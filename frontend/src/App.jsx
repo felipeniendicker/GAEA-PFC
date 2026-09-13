@@ -1,6 +1,13 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 
+const rotulosStatus = {
+  PENDENTE: 'Pendente',
+  EM_ANALISE: 'Em análise',
+  APROVADO: 'Aprovado',
+  REPROVADO: 'Reprovado'
+}
+
 function App() {
   const [nomeAluno, setNomeAluno] = useState('')
   const [emailAluno, setEmailAluno] = useState('')
@@ -111,20 +118,22 @@ async function alterarStatus(id, novoStatus) {
   return (
   <div className="app">
 
-    <aside className="sidebar">
-      <div className="logo">
-        <div className="logo-marca">G</div>
-        <div>
-          <h1>GAEA</h1>
-          <p>Gestão de Estágios</p>
+    <header className="navbar">
+      <div className="navbar-conteudo">
+        <div className="logo">
+          <div className="logo-marca">G</div>
+          <div>
+            <h1>GAEA</h1>
+            <p>Gestão de Estágios</p>
+          </div>
         </div>
-      </div>
 
-      <nav aria-label="Navegação principal">
-        <button type="button">Início</button>
-        <button type="button" className="ativo">Estágios</button>
-      </nav>
-    </aside>
+        <nav aria-label="Navegação principal">
+          <button type="button">Início</button>
+          <button type="button" className="ativo">Estágios</button>
+        </nav>
+      </div>
+    </header>
 
     <main className="conteudo">
 
@@ -225,7 +234,12 @@ async function alterarStatus(id, novoStatus) {
               <p><strong>Empresa</strong><span>{processo.nomeEmpresa}</span></p>
               <p><strong>Data de início</strong><span>{processo.dataInicio}</span></p>
               <p><strong>Data de término</strong><span>{processo.dataFim}</span></p>
-              <p><strong>Status</strong><span className="status">{processo.status}</span></p>
+              <p>
+                <strong>Status</strong>
+                <span className={`status status-${processo.status}`}>
+                  {rotulosStatus[processo.status] || processo.status}
+                </span>
+              </p>
             </div>
 
             <div className="processo-acoes">
