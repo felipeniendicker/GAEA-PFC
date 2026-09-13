@@ -85,8 +85,22 @@ async function alterarStatus(id, novoStatus) {
     })
 
     if (resposta.ok) {
-      alert('Estágio cadastrado com sucesso!')
-    } else {
+      const novoProcesso = await resposta.json()
+
+      setProcessos((listaAtual) => [
+      ...listaAtual,
+      novoProcesso
+    ])
+    setNomeAluno('')
+    setEmailAluno('')
+    setNomeEmpresa('')
+    setCnpjEmpresa('')
+    setDataInicio('')
+    setDataFim('')
+
+    alert('Estágio cadastrado com sucesso!')
+  }
+    else {
       alert('Erro ao cadastrar estágio.')
     }
   } catch (erro) {
