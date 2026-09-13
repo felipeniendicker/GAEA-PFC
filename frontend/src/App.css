@@ -1,0 +1,30 @@
+.container {
+  width: 500px;
+  margin: 40px auto;
+  font-family: Arial, sans-serif;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+}
+
+label {
+  margin-top: 12px;
+  margin-bottom: 4px;
+}
+
+input {
+  padding: 8px;
+}
+
+button {
+  margin-top: 20px;
+  padding: 10px;
+  cursor: pointer;
+}
+.processo {
+  border: 1px solid #777;
+  padding: 12px;
+  margin-top: 15px;
+}
