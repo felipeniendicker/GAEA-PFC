@@ -24,7 +24,7 @@ function App() {
     buscarProcessos()
   }, [])
 
-  async function alterarStatus(id, novoStatus) {
+async function alterarStatus(id, novoStatus) {
   try {
     const resposta = await fetch(
       `http://localhost:8080/api/processos/${id}/status`,
@@ -40,15 +40,26 @@ function App() {
     if (resposta.ok) {
       const processoAtualizado = await resposta.json()
 
-      setProcessos((listaAtual) =>
-      listaAtual.map((processo) =>
-       processo.id === id ? processoAtualizado : processo
-    )
-  )
+      console.log('Novo status enviado:', novoStatus)
+      console.log('Status retornado:', processoAtualizado.status)
+
+      setProcessos((listaAtual) => {
+        return listaAtual.map((processo) => {
+          if (processo.id === processoAtualizado.id) {
+            return {
+              ...processo,
+              status: processoAtualizado.status
+            }
+          }
+
+          return processo
+        })
+      })
     } else {
       alert('Erro ao alterar status.')
     }
   } catch (erro) {
+    console.log(erro)
     alert('Não foi possível conectar com o servidor.')
   }
 }
