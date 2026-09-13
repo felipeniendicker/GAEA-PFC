@@ -109,94 +109,153 @@ async function alterarStatus(id, novoStatus) {
 }
   
   return (
-    <div className="container">
-      <h1>GAEA</h1>
-      <h2>Novo Estágio</h2>
+  <div className="app">
+
+    <aside className="sidebar">
+      <div className="logo">
+        <div className="logo-marca">G</div>
+        <div>
+          <h1>GAEA</h1>
+          <p>Gestão de Estágios</p>
+        </div>
+      </div>
+
+      <nav aria-label="Navegação principal">
+        <button type="button">Início</button>
+        <button type="button" className="ativo">Estágios</button>
+      </nav>
+    </aside>
+
+    <main className="conteudo">
+
+      <header className="cabecalho">
+        <div>
+          <p className="cabecalho-contexto">GESTÃO ACADÊMICA</p>
+          <h2>Processos de Estágio</h2>
+          <p className="cabecalho-descricao">Cadastre e acompanhe os processos de estágio.</p>
+        </div>
+      </header>
+
+      <section className="formulario">
+        <div className="secao-cabecalho">
+          <h3>Novo estágio</h3>
+          <p>Preencha os dados abaixo para iniciar um novo processo.</p>
+        </div>
 
       <form onSubmit={cadastrarEstagio}>
-        <label>Nome do aluno</label>
-        <input
-          type="text"
-          value={nomeAluno}
-          onChange={(e) => setNomeAluno(e.target.value)}
-        />
+        <div className="campo">
+          <label htmlFor="nomeAluno">Nome do aluno</label>
+          <input
+            id="nomeAluno"
+            type="text"
+            value={nomeAluno}
+            onChange={(e) => setNomeAluno(e.target.value)}
+          />
+        </div>
 
-        <label>E-mail do aluno</label>
-        <input
-          type="email"
-          value={emailAluno}
-          onChange={(e) => setEmailAluno(e.target.value)}
-        />
+        <div className="campo">
+          <label htmlFor="emailAluno">E-mail do aluno</label>
+          <input
+            id="emailAluno"
+            type="email"
+            value={emailAluno}
+            onChange={(e) => setEmailAluno(e.target.value)}
+          />
+        </div>
 
-        <label>Empresa</label>
-        <input
-          type="text"
-          value={nomeEmpresa}
-          onChange={(e) => setNomeEmpresa(e.target.value)}
-        />
+        <div className="campo">
+          <label htmlFor="nomeEmpresa">Empresa</label>
+          <input
+            id="nomeEmpresa"
+            type="text"
+            value={nomeEmpresa}
+            onChange={(e) => setNomeEmpresa(e.target.value)}
+          />
+        </div>
 
-        <label>CNPJ</label>
-        <input
-          type="text"
-          value={cnpjEmpresa}
-          onChange={(e) => setCnpjEmpresa(e.target.value)}
-        />
+        <div className="campo">
+          <label htmlFor="cnpjEmpresa">CNPJ</label>
+          <input
+            id="cnpjEmpresa"
+            type="text"
+            value={cnpjEmpresa}
+            onChange={(e) => setCnpjEmpresa(e.target.value)}
+          />
+        </div>
 
-        <label>Data de início</label>
-        <input
-          type="date"
-          value={dataInicio}
-          onChange={(e) => setDataInicio(e.target.value)}
-        />
+        <div className="campo">
+          <label htmlFor="dataInicio">Data de início</label>
+          <input
+            id="dataInicio"
+            type="date"
+            value={dataInicio}
+            onChange={(e) => setDataInicio(e.target.value)}
+          />
+        </div>
 
-        <label>Data de término</label>
-        <input
-          type="date"
-          value={dataFim}
-          onChange={(e) => setDataFim(e.target.value)}
-        />
+        <div className="campo">
+          <label htmlFor="dataFim">Data de término</label>
+          <input
+            id="dataFim"
+            type="date"
+            value={dataFim}
+            onChange={(e) => setDataFim(e.target.value)}
+          />
+        </div>
 
         <button type="submit">
           Cadastrar estágio
         </button>
       </form>
-      <h2>Acompanhamento de Estágios</h2>
+      </section>
+
+      <section className="acompanhamento">
+        <div className="secao-cabecalho">
+          <h3>Acompanhamento de Estágios</h3>
+          <p>Consulte e atualize o andamento dos processos cadastrados.</p>
+        </div>
 
       {processos.length === 0 ? (
-        <p>Nenhum processo cadastrado.</p>
+        <p className="estado-vazio">Nenhum processo cadastrado.</p>
       ) : (
         processos.map((processo) => (
           <div className="processo" key={processo.id}>
-            <p><strong>Aluno:</strong> {processo.nomeAluno}</p>
-            <p><strong>Empresa:</strong> {processo.nomeEmpresa}</p>
-            <p><strong>Data de início:</strong> {processo.dataInicio}</p>
-            <p><strong>Data de término:</strong> {processo.dataFim}</p>
-            <p><strong>Status:</strong> {processo.status}</p>
-            
-            <button
-              type="button"
-              onClick={() => alterarStatus(processo.id, 'EM_ANALISE')}
-            >
-              Em análise
-            </button>
+            <div className="processo-dados">
+              <p><strong>Aluno</strong><span>{processo.nomeAluno}</span></p>
+              <p><strong>Empresa</strong><span>{processo.nomeEmpresa}</span></p>
+              <p><strong>Data de início</strong><span>{processo.dataInicio}</span></p>
+              <p><strong>Data de término</strong><span>{processo.dataFim}</span></p>
+              <p><strong>Status</strong><span className="status">{processo.status}</span></p>
+            </div>
 
-            <button
-              type="button"
-              onClick={() => alterarStatus(processo.id, 'APROVADO')}
-            >
-              Aprovar
-            </button>
+            <div className="processo-acoes">
+              <button
+                type="button"
+                onClick={() => alterarStatus(processo.id, 'EM_ANALISE')}
+              >
+                Em análise
+              </button>
 
-            <button
-              type="button"
-              onClick={() => alterarStatus(processo.id, 'REPROVADO')}
-            >
-              Reprovar
-            </button>
+              <button
+                type="button"
+                onClick={() => alterarStatus(processo.id, 'APROVADO')}
+              >
+                Aprovar
+              </button>
+
+              <button
+                type="button"
+                onClick={() => alterarStatus(processo.id, 'REPROVADO')}
+              >
+                Reprovar
+              </button>
+            </div>
           </div>
         ))
       )}
-    </div>
+    </section>
+  </main>
+</div>
   )
 }
 
