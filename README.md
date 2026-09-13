@@ -17,13 +17,15 @@ O GAEA é um projeto acadêmico desenvolvido com o objetivo de centralizar e fac
 ## Tecnologias
 
 ### Backend
+
 - Java
 - Spring Boot
 - Spring Data JPA
 - MySQL
 - API REST
 
-### Frontend
+### Front-end
+
 - React
 - Vite
 - JavaScript
