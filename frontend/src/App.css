@@ -40,7 +40,7 @@ button { font-size: 0.9rem; }
 .navbar-conteudo {
   display: flex;
   width: min(100% - 48px, 1320px);
-  min-height: 82px;
+  min-height: 68px;
   align-items: center;
   justify-content: space-between;
   gap: 40px;
@@ -56,16 +56,16 @@ button { font-size: 0.9rem; }
 
 .logo-marca {
   display: grid;
-  flex: 0 0 40px;
-  width: 40px;
-  height: 40px;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
   place-items: center;
   border: 1px solid #c79d5b;
   border-radius: 7px;
   background: rgba(255, 255, 255, 0.06);
   color: #f1d5a7;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 1.35rem;
+  font-size: 1.2rem;
   font-weight: 700;
 }
 
@@ -73,7 +73,7 @@ button { font-size: 0.9rem; }
   margin: 0;
   color: #fff;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 1.5rem;
+  font-size: 1.35rem;
   font-weight: 700;
   line-height: 1.05;
   letter-spacing: 0.08em;
@@ -251,46 +251,68 @@ button { font-size: 0.9rem; }
   text-align: center;
 }
 
-.processo {
-  padding: 20px;
-  border: 1px solid #ded7cb;
-  border-left: 3px solid #c79d5b;
+.lista-processos {
+  overflow: hidden;
+  border: 1px solid #ddd5c9;
   border-radius: 7px;
-  margin-top: 14px;
   background: #fff;
 }
 
-.processo-dados {
+.lista-cabecalho,
+.processo {
   display: grid;
-  grid-template-columns: repeat(5, minmax(110px, 1fr));
-  gap: 20px;
+  grid-template-columns: minmax(150px, 1.25fr) minmax(140px, 1fr) minmax(185px, 1.1fr) minmax(105px, 0.7fr) minmax(250px, auto);
+  gap: 16px;
+  align-items: center;
 }
 
-.processo-dados p {
+.lista-cabecalho {
+  padding: 11px 18px;
+  border-bottom: 1px solid #d8cfc1;
+  background: #eee9df;
+  color: #4e5d57;
+  font-size: 0.7rem;
+  font-weight: 750;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.processo {
+  min-height: 70px;
+  padding: 14px 18px;
+  color: #26332f;
+  background: #fffdf9;
+}
+
+.processo + .processo {
+  border-top: 1px solid #e4ddd2;
+}
+
+.processo p {
   min-width: 0;
   margin: 0;
 }
 
-.processo-dados strong,
-.processo-dados span {
+.processo strong,
+.processo p > span {
   display: block;
   overflow-wrap: anywhere;
 }
 
-.processo-dados strong {
-  margin-bottom: 4px;
+.processo strong {
+  display: none;
   color: #65716d;
   font-size: 0.7rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
-.processo-dados span {
-  color: #26332f;
+.processo p > span {
+  color: #28312d;
   font-size: 0.9rem;
 }
 
-.processo-dados .status {
+.processo .status {
   display: inline-block;
   max-width: 100%;
   padding: 4px 9px;
@@ -302,25 +324,25 @@ button { font-size: 0.9rem; }
   white-space: nowrap;
 }
 
-.processo-dados .status-PENDENTE {
+.processo .status-PENDENTE {
   border-color: #e1c77e;
   background: #fbf0cf;
   color: #745613;
 }
 
-.processo-dados .status-EM_ANALISE {
+.processo .status-EM_ANALISE {
   border-color: #c79d5b;
   background: #f2e2c3;
   color: #694916;
 }
 
-.processo-dados .status-APROVADO {
+.processo .status-APROVADO {
   border-color: #a7c7b5;
   background: #e1eee7;
   color: #23513d;
 }
 
-.processo-dados .status-REPROVADO {
+.processo .status-REPROVADO {
   border-color: #d9aaa5;
   background: #f5e2e0;
   color: #813a3a;
@@ -329,15 +351,13 @@ button { font-size: 0.9rem; }
 .processo-acoes {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  padding-top: 16px;
-  border-top: 1px solid #ece6dc;
-  margin-top: 18px;
+  justify-content: flex-end;
+  gap: 6px;
 }
 
 .processo button {
-  min-height: 36px;
-  padding: 8px 14px;
+  min-height: 32px;
+  padding: 6px 10px;
   border: 0;
   border-radius: 5px;
   color: #fff;
@@ -349,9 +369,39 @@ button { font-size: 0.9rem; }
 .processo button:nth-of-type(2) { background: #32705b; }
 .processo button:nth-of-type(3) { background: #934545; }
 
-@media (max-width: 900px) {
-  .processo-dados {
+@media (max-width: 1050px) {
+  .lista-processos {
+    overflow: visible;
+    border: 0;
+    background: transparent;
+  }
+
+  .lista-cabecalho { display: none; }
+
+  .processo {
     grid-template-columns: repeat(2, minmax(130px, 1fr));
+    gap: 16px 22px;
+    padding: 18px;
+    border: 1px solid #ddd5c9;
+    border-left: 3px solid #c79d5b;
+    border-radius: 7px;
+  }
+
+  .processo + .processo {
+    border-top: 1px solid #ddd5c9;
+    margin-top: 12px;
+  }
+
+  .processo strong {
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .processo-acoes {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    padding-top: 14px;
+    border-top: 1px solid #e4ddd2;
   }
 }
 
@@ -391,12 +441,13 @@ button { font-size: 0.9rem; }
   .formulario,
   .acompanhamento { padding: 20px 16px; }
 
-  .processo-dados {
+  .processo {
     grid-template-columns: 1fr;
     gap: 14px;
   }
 
   .processo-acoes {
+    grid-column: auto;
     display: grid;
     grid-template-columns: 1fr;
   }

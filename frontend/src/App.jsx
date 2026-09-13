@@ -227,45 +227,55 @@ async function alterarStatus(id, novoStatus) {
       {processos.length === 0 ? (
         <p className="estado-vazio">Nenhum processo cadastrado.</p>
       ) : (
-        processos.map((processo) => (
-          <div className="processo" key={processo.id}>
-            <div className="processo-dados">
+        <div className="lista-processos">
+          <div className="lista-cabecalho" aria-hidden="true">
+            <span>Aluno</span>
+            <span>Empresa</span>
+            <span>Período</span>
+            <span>Status</span>
+            <span>Ações</span>
+          </div>
+
+          {processos.map((processo) => (
+            <div className="processo" key={processo.id}>
               <p><strong>Aluno</strong><span>{processo.nomeAluno}</span></p>
               <p><strong>Empresa</strong><span>{processo.nomeEmpresa}</span></p>
-              <p><strong>Data de início</strong><span>{processo.dataInicio}</span></p>
-              <p><strong>Data de término</strong><span>{processo.dataFim}</span></p>
+              <p>
+                <strong>Período</strong>
+                <span>{processo.dataInicio} — {processo.dataFim}</span>
+              </p>
               <p>
                 <strong>Status</strong>
                 <span className={`status status-${processo.status}`}>
                   {rotulosStatus[processo.status] || processo.status}
                 </span>
               </p>
+
+              <div className="processo-acoes">
+                <button
+                  type="button"
+                  onClick={() => alterarStatus(processo.id, 'EM_ANALISE')}
+                >
+                  Em análise
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => alterarStatus(processo.id, 'APROVADO')}
+                >
+                  Aprovar
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => alterarStatus(processo.id, 'REPROVADO')}
+                >
+                  Reprovar
+                </button>
+              </div>
             </div>
-
-            <div className="processo-acoes">
-              <button
-                type="button"
-                onClick={() => alterarStatus(processo.id, 'EM_ANALISE')}
-              >
-                Em análise
-              </button>
-
-              <button
-                type="button"
-                onClick={() => alterarStatus(processo.id, 'APROVADO')}
-              >
-                Aprovar
-              </button>
-
-              <button
-                type="button"
-                onClick={() => alterarStatus(processo.id, 'REPROVADO')}
-              >
-                Reprovar
-              </button>
-            </div>
-          </div>
-        ))
+          ))}
+        </div>
       )}
     </section>
   </main>
