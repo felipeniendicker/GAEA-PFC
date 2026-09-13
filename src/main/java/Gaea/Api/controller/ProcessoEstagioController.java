@@ -25,4 +25,11 @@ public class ProcessoEstagioController {
     public List<ProcessoEstagio> listar() {
         return service.listarTodos();
     }
+    @PutMapping("/{id}/status")
+    public ProcessoEstagio alterarStatus(
+        @PathVariable Long id,
+        @RequestBody String novoStatus) {
+
+        return service.alterarStatus(id, novoStatus);
+    }
 }
