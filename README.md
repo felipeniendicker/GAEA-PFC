@@ -38,3 +38,32 @@ GAEA-PFC/
 ├── src/
 ├── pom.xml
 └── README.md
+
+Executando o projeto
+Backend
+
+No Windows:
+
+.\mvnw.cmd spring-boot:run
+Frontend
+cd frontend
+npm install
+npm run dev
+Entregas acadêmicas
+14/09/2026
+
+Primeira funcionalidade completa:
+
+Cadastro e acompanhamento de processos de estágio
+
+Branch da entrega:
+
+entrega1409
+
+Fluxo demonstrado:
+
+Cadastro → Pendente → Em análise → Aprovado/Reprovado
+
+Status do projeto
+
+Em desenvolvimento.
