@@ -5,6 +5,7 @@ import Gaea.Api.service.LogAuditoriaService;
 import Gaea.Api.service.ProcessoEstagioService;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import Gaea.Api.model.Usuario;
 
 import java.util.List;
 
@@ -32,7 +33,7 @@ public class ProcessoEstagioController {
         ProcessoEstagio processoSalvo = service.cadastrar(processo);
 
         logAuditoriaService.registrar(
-                authentication.getName(),
+                ((Usuario) authentication.getPrincipal()).getEmail(),
                 "CADASTRO_PROCESSO",
                 "Processo de estágio " + processoSalvo.getId()
         );
@@ -55,7 +56,7 @@ public class ProcessoEstagioController {
                 service.alterarStatus(id, novoStatus);
 
         logAuditoriaService.registrar(
-                authentication.getName(),
+                ((Usuario) authentication.getPrincipal()).getEmail(),
                 "ALTERACAO_STATUS",
                 "Processo de estágio " + id
         );
