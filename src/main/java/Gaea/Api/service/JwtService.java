@@ -1,6 +1,7 @@
 package Gaea.Api.service;
 
 import Gaea.Api.model.Usuario;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Service;
@@ -29,5 +30,15 @@ public class JwtService {
                 .expiration(new Date(agora + 3600000))
                 .signWith(getChave())
                 .compact();
+    }
+
+    public String extrairEmail(String token) {
+        Claims claims = Jwts.parser()
+                .verifyWith(getChave())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+
+        return claims.getSubject();
     }
 }
