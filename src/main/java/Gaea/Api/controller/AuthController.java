@@ -2,6 +2,7 @@ package Gaea.Api.controller;
 
 import Gaea.Api.model.Usuario;
 import Gaea.Api.repository.UsuarioRepository;
+import Gaea.Api.service.JwtService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,11 +15,20 @@ public class AuthController {
 
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
     public AuthController(UsuarioRepository usuarioRepository,
-                          PasswordEncoder passwordEncoder) {
+                          PasswordEncoder passwordEncoder,
+                          JwtService jwtService) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
+    }
+
+    @PostMapping("/cadastro")
+    public Usuario cadastrar(@RequestBody Usuario usuario) {
+        usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
+        return usuarioRepository.save(usuario);
     }
 
     @PostMapping("/login")
@@ -34,15 +44,13 @@ public class AuthController {
             throw new RuntimeException("Senha inválida");
         }
 
+        String token = jwtService.gerarToken(usuario);
+
         return Map.of(
                 "nome", usuario.getNome(),
                 "email", usuario.getEmail(),
-                "perfil", usuario.getPerfil()
+                "perfil", usuario.getPerfil(),
+                "token", token
         );
-    }
-    @PostMapping("/cadastro")
-    public Usuario cadastrar(@RequestBody Usuario usuario) {
-        usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
-            return usuarioRepository.save(usuario);
     }
 }
