@@ -42,6 +42,8 @@ public class SecurityConfig {
 
                         .requestMatchers("/api/auditoria/**")
                         .hasRole("INSTITUICAO")
+                        .requestMatchers("/api/cep/**")
+                        .hasRole("INSTITUICAO")
 
                         .anyRequest().authenticated()
                 )
