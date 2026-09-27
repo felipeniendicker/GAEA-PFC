@@ -3,6 +3,7 @@ package Gaea.Api.controller;
 import Gaea.Api.model.Usuario;
 import Gaea.Api.repository.UsuarioRepository;
 import Gaea.Api.service.JwtService;
+import Gaea.Api.service.LogAuditoriaService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,13 +17,16 @@ public class AuthController {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final LogAuditoriaService logAuditoriaService;
 
     public AuthController(UsuarioRepository usuarioRepository,
                           PasswordEncoder passwordEncoder,
-                          JwtService jwtService) {
+                          JwtService jwtService,
+                          LogAuditoriaService logAuditoriaService) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.logAuditoriaService = logAuditoriaService;
     }
 
     @PostMapping("/cadastro")
@@ -45,6 +49,12 @@ public class AuthController {
         }
 
         String token = jwtService.gerarToken(usuario);
+
+        logAuditoriaService.registrar(
+                usuario.getEmail(),
+                "LOGIN",
+                "Autenticação no sistema"
+        );
 
         return Map.of(
                 "nome", usuario.getNome(),

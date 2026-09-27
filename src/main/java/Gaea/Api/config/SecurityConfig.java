@@ -40,6 +40,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/processos/**")
                         .hasRole("INSTITUICAO")
 
+                        .requestMatchers("/api/auditoria/**")
+                        .hasRole("INSTITUICAO")
+
                         .anyRequest().authenticated()
                 )
 
