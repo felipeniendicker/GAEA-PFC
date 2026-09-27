@@ -4,6 +4,7 @@ import Gaea.Api.model.Usuario;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
@@ -13,11 +14,14 @@ import java.util.Date;
 @Service
 public class JwtService {
 
-    private static final String CHAVE =
-            "gaea-chave-jwt-projeto-academico-2026-seguranca";
+    private final String chave;
+
+    public JwtService(@Value("${jwt.secret}") String chave) {
+        this.chave = chave;
+    }
 
     private SecretKey getChave() {
-        return Keys.hmacShaKeyFor(CHAVE.getBytes(StandardCharsets.UTF_8));
+        return Keys.hmacShaKeyFor(chave.getBytes(StandardCharsets.UTF_8));
     }
 
     public String gerarToken(Usuario usuario) {

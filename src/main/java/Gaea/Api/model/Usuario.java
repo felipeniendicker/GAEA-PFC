@@ -1,6 +1,7 @@
 package Gaea.Api.model;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 public class Usuario {
@@ -19,6 +20,10 @@ public class Usuario {
 
     @Column(nullable = false)
     private String perfil;
+
+    private Boolean termosAceitos;
+
+    private LocalDateTime termosAceitosEm;
 
     public Usuario() {
     }
@@ -57,5 +62,20 @@ public class Usuario {
 
     public void setPerfil(String perfil) {
         this.perfil = perfil;
+    }
+    public Boolean getTermosAceitos() {
+        return termosAceitos;
+    }
+
+    public void setTermosAceitos(Boolean termosAceitos) {
+        this.termosAceitos = termosAceitos;
+    }
+
+    public LocalDateTime getTermosAceitosEm() {
+        return termosAceitosEm;
+    }
+
+    public void setTermosAceitosEm(LocalDateTime termosAceitosEm) {
+        this.termosAceitosEm = termosAceitosEm;
     }
 }
