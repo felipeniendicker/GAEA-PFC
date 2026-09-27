@@ -9,6 +9,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 @RestController
@@ -60,7 +61,14 @@ public class AuthController {
         }
 
         usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
+        usuario.setTermosAceitosEm(LocalDateTime.now());
         Usuario usuarioSalvo = usuarioRepository.save(usuario);
+
+        logAuditoriaService.registrar(
+                usuarioSalvo.getEmail(),
+                "ACEITE_TERMOS",
+                "Termos de Uso e Política de Privacidade"
+        );
 
         return Map.of(
                 "nome", usuarioSalvo.getNome(),
