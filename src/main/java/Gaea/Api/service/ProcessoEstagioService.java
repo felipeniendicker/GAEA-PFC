@@ -23,6 +23,11 @@ public class ProcessoEstagioService {
     public List<ProcessoEstagio> listarTodos() {
         return repository.findAll();
     }
+
+    public List<ProcessoEstagio> listarPorEmailAluno(String emailAluno) {
+        return repository.findByEmailAluno(emailAluno);
+    }
+
     public ProcessoEstagio alterarStatus(Long id, String novoStatus) {
 
         if (!novoStatus.equals("PENDENTE")

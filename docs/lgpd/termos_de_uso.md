@@ -1,100 +1,76 @@
 # Termos de Uso e Termo de Aceite do GAEA
 
-**Versão:** 1.0  
+**Versão:** 1.0
 **Data:** 27/09/2026
 
 ## 1. Sobre o GAEA
 
-O GAEA (Gestão e Acompanhamento de Estágios Acadêmicos) é um projeto acadêmico desenvolvido para auxiliar no gerenciamento e acompanhamento de processos de estágio.
+O GAEA (Gestão e Acompanhamento de Estágios Acadêmicos) é um projeto acadêmico destinado à gestão e ao acompanhamento de processos de estágio.
 
-Estes Termos apresentam as condições de utilização do sistema e as responsabilidades relacionadas ao seu uso.
+Estes Termos apresentam as condições para utilização do sistema.
 
-## 2. Usuários do sistema
+## 2. Perfis de usuário
 
-O GAEA possui diferentes perfis de acesso, de acordo com as funções exercidas no sistema:
+O GAEA possui os perfis ALUNO, EMPRESA e INSTITUICAO. As funcionalidades e permissões disponíveis dependem do perfil associado à conta.
 
-- ALUNO;
-- EMPRESA;
-- INSTITUICAO.
+O usuário não deve tentar acessar funcionalidades ou informações para as quais não possui autorização.
 
-As funcionalidades disponíveis poderão variar de acordo com o perfil do usuário.
+## 3. Conta e credenciais
 
-O usuário não deverá tentar acessar funcionalidades ou informações para as quais não possua autorização.
+Para acessar funcionalidades protegidas, o usuário deve utilizar uma conta cadastrada. Ele é responsável por informar dados corretos, utilizar suas próprias credenciais e não compartilhar sua senha ou conta com outras pessoas.
 
-## 3. Conta e acesso
+## 4. Utilização do sistema
 
-Para acessar funcionalidades protegidas, o usuário deverá utilizar uma conta cadastrada no sistema.
-
-O usuário é responsável por utilizar corretamente suas credenciais e não deverá compartilhar sua senha com outras pessoas.
-
-O GAEA utiliza mecanismos de autenticação e controle de acesso para restringir funcionalidades de acordo com o perfil do usuário.
-
-## 4. Uso do sistema
-
-O usuário deverá utilizar o GAEA de acordo com a finalidade do sistema e fornecer informações adequadas ao processo de estágio.
-
-Não é permitido utilizar o sistema para:
+O GAEA deve ser utilizado para suas finalidades acadêmicas. Não é permitido:
 
 - tentar acessar áreas sem autorização;
 - utilizar credenciais pertencentes a outra pessoa;
 - inserir informações intencionalmente falsas;
 - tentar comprometer a segurança ou o funcionamento do sistema;
-- utilizar o sistema para finalidade diferente daquela relacionada ao gerenciamento e acompanhamento de estágios.
+- utilizar o sistema para finalidade diferente da gestão e do acompanhamento de estágios.
 
 ## 5. Processos de estágio
 
-As informações cadastradas nos processos de estágio são utilizadas para permitir o acompanhamento das atividades relacionadas ao estágio.
+As informações cadastradas nos processos são utilizadas para o acompanhamento do estágio. Conforme o perfil, o usuário poderá cadastrar, consultar ou atualizar essas informações.
 
-Dependendo do perfil e das permissões disponíveis, o usuário poderá cadastrar, consultar ou alterar informações relacionadas aos processos.
+O aluno pode consultar somente os processos relacionados ao e-mail de sua conta. As operações administrativas permanecem restritas ao perfil autorizado.
 
-Algumas operações realizadas no sistema poderão ser registradas nos logs de auditoria para permitir sua rastreabilidade.
+## 6. Registros de auditoria
 
-## 6. Serviços externos
+Ações importantes podem ser registradas com o usuário responsável, a ação realizada, o recurso relacionado e a data/hora. Esses registros permitem rastreabilidade e apoiam a segurança do sistema.
 
-O GAEA poderá utilizar serviços externos necessários para determinadas funcionalidades.
+Senhas e tokens de autenticação não são incluídos nesses registros.
 
-Atualmente, o sistema possui integração com o ViaCEP para consulta de informações de endereço a partir do CEP informado.
+## 7. Uso do ViaCEP
 
-A utilização de serviços externos poderá estar sujeita à disponibilidade desses serviços.
+O GAEA utiliza o ViaCEP para consultar dados de endereço a partir do CEP informado. A disponibilidade dessa consulta também depende do serviço externo.
 
-## 7. Privacidade e proteção de dados
+Durante a consulta, o CEP necessário é enviado ao ViaCEP. Senhas, tokens e dados completos do processo não são enviados ao serviço.
 
-O tratamento de dados pessoais realizado pelo GAEA é descrito na Política de Privacidade do sistema.
+## 8. Privacidade e proteção de dados
 
-A Política apresenta informações sobre os dados utilizados, suas finalidades, segurança, serviços externos, retenção e direitos relacionados aos dados pessoais.
+O tratamento de dados pessoais é explicado na Política de Privacidade do GAEA, que apresenta os dados utilizados, suas finalidades, o tratamento realizado, a retenção e os direitos dos titulares.
 
-A aceitação destes Termos não representa autorização irrestrita para utilização de dados pessoais para finalidades diferentes das informadas no sistema e na Política de Privacidade.
+A aceitação destes Termos não autoriza o uso dos dados para finalidades diferentes das informadas no sistema e na Política de Privacidade.
 
-## 8. Disponibilidade e manutenção
+## 9. Disponibilidade do projeto
 
-Por se tratar atualmente de um projeto acadêmico em desenvolvimento, o GAEA poderá passar por alterações, atualizações e períodos de indisponibilidade durante atividades de desenvolvimento e manutenção.
+Por ser um projeto acadêmico em desenvolvimento, o GAEA pode passar por atualizações, manutenção e períodos de indisponibilidade.
 
-Novas funcionalidades poderão ser adicionadas conforme a evolução do projeto.
+## 10. Aceite dos Termos
 
-## 9. Encerramento e restrição de acesso
+Durante o cadastro, o usuário deve marcar a opção específica declarando que leu e aceitou estes Termos de Uso e a Política de Privacidade. Sem essa confirmação, o cadastro não é concluído.
 
-O acesso de um usuário poderá ser restringido quando houver utilização indevida do sistema ou quando sua conta não for mais necessária para as atividades relacionadas ao GAEA.
+O GAEA registra o aceite e sua respectiva data/hora. O simples acesso ao sistema não substitui o aceite realizado no cadastro.
 
-Em uma implantação real, os procedimentos para criação, alteração e encerramento de contas deverão ser definidos pela instituição responsável pela utilização do sistema.
+Os Termos e a Política de Privacidade permanecem disponíveis para consulta pela navegação do GAEA antes e depois do login.
 
-## 10. Termo de Aceite
+## 11. Contato
 
-Ao indicar sua concordância com estes Termos de Uso, o usuário declara que teve acesso ao conteúdo deste documento e à Política de Privacidade do GAEA.
-
-O aceite deverá ser realizado de forma livre e antes da utilização das funcionalidades protegidas do sistema.
-
-A versão dos Termos apresentada ao usuário deverá permanecer disponível para consulta no GAEA.
-
-## 11. Canal de contato
-
-Dúvidas relacionadas ao projeto GAEA poderão ser encaminhadas para:
+Dúvidas relacionadas ao projeto podem ser enviadas para:
 
 **E-mail:** feliperafaelniendicker@gmail.com
 
-## 12. Alterações dos Termos
-
-Estes Termos poderão ser atualizados conforme o GAEA seja modificado ou novas funcionalidades sejam adicionadas.
-
-Alterações relevantes deverão resultar na atualização da versão e da data deste documento.
+Estes Termos poderão ser atualizados conforme o desenvolvimento do projeto. A versão disponível no sistema deve ser consultada para conhecer o conteúdo vigente.
 
 **Versão atual: 1.0 — 27/09/2026**

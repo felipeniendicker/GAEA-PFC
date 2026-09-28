@@ -147,9 +147,28 @@ function App() {
     }
   }
 
+  async function buscarMeusProcessos() {
+    try {
+      const resposta = await fetch(`${API}/api/processos/meus`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+
+      if (resposta.ok) {
+        const dados = await resposta.json()
+        setProcessos(dados)
+      }
+    } catch (erro) {
+      console.log('Erro ao buscar processos do aluno')
+    }
+  }
+
   useEffect(() => {
     if (token && usuario?.perfil === 'INSTITUICAO') {
       buscarProcessos()
+    } else if (token && usuario?.perfil === 'ALUNO') {
+      buscarMeusProcessos()
     }
   }, [token, usuario])
 
@@ -344,66 +363,116 @@ function App() {
             </p>
           </header>
 
-          <section className="formulario">
+          <article className="formulario documento-lgpd">
             <div className="secao-cabecalho">
-              <h3>Privacidade no GAEA</h3>
+              <h3>Política de Privacidade do GAEA</h3>
               <p>
-                Informações sobre o tratamento de dados pessoais no sistema.
+                Informações sobre o uso e a proteção de dados pessoais no
+                sistema, conforme a Lei nº 13.709/2018 (Lei Geral de Proteção
+                de Dados Pessoais — LGPD).
               </p>
             </div>
 
-            <h3>Dados tratados</h3>
-            <p>
-              O GAEA pode tratar nome, e-mail, perfil de acesso e senha
-              protegida por hash para criação e utilização da conta.
-              Nos processos de estágio são utilizados dados do aluno,
-              da empresa, período do estágio e situação do processo.
-            </p>
+            <section className="documento-secao">
+              <h3>1. Sobre esta política</h3>
+              <p>
+                Esta Política apresenta como os dados pessoais são utilizados
+                no GAEA, sistema acadêmico voltado à gestão e ao acompanhamento
+                de processos de estágio.
+              </p>
+            </section>
 
-            <h3>Finalidades</h3>
-            <p>
-              Os dados são utilizados para autenticação, controle de acesso,
-              cadastro e acompanhamento dos processos de estágio, consulta
-              de endereço e registro de ações importantes para auditoria.
-            </p>
+            <section className="documento-secao documento-destaque">
+              <h3>2. Dados tratados pelo GAEA</h3>
+              <p>De acordo com as funcionalidades atuais, o sistema trata:</p>
+              <ul>
+                <li>nome, e-mail e perfil de acesso (ALUNO, EMPRESA ou INSTITUICAO);</li>
+                <li>senha protegida por hash BCrypt, sem armazenamento em texto puro;</li>
+                <li>nome e e-mail do aluno relacionados ao processo de estágio;</li>
+                <li>nome e CNPJ da empresa;</li>
+                <li>datas de início e fim e status do processo de estágio;</li>
+                <li>CEP e dados de endereço consultados por meio do ViaCEP;</li>
+                <li>usuário, ação, recurso e data/hora dos registros de auditoria;</li>
+                <li>aceite dos Termos e da Política de Privacidade e sua data/hora.</li>
+              </ul>
+            </section>
 
-            <h3>Segurança</h3>
-            <p>
-              As senhas são protegidas com BCrypt. O sistema utiliza JWT
-              para autenticação e possui controle de acesso conforme o
-              perfil do usuário. Ações relevantes também podem ser
-              registradas nos logs de auditoria.
-            </p>
+            <section className="documento-secao documento-destaque">
+              <h3>3. Finalidades</h3>
+              <p>Os dados são utilizados para:</p>
+              <ul>
+                <li>criar e identificar a conta do usuário;</li>
+                <li>autenticar o usuário e controlar o acesso conforme seu perfil;</li>
+                <li>cadastrar e acompanhar processos de estágio;</li>
+                <li>identificar o aluno e a empresa envolvidos no processo;</li>
+                <li>consultar o endereço da empresa a partir do CEP;</li>
+                <li>registrar ações importantes para rastreabilidade e segurança;</li>
+                <li>registrar o aceite dos Termos e da Política de Privacidade.</li>
+              </ul>
+            </section>
 
-            <h3>Serviços externos</h3>
-            <p>
-              O GAEA utiliza o ViaCEP para consulta de endereço. Nessa
-              integração é enviado somente o CEP necessário para realizar
-              a consulta. Senhas, tokens e dados completos do processo de
-              estágio não são enviados ao ViaCEP.
-            </p>
+            <section className="documento-secao documento-destaque">
+              <h3>4. Tratamento e segurança</h3>
+              <p>
+                Os dados são recebidos e persistidos pelo backend e pelo banco
+                de dados do GAEA. As senhas são protegidas com BCrypt, a
+                autenticação utiliza JWT e a autorização por perfil é
+                verificada no backend. O sistema também mantém registros de
+                auditoria e se comunica com o ViaCEP para consultar endereços.
+              </p>
+            </section>
 
-            <h3>Armazenamento</h3>
-            <p>
-              Os dados devem permanecer armazenados somente enquanto forem
-              necessários às finalidades do sistema. Por se tratar de um
-              projeto acadêmico, ainda não existe uma política automática
-              definitiva de exclusão.
-            </p>
+            <section className="documento-secao">
+              <h3>5. Serviço externo ViaCEP</h3>
+              <p>
+                O GAEA envia ao ViaCEP somente o CEP necessário para consultar
+                o endereço. Senhas, tokens de autenticação e dados completos
+                do processo de estágio não são enviados ao serviço.
+              </p>
+            </section>
 
-            <h3>Direitos do usuário</h3>
-            <p>
-              O usuário poderá solicitar informações sobre seus dados,
-              correção e, quando aplicável, exclusão dos dados tratados
-              pelo sistema.
-            </p>
+            <section className="documento-secao">
+              <h3>6. Retenção</h3>
+              <p>
+                Os dados são mantidos enquanto forem necessários às
+                funcionalidades e à finalidade acadêmica do sistema. O projeto
+                ainda não possui exclusão automática por prazo. Em um ambiente
+                real, regras específicas de retenção deverão observar as
+                finalidades e as obrigações aplicáveis.
+              </p>
+            </section>
 
-            <h3>Contato</h3>
-            <p>
-              Para questões relacionadas à privacidade:
-              {' '}feliperafaelniendicker@gmail.com
-            </p>
-          </section>
+            <section className="documento-secao documento-destaque">
+              <h3>7. Seus direitos</h3>
+              <p>Conforme aplicável, o titular pode solicitar:</p>
+              <ul>
+                <li>confirmação da existência de tratamento;</li>
+                <li>acesso aos seus dados;</li>
+                <li>correção de dados incompletos, inexatos ou desatualizados;</li>
+                <li>informações sobre o tratamento realizado;</li>
+                <li>eliminação de dados tratados com consentimento, quando aplicável e observadas as hipóteses legais;</li>
+                <li>revogação do consentimento, quando ele for a base aplicável.</li>
+              </ul>
+            </section>
+
+            <section className="documento-secao">
+              <h3>8. Contato</h3>
+              <p>
+                Dúvidas e solicitações relacionadas à privacidade podem ser
+                enviadas ao canal de contato do projeto GAEA:
+                {' '}feliperafaelniendicker@gmail.com.
+              </p>
+            </section>
+
+            <section className="documento-secao">
+              <h3>9. Atualização</h3>
+              <p>
+                Esta Política poderá ser atualizada conforme o desenvolvimento
+                do projeto. A versão disponível no sistema deve ser consultada
+                para conhecer o conteúdo vigente.
+              </p>
+            </section>
+          </article>
         </main>
       </div>
     )
@@ -417,75 +486,119 @@ function App() {
         <main className="conteudo">
           <header className="cabecalho">
             <p className="cabecalho-contexto">GAEA</p>
-            <h2>Termos de Uso</h2>
+            <h2>Termos de Uso e Termo de Aceite</h2>
             <p className="cabecalho-descricao">
               Versão 1.0 — 27/09/2026
             </p>
           </header>
 
-          <section className="formulario">
+          <article className="formulario documento-lgpd">
             <div className="secao-cabecalho">
               <h3>Termo de Aceite do GAEA</h3>
               <p>
-                Condições para utilização do sistema.
+                Condições para utilização do sistema acadêmico GAEA.
               </p>
             </div>
 
-            <h3>Sobre o sistema</h3>
-            <p>
-              O GAEA é um projeto acadêmico destinado à gestão e ao
-              acompanhamento de processos de estágio.
-            </p>
+            <section className="documento-secao">
+              <h3>1. Sobre o GAEA</h3>
+              <p>
+                O GAEA é um projeto acadêmico destinado à gestão e ao
+                acompanhamento de processos de estágio.
+              </p>
+            </section>
 
-            <h3>Perfis de acesso</h3>
-            <p>
-              O sistema possui diferentes perfis, incluindo aluno, empresa
-              e instituição. As funcionalidades disponíveis dependem do
-              perfil e das permissões atribuídas ao usuário.
-            </p>
+            <section className="documento-secao">
+              <h3>2. Perfis de usuário</h3>
+              <p>
+                O sistema possui os perfis ALUNO, EMPRESA e INSTITUICAO.
+                As funcionalidades e permissões disponíveis dependem do perfil
+                associado à conta.
+              </p>
+            </section>
 
-            <h3>Conta e acesso</h3>
-            <p>
-              O usuário deve utilizar suas próprias credenciais e é
-              responsável por não compartilhar sua senha ou utilizar
-              indevidamente a conta de terceiros.
-            </p>
+            <section className="documento-secao">
+              <h3>3. Conta e credenciais</h3>
+              <p>
+                O usuário deve informar dados corretos, utilizar suas próprias
+                credenciais e não compartilhar sua senha ou a conta com outras
+                pessoas.
+              </p>
+            </section>
 
-            <h3>Uso adequado</h3>
-            <p>
-              Não é permitido tentar acessar funcionalidades sem
-              autorização, utilizar credenciais de terceiros, inserir
-              informações intencionalmente falsas ou comprometer a
-              segurança do sistema.
-            </p>
+            <section className="documento-secao">
+              <h3>4. Utilização do sistema</h3>
+              <p>
+                O GAEA deve ser utilizado para suas finalidades acadêmicas.
+                Não é permitido tentar acessar áreas sem autorização, usar
+                credenciais de terceiros, inserir informações intencionalmente
+                falsas ou comprometer a segurança do sistema.
+              </p>
+            </section>
 
-            <h3>Processos de estágio</h3>
-            <p>
-              Conforme o perfil de acesso, o usuário poderá utilizar
-              funcionalidades relacionadas ao cadastro, consulta e
-              acompanhamento dos processos de estágio.
-            </p>
+            <section className="documento-secao">
+              <h3>5. Processos de estágio</h3>
+              <p>
+                Conforme o perfil, o usuário poderá cadastrar, consultar ou
+                atualizar informações dos processos. O aluno pode consultar
+                somente os processos relacionados ao e-mail de sua conta.
+              </p>
+            </section>
 
-            <h3>Serviços externos</h3>
-            <p>
-              Algumas funcionalidades podem utilizar serviços externos,
-              como o ViaCEP, cuja disponibilidade também depende do
-              respectivo provedor.
-            </p>
+            <section className="documento-secao">
+              <h3>6. Registros de auditoria</h3>
+              <p>
+                Ações importantes podem ser registradas com o usuário
+                responsável, a ação realizada, o recurso relacionado e a
+                data/hora, permitindo rastreabilidade e apoio à segurança.
+              </p>
+            </section>
 
-            <h3>Aceite</h3>
-            <p>
-              Ao marcar a opção de aceite durante o cadastro, o usuário
-              declara que teve acesso aos Termos de Uso e à Política de
-              Privacidade do GAEA.
-            </p>
+            <section className="documento-secao">
+              <h3>7. Uso do ViaCEP</h3>
+              <p>
+                O GAEA utiliza o ViaCEP para consultar endereço a partir do
+                CEP informado. A disponibilidade dessa consulta também depende
+                do serviço externo.
+              </p>
+            </section>
 
-            <h3>Contato</h3>
-            <p>
-              Para questões relacionadas ao projeto:
-              {' '}feliperafaelniendicker@gmail.com
-            </p>
-          </section>
+            <section className="documento-secao">
+              <h3>8. Privacidade e proteção de dados</h3>
+              <p>
+                O tratamento dos dados pessoais é explicado na Política de
+                Privacidade do GAEA, que apresenta os dados utilizados, suas
+                finalidades, o tratamento realizado e os direitos dos titulares.
+              </p>
+            </section>
+
+            <section className="documento-secao">
+              <h3>9. Disponibilidade do projeto</h3>
+              <p>
+                Por ser um projeto acadêmico em desenvolvimento, o GAEA pode
+                passar por atualizações, manutenção e períodos de
+                indisponibilidade.
+              </p>
+            </section>
+
+            <section className="documento-secao documento-destaque">
+              <h3>10. Aceite dos Termos</h3>
+              <p>
+                Durante o cadastro, o usuário deve marcar a opção específica
+                declarando que leu e aceitou estes Termos de Uso e a Política
+                de Privacidade. O GAEA registra o aceite e sua respectiva
+                data/hora. Sem essa confirmação, o cadastro não é concluído.
+              </p>
+            </section>
+
+            <section className="documento-secao">
+              <h3>11. Contato</h3>
+              <p>
+                Dúvidas relacionadas ao projeto podem ser enviadas para:
+                {' '}feliperafaelniendicker@gmail.com.
+              </p>
+            </section>
+          </article>
         </main>
       </div>
     )
@@ -692,14 +805,55 @@ function App() {
               </h3>
 
               <p>
-                Você está autenticado no GAEA.
+                {usuario.perfil === 'ALUNO'
+                  ? 'Acompanhe seus processos de estágio.'
+                  : 'Você está autenticado no GAEA.'}
               </p>
             </div>
 
-            <p>
-              As funcionalidades disponíveis são apresentadas conforme
-              o perfil e as permissões do usuário.
-            </p>
+            {usuario.perfil === 'ALUNO' ? (
+              processos.length === 0 ? (
+                <p className="estado-vazio">
+                  Nenhum processo de estágio foi encontrado para sua conta.
+                </p>
+              ) : (
+                <div className="lista-processos lista-processos-aluno">
+                  <div className="lista-cabecalho">
+                    <span>Empresa</span>
+                    <span>Período</span>
+                    <span>Status</span>
+                  </div>
+
+                  {processos.map((processo) => (
+                    <div className="processo" key={processo.id}>
+                      <p>
+                        <strong>Empresa</strong>
+                        <span>{processo.nomeEmpresa}</span>
+                      </p>
+
+                      <p>
+                        <strong>Período</strong>
+                        <span>
+                          {processo.dataInicio} — {processo.dataFim}
+                        </span>
+                      </p>
+
+                      <p>
+                        <strong>Status</strong>
+                        <span className={`status status-${processo.status}`}>
+                          {rotulosStatus[processo.status] || processo.status}
+                        </span>
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )
+            ) : (
+              <p>
+                As funcionalidades disponíveis são apresentadas conforme
+                o perfil e as permissões do usuário.
+              </p>
+            )}
           </section>
         </main>
       </div>

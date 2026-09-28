@@ -1,113 +1,83 @@
 # Política de Privacidade do GAEA
 
-**Versão:** 1.0  
+**Versão:** 1.0
 **Data:** 27/09/2026
 
-## 1. Sobre o GAEA
+Esta Política apresenta como o GAEA trata dados pessoais, conforme a Lei nº 13.709/2018 (Lei Geral de Proteção de Dados Pessoais — LGPD).
 
-O GAEA (Gestão e Acompanhamento de Estágios Acadêmicos) é um projeto acadêmico desenvolvido com o objetivo de auxiliar no gerenciamento e acompanhamento de processos de estágio.
+## 1. Sobre esta política
 
-Esta Política de Privacidade apresenta quais dados podem ser tratados pelo sistema, para quais finalidades são utilizados e quais medidas são adotadas para sua proteção.
+O GAEA (Gestão e Acompanhamento de Estágios Acadêmicos) é um sistema acadêmico voltado à gestão e ao acompanhamento de processos de estágio. Esta Política explica quais dados são utilizados, suas finalidades, o tratamento realizado e os direitos dos titulares.
 
-## 2. Dados tratados pelo sistema
+## 2. Dados tratados pelo GAEA
 
-De acordo com as funcionalidades disponíveis no GAEA, poderão ser tratados os seguintes dados:
+De acordo com as funcionalidades atuais, o sistema trata:
 
-### Dados da conta
-- nome;
-- endereço de e-mail;
-- senha, armazenada de forma protegida por hash;
-- perfil de acesso do usuário.
+- nome, e-mail e perfil de acesso (ALUNO, EMPRESA ou INSTITUICAO);
+- senha protegida por hash BCrypt, sem armazenamento em texto puro;
+- nome e e-mail do aluno relacionados ao processo de estágio;
+- nome e CNPJ da empresa;
+- datas de início e fim e status do processo de estágio;
+- CEP e dados de endereço consultados por meio do ViaCEP;
+- registros de auditoria, incluindo usuário, ação realizada, recurso e data/hora;
+- registro do aceite dos Termos de Uso e da Política de Privacidade e sua data/hora.
 
-### Dados relacionados ao processo de estágio
-- nome do aluno;
-- e-mail do aluno;
-- nome da empresa;
-- CNPJ da empresa;
-- data de início do estágio;
-- data de término do estágio;
-- situação do processo de estágio.
+O GAEA não coleta atualmente CPF, telefone ou documentos pessoais.
 
-### Dados de endereço
-O sistema poderá utilizar o CEP da empresa para realizar a consulta de endereço por meio da integração com o ViaCEP.
+## 3. Finalidades
 
-### Dados de auditoria
-Para permitir a rastreabilidade de determinadas operações, o GAEA registra informações como:
-- usuário responsável pela ação;
-- ação realizada;
-- recurso relacionado à operação;
-- data e horário da ação.
+Os dados são utilizados para:
 
-Senhas e tokens de autenticação não devem ser armazenados nos registros de auditoria.
-
-## 3. Finalidades do tratamento
-
-Os dados são utilizados de acordo com as funcionalidades do GAEA, principalmente para:
-
-- identificar e autenticar usuários;
-- controlar o acesso às funcionalidades de acordo com o perfil;
+- criar e identificar a conta do usuário;
+- autenticar o usuário e controlar o acesso conforme seu perfil;
+- diferenciar as permissões dos perfis ALUNO, EMPRESA e INSTITUICAO;
 - cadastrar e acompanhar processos de estágio;
-- relacionar informações do aluno e da empresa ao processo;
-- consultar informações de endereço da empresa;
-- registrar ações relevantes para auditoria e rastreabilidade;
-- auxiliar no funcionamento e na segurança do sistema.
+- identificar o aluno e a empresa envolvidos no processo;
+- consultar o endereço da empresa a partir do CEP;
+- registrar ações importantes para rastreabilidade e segurança;
+- registrar o aceite dos Termos de Uso e da Política de Privacidade.
 
-O GAEA não deve solicitar dados pessoais que não sejam necessários para suas funcionalidades.
+## 4. Tratamento e segurança
 
-## 4. Autenticação e segurança
+Os dados são recebidos e persistidos pelo backend e pelo banco de dados do GAEA. As senhas são protegidas com BCrypt, a autenticação utiliza JWT e a autorização conforme o perfil é verificada no backend.
 
-As senhas cadastradas no sistema são protegidas utilizando BCrypt e não devem ser armazenadas em texto puro.
+O sistema também mantém registros de auditoria e se comunica com o ViaCEP para consultar endereços. Senhas e tokens de autenticação não são armazenados nos registros de auditoria.
 
-Após a autenticação, o sistema utiliza JWT (JSON Web Token) para identificar o usuário durante o acesso às funcionalidades protegidas.
+## 5. Serviço externo ViaCEP
 
-O controle de acesso é realizado de acordo com o perfil do usuário, incluindo os perfis ALUNO, EMPRESA e INSTITUICAO.
+O GAEA utiliza o ViaCEP para consultar dados de endereço. Durante a consulta, somente o CEP necessário é enviado ao serviço externo.
 
-O GAEA também utiliza registros de auditoria para permitir o acompanhamento de determinadas ações realizadas no sistema.
+Senhas, tokens de autenticação e dados completos do processo de estágio não são enviados ao ViaCEP.
 
-Nenhuma medida de segurança elimina completamente os riscos relacionados ao uso de sistemas de informação. Em uma implantação de produção, também deverão ser adotadas medidas adequadas de infraestrutura, incluindo o uso de HTTPS e a proteção das credenciais e segredos utilizados pela aplicação.
+## 6. Retenção
 
-## 5. Compartilhamento e serviços externos
+Os dados são mantidos enquanto forem necessários às funcionalidades e à finalidade acadêmica do sistema. Como o projeto ainda não possui uma rotina automática de exclusão por prazo, não é definido um período fixo de retenção.
 
-O GAEA utiliza o ViaCEP como serviço externo para consulta de endereço.
+Em um ambiente real, regras específicas de retenção e descarte deverão observar as finalidades do tratamento e as obrigações aplicáveis.
 
-Durante essa consulta, somente o CEP necessário para localizar o endereço é enviado ao serviço ViaCEP.
+## 7. Seus direitos
 
-Dados de autenticação, senhas, tokens e informações completas do processo de estágio não são enviados ao ViaCEP.
+Conforme aplicável, o titular pode solicitar:
 
-O uso de outros serviços externos deverá ser informado nesta Política caso novas integrações sejam adicionadas ao sistema.
+- confirmação da existência de tratamento;
+- acesso aos seus dados;
+- correção de dados incompletos, inexatos ou desatualizados;
+- informações sobre o tratamento realizado;
+- eliminação de dados tratados com consentimento, quando aplicável e observadas as hipóteses legais;
+- revogação do consentimento, quando ele for a base aplicável.
 
-## 6. Armazenamento e retenção
+Essas solicitações devem ser encaminhadas pelo canal de contato do projeto. O sistema não possui atualmente uma função de exclusão automática disponível ao usuário.
 
-Os dados são armazenados enquanto forem necessários para o funcionamento e acompanhamento dos processos existentes no sistema.
+## 8. Contato
 
-Por se tratar de um projeto acadêmico em desenvolvimento, ainda não existe uma rotina automática definitiva para exclusão dos dados após determinado período.
-
-Em uma implantação real, os períodos de retenção e os procedimentos de descarte deverão ser definidos pela instituição responsável pelo uso do sistema, considerando a finalidade do tratamento e as obrigações aplicáveis.
-
-## 7. Direitos relacionados aos dados pessoais
-
-O titular dos dados poderá solicitar informações e exercer os direitos aplicáveis previstos na legislação de proteção de dados, incluindo solicitações relacionadas ao acesso, correção e eliminação de dados, quando aplicável.
-
-As solicitações relacionadas aos dados utilizados no projeto GAEA poderão ser encaminhadas pelo canal de contato informado nesta Política.
-
-## 8. Canal de contato
-
-Para dúvidas ou solicitações relacionadas à privacidade e ao tratamento de dados no projeto GAEA:
+Dúvidas e solicitações relacionadas à privacidade podem ser enviadas ao canal de contato do projeto GAEA:
 
 **E-mail:** feliperafaelniendicker@gmail.com
 
-Este endereço é apresentado como canal de contato do projeto acadêmico e não representa a indicação formal de um Encarregado pelo Tratamento de Dados Pessoais (DPO).
+Esse contato não representa a indicação formal de um DPO ou Encarregado pelo Tratamento de Dados Pessoais.
 
-## 9. Responsabilidade pelo tratamento
+## 9. Atualização
 
-O GAEA é atualmente um projeto acadêmico e não possui uma instituição formalmente definida como controladora dos dados para uma implantação em produção.
-
-Caso o sistema seja implantado para utilização real, as responsabilidades relacionadas ao tratamento dos dados deverão ser definidas entre a instituição responsável pelo uso do sistema e os demais envolvidos.
-
-## 10. Alterações desta Política
-
-Esta Política poderá ser atualizada conforme novas funcionalidades ou formas de tratamento de dados sejam adicionadas ao GAEA.
-
-Quando houver alterações relevantes, a versão e a data deste documento deverão ser atualizadas.
+Esta Política poderá ser atualizada conforme o desenvolvimento do projeto. A versão disponível no sistema deve ser consultada para conhecer o conteúdo vigente.
 
 **Versão atual: 1.0 — 27/09/2026**

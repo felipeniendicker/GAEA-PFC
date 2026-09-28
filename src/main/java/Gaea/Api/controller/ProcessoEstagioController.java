@@ -46,6 +46,12 @@ public class ProcessoEstagioController {
         return service.listarTodos();
     }
 
+    @GetMapping("/meus")
+    public List<ProcessoEstagio> listarMeus(Authentication authentication) {
+        Usuario usuario = (Usuario) authentication.getPrincipal();
+        return service.listarPorEmailAluno(usuario.getEmail());
+    }
+
     @PutMapping("/{id}/status")
     public ProcessoEstagio alterarStatus(
             @PathVariable Long id,

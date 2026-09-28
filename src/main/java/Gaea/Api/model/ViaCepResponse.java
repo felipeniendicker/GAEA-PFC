@@ -1,8 +1,10 @@
 package Gaea.Api.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ViaCepResponse {
 
     private String cep;
@@ -11,6 +13,7 @@ public class ViaCepResponse {
     private String bairro;
     private String localidade;
     private String uf;
+    private Boolean erro;
 
     public ViaCepResponse() {
     }
@@ -61,5 +64,13 @@ public class ViaCepResponse {
 
     public void setUf(String uf) {
         this.uf = uf;
+    }
+
+    public Boolean getErro() {
+        return erro;
+    }
+
+    public void setErro(Boolean erro) {
+        this.erro = erro;
     }
 }
