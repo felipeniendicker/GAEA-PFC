@@ -1,7 +1,9 @@
 package Gaea.Api.service;
 
 import Gaea.Api.dto.DashboardResumoResponse;
+import Gaea.Api.model.Usuario;
 import Gaea.Api.repository.ProcessoEstagioRepository;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,12 +20,17 @@ public class DashboardService {
     }
 
     @Transactional(readOnly = true)
-    public DashboardResumoResponse obterResumo() {
-        long totalProcessos = processoRepository.count();
-        long pendentes = processoRepository.countByStatus("PENDENTE");
-        long emAnalise = processoRepository.countByStatus("EM_ANALISE");
-        long aprovados = processoRepository.countByStatus("APROVADO");
-        long reprovados = processoRepository.countByStatus("REPROVADO");
+    public DashboardResumoResponse obterResumo(Usuario usuario) {
+        if (!"INSTITUICAO".equals(usuario.getPerfil()) || usuario.getInstituicao() == null) {
+            throw new AccessDeniedException("Usuário institucional sem instituição vinculada");
+        }
+
+        Long instituicaoId = usuario.getInstituicao().getId();
+        long totalProcessos = processoRepository.countByInstituicaoId(instituicaoId);
+        long pendentes = processoRepository.countByInstituicaoIdAndStatus(instituicaoId, "PENDENTE");
+        long emAnalise = processoRepository.countByInstituicaoIdAndStatus(instituicaoId, "EM_ANALISE");
+        long aprovados = processoRepository.countByInstituicaoIdAndStatus(instituicaoId, "APROVADO");
+        long reprovados = processoRepository.countByInstituicaoIdAndStatus(instituicaoId, "REPROVADO");
 
         return new DashboardResumoResponse(
                 totalProcessos,

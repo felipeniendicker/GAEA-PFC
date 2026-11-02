@@ -15,14 +15,23 @@ public class LogAuditoria {
     private String recurso;
     private LocalDateTime dataHora;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "instituicao_id")
+    private Instituicao instituicao;
+
     public LogAuditoria() {
     }
 
     public LogAuditoria(String usuario, String acao, String recurso) {
+        this(usuario, acao, recurso, null);
+    }
+
+    public LogAuditoria(String usuario, String acao, String recurso, Instituicao instituicao) {
         this.usuario = usuario;
         this.acao = acao;
         this.recurso = recurso;
         this.dataHora = LocalDateTime.now();
+        this.instituicao = instituicao;
     }
 
     public Long getId() {
@@ -59,5 +68,13 @@ public class LogAuditoria {
 
     public void setDataHora(LocalDateTime dataHora) {
         this.dataHora = dataHora;
+    }
+
+    public Instituicao getInstituicao() {
+        return instituicao;
+    }
+
+    public void setInstituicao(Instituicao instituicao) {
+        this.instituicao = instituicao;
     }
 }

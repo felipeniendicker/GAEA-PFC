@@ -1,9 +1,13 @@
 package Gaea.Api.service;
 
+import Gaea.Api.model.Instituicao;
 import Gaea.Api.model.ProcessoEstagio;
 import Gaea.Api.model.TipoOperacaoStatus;
+import Gaea.Api.model.Usuario;
 import Gaea.Api.repository.HistoricoStatusProcessoRepository;
+import Gaea.Api.repository.InstituicaoRepository;
 import Gaea.Api.repository.ProcessoEstagioRepository;
+import Gaea.Api.repository.UsuarioRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +16,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 
@@ -27,13 +32,24 @@ class ProcessoEstagioTransactionalTests {
     @Autowired
     private HistoricoStatusProcessoRepository historicoRepository;
 
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private InstituicaoRepository instituicaoRepository;
+
     @MockitoBean
     private LogAuditoriaService logAuditoriaService;
+
+    private Usuario responsavelInstituicao;
 
     @BeforeEach
     void limparBanco() {
         historicoRepository.deleteAll();
         processoRepository.deleteAll();
+        usuarioRepository.deleteAll();
+        instituicaoRepository.deleteAll();
+        responsavelInstituicao = salvarResponsavelInstituicao();
     }
 
     @Test
@@ -43,7 +59,7 @@ class ProcessoEstagioTransactionalTests {
         service.alterarStatus(
                 processo.getId(),
                 "EM_ANALISE",
-                "instituicao@example.com");
+                responsavelInstituicao);
 
         ProcessoEstagio processoAtualizado = processoRepository.findById(processo.getId()).orElseThrow();
         var historicos = historicoRepository.findByProcessoIdOrderByDataHoraAscIdAsc(processo.getId());
@@ -62,14 +78,14 @@ class ProcessoEstagioTransactionalTests {
 
         Long processoId = processo.getId();
         doThrow(new RuntimeException("Falha simulada de auditoria"))
-                .when(logAuditoriaService).registrar(anyString(), anyString(), anyString());
+                .when(logAuditoriaService).registrar(anyString(), anyString(), anyString(), any());
 
         assertThrows(
                 RuntimeException.class,
                 () -> service.alterarStatus(
                         processoId,
                         "EM_ANALISE",
-                        "instituicao@example.com"));
+                        responsavelInstituicao));
 
         assertEquals("PENDENTE", processoRepository.findById(processoId).orElseThrow().getStatus());
         assertEquals(0, historicoRepository.count());
@@ -82,6 +98,22 @@ class ProcessoEstagioTransactionalTests {
         processo.setNomeEmpresa("Empresa Exemplo");
         processo.setCnpjEmpresa("11222333000181");
         processo.setStatus("PENDENTE");
+        processo.setInstituicao(responsavelInstituicao.getInstituicao());
         return processoRepository.save(processo);
+    }
+
+    private Usuario salvarResponsavelInstituicao() {
+        Instituicao instituicao = new Instituicao();
+        instituicao.setNome("Faculdade de Teste");
+        instituicao.setCnpj("11222333000181");
+        instituicao = instituicaoRepository.save(instituicao);
+
+        Usuario usuario = new Usuario();
+        usuario.setNome("Responsável Institucional");
+        usuario.setEmail("instituicao@example.com");
+        usuario.setSenha("hash-de-teste");
+        usuario.setPerfil("INSTITUICAO");
+        usuario.setInstituicao(instituicao);
+        return usuarioRepository.save(usuario);
     }
 }

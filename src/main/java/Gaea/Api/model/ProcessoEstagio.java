@@ -1,9 +1,14 @@
 package Gaea.Api.model;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Version;
 
 import java.time.LocalDate;
 
@@ -18,10 +23,22 @@ public class ProcessoEstagio {
     private String nomeEmpresa;
     private String cnpjEmpresa;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "aluno_usuario_id")
+    private Usuario aluno;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "instituicao_id")
+    private Instituicao instituicao;
+
     private LocalDate dataInicio;
     private LocalDate dataFim;
 
     private String status;
+
+    @Version
+    @Column(nullable = false)
+    private Long versao;
 
     public Long getId() {
         return id;
@@ -63,6 +80,22 @@ public class ProcessoEstagio {
         this.cnpjEmpresa = cnpjEmpresa;
     }
 
+    public Usuario getAluno() {
+        return aluno;
+    }
+
+    public void setAluno(Usuario aluno) {
+        this.aluno = aluno;
+    }
+
+    public Instituicao getInstituicao() {
+        return instituicao;
+    }
+
+    public void setInstituicao(Instituicao instituicao) {
+        this.instituicao = instituicao;
+    }
+
     public LocalDate getDataInicio() {
         return dataInicio;
     }
@@ -85,5 +118,9 @@ public class ProcessoEstagio {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public Long getVersao() {
+        return versao;
     }
 }

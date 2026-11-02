@@ -37,7 +37,7 @@ class UsuarioServiceTests {
                 "  Ana Souza  ",
                 "  ANA@EXAMPLE.COM ",
                 "senha-segura",
-                "ALUNO",
+                "EMPRESA",
                 true);
 
         when(usuarioRepository.existsByEmailNormalizado("ana@example.com")).thenReturn(false);
@@ -49,7 +49,7 @@ class UsuarioServiceTests {
         assertEquals("Ana Souza", usuario.getNome());
         assertEquals("ana@example.com", usuario.getEmail());
         assertEquals("hash-bcrypt", usuario.getSenha());
-        assertEquals("ALUNO", usuario.getPerfil());
+        assertEquals("EMPRESA", usuario.getPerfil());
         assertEquals(true, usuario.getTermosAceitos());
         assertNotNull(usuario.getTermosAceitosEm());
         verify(passwordEncoder).encode("senha-segura");
@@ -61,7 +61,7 @@ class UsuarioServiceTests {
                 "Ana Souza",
                 "ANA@example.com",
                 "senha-segura",
-                "ALUNO",
+                "EMPRESA",
                 true);
 
         when(usuarioRepository.existsByEmailNormalizado("ana@example.com")).thenReturn(true);

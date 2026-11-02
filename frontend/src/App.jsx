@@ -361,6 +361,448 @@ function DashboardInstitucional({ resumo, carregando, erro, aoTentarNovamente })
   )
 }
 
+const rotulosSituacaoAtivacao = {
+  ATIVADO: 'Conta ativada',
+  AGUARDANDO_ATIVACAO: 'Aguardando ativação',
+  CONVITE_EXPIRADO: 'Convite expirado',
+  CONVITE_CANCELADO: 'Convite substituído',
+  SEM_CONVITE: 'Sem convite',
+  DESATIVADO: 'Aluno desativado'
+}
+
+function GestaoAlunos({ token }) {
+  const [alunos, setAlunos] = useState([])
+  const [nome, setNome] = useState('')
+  const [email, setEmail] = useState('')
+  const [matricula, setMatricula] = useState('')
+  const [erro, setErro] = useState('')
+  const [mensagem, setMensagem] = useState('')
+  const [carregando, setCarregando] = useState(true)
+  const [acaoEmAndamento, setAcaoEmAndamento] = useState('')
+  const [edicao, setEdicao] = useState(null)
+  const [convite, setConvite] = useState(null)
+
+  useEffect(() => {
+    const controle = new AbortController()
+
+    async function carregarAlunos() {
+      try {
+        const resposta = await fetch(`${API}/api/instituicoes/alunos`, {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: controle.signal
+        })
+
+        if (!resposta.ok) {
+          setErro(await mensagemDaApi(resposta, 'Não foi possível carregar os alunos.'))
+          return
+        }
+
+        setAlunos(await resposta.json())
+      } catch (erroRequisicao) {
+        if (erroRequisicao.name !== 'AbortError') {
+          setErro('Não foi possível conectar com o servidor.')
+        }
+      } finally {
+        if (!controle.signal.aborted) {
+          setCarregando(false)
+        }
+      }
+    }
+
+    carregarAlunos()
+    return () => controle.abort()
+  }, [token])
+
+  function linkDoConvite(tokenAtivacao) {
+    const url = new URL(window.location.href)
+    url.search = ''
+    url.hash = `conviteAluno=${encodeURIComponent(tokenAtivacao)}`
+    return url.toString()
+  }
+
+  function apresentarConvite(dados) {
+    setConvite({
+      aluno: dados.aluno,
+      link: linkDoConvite(dados.tokenAtivacao),
+      expiraEm: dados.expiraEm
+    })
+  }
+
+  async function cadastrarAluno(event) {
+    event.preventDefault()
+    setErro('')
+    setMensagem('')
+
+    const nomeNormalizado = nome.trim()
+    const emailNormalizado = email.trim().toLowerCase()
+    if (!nomeNormalizado) {
+      setErro('Informe o nome completo do aluno.')
+      return
+    }
+    if (!emailValido(emailNormalizado)) {
+      setErro('Informe um e-mail válido.')
+      return
+    }
+    if (!matricula.trim()) {
+      setErro('Informe a matrícula (RA/RGM) do aluno.')
+      return
+    }
+
+    setAcaoEmAndamento('cadastro')
+    try {
+      const resposta = await fetch(`${API}/api/instituicoes/alunos`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          nome: nomeNormalizado,
+          email: emailNormalizado,
+          matricula: matricula.trim()
+        })
+      })
+
+      if (!resposta.ok) {
+        setErro(await mensagemDaApi(resposta, 'Não foi possível cadastrar o aluno.'))
+        return
+      }
+
+      const dados = await resposta.json()
+      setAlunos((atuais) => [...atuais, dados.aluno].sort((a, b) => a.nome.localeCompare(b.nome)))
+      setNome('')
+      setEmail('')
+      setMatricula('')
+      apresentarConvite(dados)
+      setMensagem('Aluno cadastrado. Compartilhe o link de ativação por um canal seguro.')
+    } catch {
+      setErro('Não foi possível conectar com o servidor.')
+    } finally {
+      setAcaoEmAndamento('')
+    }
+  }
+
+  function iniciarEdicao(aluno) {
+    setEdicao({ id: aluno.id, nome: aluno.nome, matricula: aluno.matricula || '' })
+    setErro('')
+    setMensagem('')
+  }
+
+  async function salvarEdicao(event) {
+    event.preventDefault()
+    if (!edicao.nome.trim()) {
+      setErro('Informe o nome completo do aluno.')
+      return
+    }
+    if (!edicao.matricula.trim()) {
+      setErro('Informe a matrícula (RA/RGM) do aluno.')
+      return
+    }
+
+    setAcaoEmAndamento(`editar-${edicao.id}`)
+    setErro('')
+    try {
+      const resposta = await fetch(`${API}/api/instituicoes/alunos/${edicao.id}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          nome: edicao.nome.trim(),
+          matricula: edicao.matricula.trim()
+        })
+      })
+
+      if (!resposta.ok) {
+        setErro(await mensagemDaApi(resposta, 'Não foi possível atualizar o aluno.'))
+        return
+      }
+
+      const atualizado = await resposta.json()
+      setAlunos((atuais) => atuais.map((aluno) => aluno.id === atualizado.id ? atualizado : aluno))
+      setEdicao(null)
+      setMensagem('Dados do aluno atualizados.')
+    } catch {
+      setErro('Não foi possível conectar com o servidor.')
+    } finally {
+      setAcaoEmAndamento('')
+    }
+  }
+
+  async function alterarSituacao(aluno) {
+    const novoAtivo = !aluno.ativo
+    setAcaoEmAndamento(`situacao-${aluno.id}`)
+    setErro('')
+    setMensagem('')
+
+    try {
+      const resposta = await fetch(`${API}/api/instituicoes/alunos/${aluno.id}/situacao`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ ativo: novoAtivo })
+      })
+
+      if (!resposta.ok) {
+        setErro(await mensagemDaApi(resposta, 'Não foi possível alterar a situação do aluno.'))
+        return
+      }
+
+      const atualizado = await resposta.json()
+      setAlunos((atuais) => atuais.map((item) => item.id === atualizado.id ? atualizado : item))
+      setMensagem(novoAtivo ? 'Aluno reativado.' : 'Aluno desativado.')
+    } catch {
+      setErro('Não foi possível conectar com o servidor.')
+    } finally {
+      setAcaoEmAndamento('')
+    }
+  }
+
+  async function gerarNovoConvite(aluno) {
+    setAcaoEmAndamento(`convite-${aluno.id}`)
+    setErro('')
+    setMensagem('')
+
+    try {
+      const resposta = await fetch(`${API}/api/instituicoes/alunos/${aluno.id}/convite`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+
+      if (!resposta.ok) {
+        setErro(await mensagemDaApi(resposta, 'Não foi possível gerar um novo convite.'))
+        return
+      }
+
+      const dados = await resposta.json()
+      setAlunos((atuais) => atuais.map((item) => item.id === dados.aluno.id ? dados.aluno : item))
+      apresentarConvite(dados)
+      setMensagem('Novo convite gerado. O convite anterior foi invalidado.')
+    } catch {
+      setErro('Não foi possível conectar com o servidor.')
+    } finally {
+      setAcaoEmAndamento('')
+    }
+  }
+
+  async function copiarConvite() {
+    try {
+      await navigator.clipboard.writeText(convite.link)
+      setMensagem('Link de ativação copiado.')
+    } catch {
+      setErro('Não foi possível copiar automaticamente. Selecione o link e copie manualmente.')
+    }
+  }
+
+  return (
+    <>
+      <header className="cabecalho">
+        <p className="cabecalho-contexto">GESTÃO INSTITUCIONAL</p>
+        <h2>Gestão de Alunos</h2>
+        <p className="cabecalho-descricao">
+          Cadastre e acompanhe os alunos vinculados à sua instituição.
+        </p>
+      </header>
+
+      {(erro || mensagem) && (
+        <p className={erro ? 'mensagem-erro painel-mensagem' : 'mensagem-sucesso painel-mensagem'} role={erro ? 'alert' : 'status'}>
+          {erro || mensagem}
+        </p>
+      )}
+
+      {convite && (
+        <section className="convite-aluno" aria-labelledby="titulo-convite-aluno">
+          <div>
+            <h3 id="titulo-convite-aluno">Link de ativação de {convite.aluno.nome}</h3>
+            <p>Este link é exibido somente agora. Compartilhe-o diretamente com o aluno por um canal seguro.</p>
+          </div>
+          <input value={convite.link} readOnly aria-label="Link de ativação" onFocus={(event) => event.target.select()} />
+          <div className="convite-acoes">
+            <small>Expira em {new Date(convite.expiraEm).toLocaleString('pt-BR')}.</small>
+            <button type="button" onClick={copiarConvite}>Copiar link</button>
+            <button type="button" className="botao-secundario" onClick={() => setConvite(null)}>Ocultar</button>
+          </div>
+        </section>
+      )}
+
+      <section className="formulario gestao-alunos-formulario">
+        <div className="secao-cabecalho">
+          <h3>Cadastrar aluno</h3>
+          <p>A instituição é definida automaticamente pela sua conta.</p>
+        </div>
+        <form onSubmit={cadastrarAluno}>
+          <div className="campo">
+            <label htmlFor="nomeNovoAluno">Nome completo</label>
+            <input id="nomeNovoAluno" value={nome} onChange={(event) => setNome(event.target.value)} maxLength="255" required />
+          </div>
+          <div className="campo">
+            <label htmlFor="emailNovoAluno">E-mail</label>
+            <input id="emailNovoAluno" type="email" value={email} onChange={(event) => setEmail(event.target.value)} maxLength="255" required />
+          </div>
+          <div className="campo">
+            <label htmlFor="matriculaNovoAluno">Matrícula (RA/RGM)</label>
+            <input id="matriculaNovoAluno" value={matricula} onChange={(event) => setMatricula(event.target.value)} maxLength="50" required />
+          </div>
+          <button type="submit" disabled={acaoEmAndamento === 'cadastro'}>
+            {acaoEmAndamento === 'cadastro' ? 'Cadastrando...' : 'Cadastrar e gerar convite'}
+          </button>
+        </form>
+      </section>
+
+      <section className="acompanhamento gestao-alunos-lista">
+        <div className="secao-cabecalho">
+          <h3>Alunos da instituição</h3>
+          <p>Somente alunos vinculados à sua faculdade são apresentados.</p>
+        </div>
+
+        {carregando ? (
+          <p className="estado-vazio">Carregando alunos...</p>
+        ) : alunos.length === 0 ? (
+          <p className="estado-vazio">Nenhum aluno cadastrado nesta instituição.</p>
+        ) : (
+          <div className="alunos-grid">
+            {alunos.map((aluno) => (
+              <article className={`aluno-card ${aluno.ativo ? '' : 'desativado'}`} key={aluno.id}>
+                {edicao?.id === aluno.id ? (
+                  <form className="aluno-edicao" onSubmit={salvarEdicao}>
+                    <div className="campo">
+                      <label htmlFor={`editar-nome-${aluno.id}`}>Nome</label>
+                      <input id={`editar-nome-${aluno.id}`} value={edicao.nome} onChange={(event) => setEdicao({ ...edicao, nome: event.target.value })} maxLength="255" required autoFocus />
+                    </div>
+                    <div className="campo">
+                      <label htmlFor={`editar-matricula-${aluno.id}`}>Matrícula (RA/RGM)</label>
+                      <input id={`editar-matricula-${aluno.id}`} value={edicao.matricula} onChange={(event) => setEdicao({ ...edicao, matricula: event.target.value })} maxLength="50" required />
+                    </div>
+                    <div className="aluno-acoes">
+                      <button type="submit" disabled={acaoEmAndamento === `editar-${aluno.id}`}>Salvar</button>
+                      <button type="button" className="botao-secundario" onClick={() => setEdicao(null)}>Cancelar</button>
+                    </div>
+                  </form>
+                ) : (
+                  <>
+                    <div className="aluno-card-cabecalho">
+                      <div>
+                        <h4>{aluno.nome}</h4>
+                        <p>{aluno.email}</p>
+                      </div>
+                      <span className={`situacao-aluno situacao-${aluno.situacaoAtivacao.toLowerCase()}`}>
+                        {rotulosSituacaoAtivacao[aluno.situacaoAtivacao] || aluno.situacaoAtivacao}
+                      </span>
+                    </div>
+                    <dl>
+                      <div><dt>Matrícula (RA/RGM)</dt><dd>{aluno.matricula || 'Registro legado sem matrícula'}</dd></div>
+                      <div><dt>Convite</dt><dd>{aluno.conviteExpiraEm ? `Expira em ${new Date(aluno.conviteExpiraEm).toLocaleString('pt-BR')}` : 'Não disponível'}</dd></div>
+                    </dl>
+                    <div className="aluno-acoes">
+                      <button type="button" className="botao-secundario" onClick={() => iniciarEdicao(aluno)}>Editar</button>
+                      {!aluno.ativado && aluno.ativo && (
+                        <button type="button" className="botao-secundario" disabled={acaoEmAndamento === `convite-${aluno.id}`} onClick={() => gerarNovoConvite(aluno)}>
+                          Gerar novo convite
+                        </button>
+                      )}
+                      <button type="button" className={aluno.ativo ? 'botao-perigo' : ''} disabled={acaoEmAndamento === `situacao-${aluno.id}`} onClick={() => alterarSituacao(aluno)}>
+                        {aluno.ativo ? 'Desativar' : 'Reativar'}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+    </>
+  )
+}
+
+function AtivacaoAluno({ tokenAtivacao, aoConcluir }) {
+  const [senha, setSenha] = useState('')
+  const [confirmacao, setConfirmacao] = useState('')
+  const [termos, setTermos] = useState(false)
+  const [erro, setErro] = useState('')
+  const [concluido, setConcluido] = useState(false)
+  const [carregando, setCarregando] = useState(false)
+
+  async function ativar(event) {
+    event.preventDefault()
+    setErro('')
+    if (senha.length < 8) {
+      setErro('A senha deve ter pelo menos 8 caracteres.')
+      return
+    }
+    if (senha !== confirmacao) {
+      setErro('A confirmação da senha não corresponde.')
+      return
+    }
+    if (!termos) {
+      setErro('É necessário aceitar os Termos de Uso e a Política de Privacidade.')
+      return
+    }
+
+    setCarregando(true)
+    try {
+      const resposta = await fetch(`${API}/api/ativacoes/aluno`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: tokenAtivacao, senha, termosAceitos: termos })
+      })
+
+      if (!resposta.ok) {
+        setErro(await mensagemDaApi(resposta, 'Não foi possível ativar a conta.'))
+        return
+      }
+
+      window.history.replaceState({}, document.title, window.location.pathname)
+      setSenha('')
+      setConfirmacao('')
+      setConcluido(true)
+    } catch {
+      setErro('Não foi possível conectar com o servidor.')
+    } finally {
+      setCarregando(false)
+    }
+  }
+
+  return (
+    <main className="conteudo ativacao-aluno-pagina">
+      <header className="cabecalho">
+        <p className="cabecalho-contexto">ATIVAÇÃO SEGURA</p>
+        <h2>Ativar conta de aluno</h2>
+        <p className="cabecalho-descricao">Defina sua senha pessoal para acessar o GAEA.</p>
+      </header>
+      <section className="formulario">
+        {concluido ? (
+          <div className="ativacao-concluida" role="status">
+            <h3>Conta ativada com sucesso</h3>
+            <p>Sua senha foi definida. Você já pode entrar no sistema.</p>
+            <button type="button" onClick={aoConcluir}>Ir para o login</button>
+          </div>
+        ) : (
+          <form onSubmit={ativar}>
+            <div className="campo">
+              <label htmlFor="senhaAtivacao">Nova senha</label>
+              <input id="senhaAtivacao" type="password" value={senha} onChange={(event) => setSenha(event.target.value)} minLength="8" autoComplete="new-password" required autoFocus />
+            </div>
+            <div className="campo">
+              <label htmlFor="confirmacaoSenhaAtivacao">Confirmar senha</label>
+              <input id="confirmacaoSenhaAtivacao" type="password" value={confirmacao} onChange={(event) => setConfirmacao(event.target.value)} minLength="8" autoComplete="new-password" required />
+            </div>
+            <label className="aceite ativacao-aceite">
+              <input type="checkbox" checked={termos} onChange={(event) => setTermos(event.target.checked)} />
+              Li e aceito os Termos de Uso e a Política de Privacidade.
+            </label>
+            {erro && <p className="mensagem-erro" role="alert">{erro}</p>}
+            <button type="submit" disabled={carregando}>{carregando ? 'Ativando...' : 'Ativar minha conta'}</button>
+          </form>
+        )}
+      </section>
+    </main>
+  )
+}
+
 function Cabecalho({
   mostrarSair = false,
   usuario,
@@ -369,6 +811,7 @@ function Cabecalho({
   aoIrInicio,
   aoIrDashboard,
   aoIrProcessos,
+  aoIrAlunos,
   aoIrPrivacidade,
   aoIrTermos,
   aoSair
@@ -401,6 +844,13 @@ function Cabecalho({
                 onClick={aoIrProcessos}
               >
                 Processos
+              </button>
+              <button
+                className={tela === 'sistema' && secaoInstituicao === 'alunos' ? 'ativo' : ''}
+                type="button"
+                onClick={aoIrAlunos}
+              >
+                Gestão de Alunos
               </button>
             </>
           ) : (
@@ -441,10 +891,11 @@ function Cabecalho({
 }
 
 function App() {
+  const tokenAtivacaoInicial = new URLSearchParams(window.location.hash.slice(1)).get('conviteAluno') || ''
   const [usuario, setUsuario] = useState(null)
   const [token, setToken] = useState('')
 
-  const [tela, setTela] = useState('login')
+  const [tela, setTela] = useState(tokenAtivacaoInicial ? 'ativacaoAluno' : 'login')
 
   const [emailLogin, setEmailLogin] = useState('')
   const [senhaLogin, setSenhaLogin] = useState('')
@@ -453,7 +904,6 @@ function App() {
   const [nomeCadastro, setNomeCadastro] = useState('')
   const [emailCadastro, setEmailCadastro] = useState('')
   const [senhaCadastro, setSenhaCadastro] = useState('')
-  const [perfilCadastro, setPerfilCadastro] = useState('ALUNO')
   const [termosAceitos, setTermosAceitos] = useState(false)
   const [erroCadastro, setErroCadastro] = useState('')
 
@@ -566,7 +1016,7 @@ function App() {
           nome,
           email,
           senha: senhaCadastro,
-          perfil: perfilCadastro,
+          perfil: 'EMPRESA',
           termosAceitos
         })
       })
@@ -583,7 +1033,6 @@ function App() {
       setNomeCadastro('')
       setEmailCadastro('')
       setSenhaCadastro('')
-      setPerfilCadastro('ALUNO')
       setTermosAceitos(false)
       setTela('login')
     } catch {
@@ -963,9 +1412,25 @@ function App() {
       setTela('sistema')
       setSecaoInstituicao('processos')
     },
+    aoIrAlunos: () => {
+      setTela('sistema')
+      setSecaoInstituicao('alunos')
+    },
     aoIrPrivacidade: () => setTela('privacidade'),
     aoIrTermos: () => setTela('termos'),
     aoSair: sair
+  }
+
+  if (tela === 'ativacaoAluno') {
+    return (
+      <div className="app">
+        <Cabecalho {...propriedadesCabecalho} />
+        <AtivacaoAluno
+          tokenAtivacao={tokenAtivacaoInicial}
+          aoConcluir={() => setTela('login')}
+        />
+      </div>
+    )
   }
 
   if (tela === 'privacidade') {
@@ -1275,14 +1740,12 @@ function App() {
 
               <div className="campo">
                 <label htmlFor="perfilCadastro">Perfil</label>
-                <select
+                <input
                   id="perfilCadastro"
-                  value={perfilCadastro}
-                  onChange={(e) => setPerfilCadastro(e.target.value)}
-                >
-                  <option value="ALUNO">Aluno</option>
-                  <option value="EMPRESA">Empresa</option>
-                </select>
+                  value="Supervisor da Empresa"
+                  readOnly
+                />
+                <small>Contas de aluno são criadas pela instituição de ensino.</small>
               </div>
 
               <div className="aceite-lgpd">
@@ -1544,6 +2007,8 @@ function App() {
               aoTentarNovamente={() => buscarResumoDashboard()}
             />
           </>
+        ) : secaoInstituicao === 'alunos' ? (
+          <GestaoAlunos token={token} />
         ) : (
           <>
         <header className="cabecalho">

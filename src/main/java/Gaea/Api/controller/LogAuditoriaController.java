@@ -1,7 +1,9 @@
 package Gaea.Api.controller;
 
-import Gaea.Api.model.LogAuditoria;
+import Gaea.Api.dto.LogAuditoriaResponse;
+import Gaea.Api.model.Usuario;
 import Gaea.Api.service.LogAuditoriaService;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,7 +19,10 @@ public class LogAuditoriaController {
     }
 
     @GetMapping
-    public List<LogAuditoria> listar() {
-        return logAuditoriaService.listarTodos();
+    public List<LogAuditoriaResponse> listar(Authentication authentication) {
+        Usuario usuario = (Usuario) authentication.getPrincipal();
+        return logAuditoriaService.listarParaInstituicao(usuario).stream()
+                .map(LogAuditoriaResponse::from)
+                .toList();
     }
 }

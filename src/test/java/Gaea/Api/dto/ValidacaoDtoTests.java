@@ -36,7 +36,7 @@ class ValidacaoDtoTests {
                 "Ana Souza",
                 "  ANA@EXAMPLE.COM  ",
                 "senha-segura",
-                "ALUNO",
+                "EMPRESA",
                 true);
 
         assertTrue(validator.validate(request).isEmpty());
@@ -63,11 +63,24 @@ class ValidacaoDtoTests {
                 "Ana Souza",
                 "ana@example.com",
                 "1234567",
-                "ALUNO",
+                "EMPRESA",
                 true);
 
         assertTrue(validator.validate(request).stream()
                 .anyMatch(violacao -> violacao.getPropertyPath().toString().equals("senha")));
+    }
+
+    @Test
+    void deveRejeitarCadastroPublicoDeAluno() {
+        CadastroUsuarioRequest request = new CadastroUsuarioRequest(
+                "Ana Souza",
+                "ana@example.com",
+                "senha-segura",
+                "ALUNO",
+                true);
+
+        assertTrue(validator.validate(request).stream()
+                .anyMatch(violacao -> violacao.getPropertyPath().toString().equals("perfil")));
     }
 
     @Test

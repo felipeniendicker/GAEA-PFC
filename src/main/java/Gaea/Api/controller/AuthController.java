@@ -68,7 +68,10 @@ public class AuthController {
                         "Credenciais inválidas"
                 ));
 
-        if (!passwordEncoder.matches(senha, usuario.getSenha())) {
+        if (!Boolean.TRUE.equals(usuario.getAtivo())
+                || !Boolean.TRUE.equals(usuario.getAtivado())
+                || usuario.getSenha() == null
+                || !passwordEncoder.matches(senha, usuario.getSenha())) {
 
             logAuditoriaService.registrar(
                     email,

@@ -22,7 +22,7 @@ public record CadastroUsuarioRequest(
         String senha,
 
         @NotBlank(message = "O perfil é obrigatório")
-        @Pattern(regexp = "ALUNO|EMPRESA", message = "O perfil deve ser ALUNO ou EMPRESA")
+        @Pattern(regexp = "EMPRESA", message = "O cadastro público é permitido somente para Supervisor da Empresa")
         String perfil,
 
         @NotNull(message = "Informe o aceite dos Termos de Uso e da Política de Privacidade")
@@ -33,5 +33,12 @@ public record CadastroUsuarioRequest(
         if (email != null) {
             email = email.trim().toLowerCase(Locale.ROOT);
         }
+    }
+
+    @Override
+    public String toString() {
+        return "CadastroUsuarioRequest[nome=" + nome + ", email=" + email
+                + ", senha=[PROTEGIDA], perfil=" + perfil
+                + ", termosAceitos=" + termosAceitos + "]";
     }
 }

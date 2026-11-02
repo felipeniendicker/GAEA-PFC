@@ -1,13 +1,19 @@
 package Gaea.Api.security;
 
 import Gaea.Api.model.HistoricoStatusProcesso;
+import Gaea.Api.model.Instituicao;
+import Gaea.Api.model.LogAuditoria;
 import Gaea.Api.model.ProcessoEstagio;
+import Gaea.Api.model.SituacaoVinculoSupervisor;
 import Gaea.Api.model.TipoOperacaoStatus;
 import Gaea.Api.model.Usuario;
+import Gaea.Api.model.VinculoSupervisorProcesso;
 import Gaea.Api.repository.HistoricoStatusProcessoRepository;
+import Gaea.Api.repository.InstituicaoRepository;
 import Gaea.Api.repository.LogAuditoriaRepository;
 import Gaea.Api.repository.ProcessoEstagioRepository;
 import Gaea.Api.repository.UsuarioRepository;
+import Gaea.Api.repository.VinculoSupervisorProcessoRepository;
 import Gaea.Api.service.JwtService;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -26,9 +32,11 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -56,6 +64,12 @@ class SecurityIntegrationTests {
     private LogAuditoriaRepository logAuditoriaRepository;
 
     @Autowired
+    private VinculoSupervisorProcessoRepository vinculoRepository;
+
+    @Autowired
+    private InstituicaoRepository instituicaoRepository;
+
+    @Autowired
     private JwtService jwtService;
 
     @Autowired
@@ -63,16 +77,18 @@ class SecurityIntegrationTests {
 
     @BeforeEach
     void limparBanco() {
+        vinculoRepository.deleteAll();
         historicoRepository.deleteAll();
         processoRepository.deleteAll();
         logAuditoriaRepository.deleteAll();
         usuarioRepository.deleteAll();
+        instituicaoRepository.deleteAll();
     }
 
     @Test
     void devePermitirQueAlunoConsulteHistoricoDoProprioProcesso() throws Exception {
         Usuario aluno = salvarUsuario("aluno@example.com", "ALUNO");
-        ProcessoEstagio processo = salvarProcesso("aluno@example.com", "EM_ANALISE");
+        ProcessoEstagio processo = salvarProcesso(aluno, null, "EM_ANALISE");
         historicoRepository.save(new HistoricoStatusProcesso(
                 processo,
                 "PENDENTE",
@@ -94,25 +110,122 @@ class SecurityIntegrationTests {
     @Test
     void deveNegarHistoricoDeOutroAluno() throws Exception {
         Usuario outroAluno = salvarUsuario("outro@example.com", "ALUNO");
-        ProcessoEstagio processo = salvarProcesso("aluno@example.com", "EM_ANALISE");
+        Usuario alunoResponsavel = salvarUsuario("aluno@example.com", "ALUNO");
+        ProcessoEstagio processo = salvarProcesso(alunoResponsavel, null, "EM_ANALISE");
 
         mockMvc.perform(get("/api/processos/{id}/historico", processo.getId())
                         .header("Authorization", "Bearer " + jwtService.gerarToken(outroAluno)))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isNotFound());
     }
 
     @Test
-    void deveNegarEndpointAdministrativoParaEmpresa() throws Exception {
-        Usuario empresa = salvarUsuario("empresa@example.com", "EMPRESA");
+    void devePermitirQueSupervisorConsulteSomenteProcessoComVinculoConfirmado() throws Exception {
+        Usuario supervisor = salvarUsuario("empresa@example.com", "EMPRESA");
+        Usuario outroSupervisor = salvarUsuario("outra.empresa@example.com", "EMPRESA");
+        ProcessoEstagio processo = salvarProcesso(null, null, "PENDENTE");
+        VinculoSupervisorProcesso vinculo = new VinculoSupervisorProcesso();
+        vinculo.setProcesso(processo);
+        vinculo.setEmailConvidado(supervisor.getEmail());
+        vinculo.setSupervisor(supervisor);
+        vinculo.setSituacao(SituacaoVinculoSupervisor.CONFIRMADO);
+        vinculoRepository.save(vinculo);
 
         mockMvc.perform(get("/api/processos")
-                        .header("Authorization", "Bearer " + jwtService.gerarToken(empresa)))
+                        .header("Authorization", "Bearer " + jwtService.gerarToken(supervisor)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].id").value(processo.getId()));
+
+        mockMvc.perform(get("/api/processos")
+                        .header("Authorization", "Bearer " + jwtService.gerarToken(outroSupervisor)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+
+        mockMvc.perform(get("/api/processos/{id}/historico", processo.getId())
+                        .header("Authorization", "Bearer " + jwtService.gerarToken(outroSupervisor)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deveIsolarProcessosEntreInstituicoes() throws Exception {
+        Instituicao primeira = salvarInstituicao("Primeira Faculdade", "11222333000181");
+        Instituicao segunda = salvarInstituicao("Segunda Faculdade", "22333444000160");
+        Usuario responsavelPrimeira = salvarResponsavelInstituicao(
+                "primeira@example.com", primeira);
+        Usuario responsavelSegunda = salvarResponsavelInstituicao(
+                "segunda@example.com", segunda);
+        ProcessoEstagio processoPrimeira = salvarProcesso(null, primeira, "PENDENTE");
+        ProcessoEstagio processoSegunda = salvarProcesso(null, segunda, "PENDENTE");
+
+        mockMvc.perform(get("/api/processos")
+                        .header("Authorization", "Bearer " + jwtService.gerarToken(responsavelPrimeira)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].id").value(processoPrimeira.getId()))
+                .andExpect(jsonPath("$[0].instituicao.id").value(primeira.getId()))
+                .andExpect(jsonPath("$[0].instituicao.cnpj").doesNotExist())
+                .andExpect(jsonPath("$[0].instituicao.ativa").doesNotExist())
+                .andExpect(jsonPath("$[0].aluno.senha").doesNotExist());
+
+        mockMvc.perform(get("/api/processos/{id}/historico", processoSegunda.getId())
+                        .header("Authorization", "Bearer " + jwtService.gerarToken(responsavelPrimeira)))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(put("/api/processos/{id}/status", processoPrimeira.getId())
+                        .header("Authorization", "Bearer " + jwtService.gerarToken(responsavelSegunda))
+                        .contentType(MediaType.TEXT_PLAIN)
+                        .content("EM_ANALISE"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deveBloquearCadastroInstitucionalSemVinculosConfiaveis() throws Exception {
+        Instituicao instituicao = salvarInstituicao("Faculdade de Teste", "11222333000181");
+        Usuario responsavel = salvarResponsavelInstituicao("instituicao@example.com", instituicao);
+
+        mockMvc.perform(post("/api/processos")
+                        .header("Authorization", "Bearer " + jwtService.gerarToken(responsavel))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "nomeAluno": "Aluno",
+                                  "emailAluno": "aluno@example.com",
+                                  "nomeEmpresa": "Empresa",
+                                  "cnpjEmpresa": "11.222.333/0001-81",
+                                  "dataInicio": "2026-11-03",
+                                  "dataFim": "2027-05-03"
+                                }
+                                """))
                 .andExpect(status().isForbidden());
+
+        assertEquals(0, processoRepository.count());
+    }
+
+    @Test
+    void deveIsolarAuditoriaEntreInstituicoes() throws Exception {
+        Instituicao primeira = salvarInstituicao("Primeira Faculdade", "11222333000181");
+        Instituicao segunda = salvarInstituicao("Segunda Faculdade", "22333444000160");
+        Usuario responsavelPrimeira = salvarResponsavelInstituicao(
+                "primeira@example.com", primeira);
+        logAuditoriaRepository.save(new LogAuditoria(
+                responsavelPrimeira.getEmail(), "ACAO_PRIMEIRA", "Recurso 1", primeira));
+        logAuditoriaRepository.save(new LogAuditoria(
+                "segunda@example.com", "ACAO_SEGUNDA", "Recurso 2", segunda));
+        logAuditoriaRepository.save(new LogAuditoria(
+                "legado@example.com", "ACAO_LEGADA", "Recurso legado"));
+
+        mockMvc.perform(get("/api/auditoria")
+                        .header("Authorization", "Bearer " + jwtService.gerarToken(responsavelPrimeira)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].acao").value("ACAO_PRIMEIRA"));
     }
 
     @Test
     void devePermitirDashboardParaInstituicao() throws Exception {
         Usuario instituicao = salvarUsuario("instituicao@example.com", "INSTITUICAO");
+        instituicao.setInstituicao(salvarInstituicao("Faculdade de Teste", "11222333000181"));
+        instituicao = usuarioRepository.save(instituicao);
 
         mockMvc.perform(get("/api/dashboard/resumo")
                         .header("Authorization", "Bearer " + jwtService.gerarToken(instituicao)))
@@ -224,14 +337,32 @@ class SecurityIntegrationTests {
         return usuarioRepository.save(usuario);
     }
 
-    private ProcessoEstagio salvarProcesso(String emailAluno, String status) {
+    private ProcessoEstagio salvarProcesso(
+            Usuario aluno,
+            Instituicao instituicao,
+            String status) {
         ProcessoEstagio processo = new ProcessoEstagio();
         processo.setNomeAluno("Aluno de Teste");
-        processo.setEmailAluno(emailAluno);
+        processo.setEmailAluno(aluno == null ? "aluno@example.com" : aluno.getEmail());
         processo.setNomeEmpresa("Empresa de Teste");
         processo.setCnpjEmpresa("11222333000181");
         processo.setStatus(status);
+        processo.setAluno(aluno);
+        processo.setInstituicao(instituicao);
         return processoRepository.save(processo);
+    }
+
+    private Instituicao salvarInstituicao(String nome, String cnpj) {
+        Instituicao instituicao = new Instituicao();
+        instituicao.setNome(nome);
+        instituicao.setCnpj(cnpj);
+        return instituicaoRepository.save(instituicao);
+    }
+
+    private Usuario salvarResponsavelInstituicao(String email, Instituicao instituicao) {
+        Usuario usuario = salvarUsuario(email, "INSTITUICAO");
+        usuario.setInstituicao(instituicao);
+        return usuarioRepository.save(usuario);
     }
 
     private String gerarTokenExpirado(Usuario usuario) {

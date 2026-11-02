@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
+@Table(uniqueConstraints = @UniqueConstraint(
+        name = "uk_usuario_instituicao_matricula",
+        columnNames = {"instituicao_id", "matricula"}))
 public class Usuario {
 
     @Id
@@ -15,11 +18,24 @@ public class Usuario {
     @Column(unique = true, nullable = false)
     private String email;
 
-    @Column(nullable = false)
+    @Column
     private String senha;
 
     @Column(nullable = false)
     private String perfil;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "instituicao_id")
+    private Instituicao instituicao;
+
+    @Column(length = 50)
+    private String matricula;
+
+    @Column(nullable = false)
+    private Boolean ativo = true;
+
+    @Column(nullable = false)
+    private Boolean ativado = true;
 
     private Boolean termosAceitos;
 
@@ -63,6 +79,39 @@ public class Usuario {
     public void setPerfil(String perfil) {
         this.perfil = perfil;
     }
+
+    public Instituicao getInstituicao() {
+        return instituicao;
+    }
+
+    public void setInstituicao(Instituicao instituicao) {
+        this.instituicao = instituicao;
+    }
+
+    public String getMatricula() {
+        return matricula;
+    }
+
+    public void setMatricula(String matricula) {
+        this.matricula = matricula;
+    }
+
+    public Boolean getAtivo() {
+        return ativo;
+    }
+
+    public void setAtivo(Boolean ativo) {
+        this.ativo = ativo;
+    }
+
+    public Boolean getAtivado() {
+        return ativado;
+    }
+
+    public void setAtivado(Boolean ativado) {
+        this.ativado = ativado;
+    }
+
     public Boolean getTermosAceitos() {
         return termosAceitos;
     }

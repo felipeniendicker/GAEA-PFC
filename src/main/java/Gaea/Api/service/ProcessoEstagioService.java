@@ -11,7 +11,6 @@ import Gaea.Api.model.TipoOperacaoStatus;
 import Gaea.Api.model.Usuario;
 import Gaea.Api.repository.HistoricoStatusProcessoRepository;
 import Gaea.Api.repository.ProcessoEstagioRepository;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,15 +23,18 @@ public class ProcessoEstagioService {
     private final ProcessoEstagioRepository repository;
     private final HistoricoStatusProcessoRepository historicoRepository;
     private final LogAuditoriaService logAuditoriaService;
+    private final ProcessoAutorizacaoService autorizacaoService;
 
     public ProcessoEstagioService(
             ProcessoEstagioRepository repository,
             HistoricoStatusProcessoRepository historicoRepository,
-            LogAuditoriaService logAuditoriaService) {
+            LogAuditoriaService logAuditoriaService,
+            ProcessoAutorizacaoService autorizacaoService) {
 
         this.repository = repository;
         this.historicoRepository = historicoRepository;
         this.logAuditoriaService = logAuditoriaService;
+        this.autorizacaoService = autorizacaoService;
     }
 
     public ProcessoEstagio cadastrar(CadastroProcessoRequest dados) {
@@ -47,17 +49,22 @@ public class ProcessoEstagioService {
         return repository.save(processo);
     }
 
-    public List<ProcessoEstagio> listarTodos() {
-        return repository.findAll();
-    }
-
-    public List<ProcessoEstagio> listarPorEmailAluno(String emailAluno) {
-        return repository.findByEmailAluno(emailAluno);
+    @Transactional(readOnly = true)
+    public List<ProcessoEstagio> listarParaUsuario(Usuario usuario) {
+        return switch (usuario.getPerfil()) {
+            case "ALUNO" -> repository.findAllByAlunoId(usuario.getId());
+            case "INSTITUICAO" -> usuario.getInstituicao() == null
+                    ? List.of()
+                    : repository.findAllByInstituicaoId(usuario.getInstituicao().getId());
+            case "EMPRESA" -> repository.findAllBySupervisorConfirmadoId(usuario.getId());
+            default -> List.of();
+        };
     }
 
     @Transactional
-    public ProcessoEstagio alterarStatus(Long id, String novoStatus, String usuarioResponsavel) {
+    public ProcessoEstagio alterarStatus(Long id, String novoStatus, Usuario usuarioResponsavel) {
         ProcessoEstagio processo = buscarProcesso(id);
+        autorizacaoService.validarGestaoInstitucional(processo, usuarioResponsavel);
         String statusAnterior = processo.getStatus();
         String statusNormalizado = normalizarStatus(novoStatus);
 
@@ -67,7 +74,7 @@ public class ProcessoEstagioService {
                 processo,
                 statusAnterior,
                 statusNormalizado,
-                usuarioResponsavel,
+                usuarioResponsavel.getEmail(),
                 null,
                 TipoOperacaoStatus.ALTERACAO_NORMAL,
                 "ALTERACAO_STATUS");
@@ -77,9 +84,10 @@ public class ProcessoEstagioService {
     public ProcessoEstagio reabrir(
             Long id,
             ReaberturaProcessoRequest request,
-            String usuarioResponsavel) {
+            Usuario usuarioResponsavel) {
 
         ProcessoEstagio processo = buscarProcesso(id);
+        autorizacaoService.validarGestaoInstitucional(processo, usuarioResponsavel);
         String statusAnterior = processo.getStatus();
         String justificativa = request.justificativa().trim();
 
@@ -96,7 +104,7 @@ public class ProcessoEstagioService {
                 processo,
                 statusAnterior,
                 "EM_ANALISE",
-                usuarioResponsavel,
+                usuarioResponsavel.getEmail(),
                 justificativa,
                 TipoOperacaoStatus.REABERTURA,
                 "REABERTURA_PROCESSO");
@@ -105,15 +113,7 @@ public class ProcessoEstagioService {
     @Transactional(readOnly = true)
     public List<HistoricoStatusResponse> listarHistorico(Long id, Usuario usuario) {
         ProcessoEstagio processo = buscarProcesso(id);
-
-        if ("ALUNO".equals(usuario.getPerfil())) {
-            String emailProcesso = processo.getEmailAluno();
-            if (emailProcesso == null || !emailProcesso.trim().equalsIgnoreCase(usuario.getEmail())) {
-                throw new AccessDeniedException("Histórico não pertence ao aluno autenticado");
-            }
-        } else if (!"INSTITUICAO".equals(usuario.getPerfil())) {
-            throw new AccessDeniedException("Perfil sem acesso ao histórico");
-        }
+        autorizacaoService.validarAcesso(processo, usuario);
 
         return historicoRepository.findByProcessoIdOrderByDataHoraAscIdAsc(id)
                 .stream()
@@ -145,7 +145,8 @@ public class ProcessoEstagioService {
         logAuditoriaService.registrar(
                 usuarioResponsavel,
                 acaoAuditoria,
-                "Processo " + processo.getId() + ": " + statusAnterior + " -> " + statusNovo);
+                "Processo " + processo.getId() + ": " + statusAnterior + " -> " + statusNovo,
+                processoAtualizado.getInstituicao());
 
         return processoAtualizado;
     }

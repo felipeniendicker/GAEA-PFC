@@ -34,6 +34,8 @@ public class UsuarioService {
         usuario.setEmail(email);
         usuario.setSenha(passwordEncoder.encode(dados.senha()));
         usuario.setPerfil(dados.perfil());
+        usuario.setAtivo(true);
+        usuario.setAtivado(true);
         usuario.setTermosAceitos(true);
         usuario.setTermosAceitosEm(LocalDateTime.now());
 

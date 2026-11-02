@@ -18,4 +18,9 @@ public record LoginRequest(
             email = email.trim().toLowerCase(Locale.ROOT);
         }
     }
+
+    @Override
+    public String toString() {
+        return "LoginRequest[email=" + email + ", senha=[PROTEGIDA]]";
+    }
 }

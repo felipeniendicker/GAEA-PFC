@@ -1231,3 +1231,239 @@ button { font-size: 0.9rem; }
     width: 100%;
   }
 }
+
+.painel-mensagem {
+  width: min(1180px, 100%);
+  padding: 13px 16px;
+  border-radius: 7px;
+  margin: 0 auto 20px;
+}
+
+.mensagem-sucesso {
+  border: 1px solid #a8c8bb;
+  background: #eef8f3;
+  color: #245845;
+}
+
+.gestao-alunos-formulario form {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+}
+
+.gestao-alunos-formulario form > button {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+
+.convite-aluno {
+  display: grid;
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid #c79d5b;
+  border-left: 5px solid #c79d5b;
+  border-radius: 9px;
+  margin-bottom: 24px;
+  background: #fffaf0;
+  box-shadow: 0 8px 24px rgba(38, 49, 44, 0.08);
+}
+
+.convite-aluno h3,
+.aluno-card h4,
+.ativacao-concluida h3 {
+  margin: 0 0 5px;
+  color: #174a4a;
+}
+
+.convite-aluno p {
+  margin: 0;
+  color: #55635e;
+}
+
+.convite-aluno input {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid #c9c0b1;
+  border-radius: 6px;
+  background: #fff;
+  color: #34443f;
+  font: inherit;
+}
+
+.convite-acoes,
+.aluno-acoes {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.convite-acoes small {
+  margin-right: auto;
+  color: #6d6048;
+}
+
+.botao-secundario {
+  border: 1px solid #789087 !important;
+  background: transparent !important;
+  color: #285246 !important;
+}
+
+.botao-perigo {
+  border-color: #9a5555 !important;
+  background: #fff7f5 !important;
+  color: #813a3a !important;
+}
+
+.alunos-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.aluno-card {
+  padding: 20px;
+  border: 1px solid #d9d2c6;
+  border-top: 4px solid #2c6656;
+  border-radius: 9px;
+  background: #fffdf9;
+  box-shadow: 0 7px 22px rgba(31, 51, 44, 0.07);
+}
+
+.aluno-card.desativado {
+  border-top-color: #8b6760;
+  background: #faf7f4;
+  opacity: 0.88;
+}
+
+.aluno-card-cabecalho {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.aluno-card-cabecalho p {
+  margin: 0;
+  color: #5c6864;
+  overflow-wrap: anywhere;
+}
+
+.situacao-aluno {
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #f1e5c9;
+  color: #6e562b;
+  font-size: 0.7rem;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.situacao-ativado {
+  background: #dceee5;
+  color: #245c46;
+}
+
+.situacao-desativado,
+.situacao-convite_expirado {
+  background: #f0dddd;
+  color: #7d3d3d;
+}
+
+.aluno-card dl {
+  display: grid;
+  gap: 9px;
+  padding: 14px 0;
+  border-top: 1px solid #ece5da;
+  border-bottom: 1px solid #ece5da;
+  margin: 16px 0;
+}
+
+.aluno-card dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.aluno-card dt {
+  color: #69756f;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.aluno-card dd {
+  margin: 0;
+  color: #34443f;
+  font-size: 0.8rem;
+  text-align: right;
+}
+
+.aluno-acoes button,
+.convite-acoes button {
+  width: auto;
+  min-height: 38px;
+  padding: 8px 12px;
+}
+
+.aluno-edicao {
+  display: grid;
+  gap: 12px;
+}
+
+.ativacao-aluno-pagina {
+  width: min(700px, calc(100% - 32px));
+}
+
+.ativacao-aceite {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.ativacao-aceite input {
+  width: auto;
+  margin-top: 3px;
+}
+
+.ativacao-concluida {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+}
+
+.ativacao-concluida p {
+  margin: 0;
+}
+
+@media (max-width: 850px) {
+  .gestao-alunos-formulario form,
+  .alunos-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .navbar-conteudo nav {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 560px) {
+  .aluno-card-cabecalho,
+  .aluno-card dl div {
+    flex-direction: column;
+  }
+
+  .aluno-card dd {
+    text-align: left;
+  }
+
+  .convite-acoes,
+  .aluno-acoes {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .aluno-acoes button,
+  .convite-acoes button {
+    width: 100%;
+  }
+}

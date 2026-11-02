@@ -39,7 +39,10 @@ public class JwtFilter extends OncePerRequestFilter {
                 String token = authorization.substring(7);
                 String email = jwtService.extrairEmail(token);
 
-                usuarioRepository.findByEmailNormalizado(email).ifPresent(usuario -> {
+                usuarioRepository.findByEmailNormalizado(email)
+                        .filter(usuario -> Boolean.TRUE.equals(usuario.getAtivo()))
+                        .filter(usuario -> Boolean.TRUE.equals(usuario.getAtivado()))
+                        .ifPresent(usuario -> {
                     UsernamePasswordAuthenticationToken authentication =
                             new UsernamePasswordAuthenticationToken(
                                     usuario,
@@ -47,7 +50,7 @@ public class JwtFilter extends OncePerRequestFilter {
                                     List.of(new SimpleGrantedAuthority("ROLE_" + usuario.getPerfil()))
                             );
                     SecurityContextHolder.getContext().setAuthentication(authentication);
-                });
+                        });
             } catch (JwtException | IllegalArgumentException exception) {
                 SecurityContextHolder.clearContext();
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token inválido ou expirado");

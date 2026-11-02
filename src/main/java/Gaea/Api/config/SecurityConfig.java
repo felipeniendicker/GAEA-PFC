@@ -46,7 +46,7 @@ public class SecurityConfig {
         );
 
         configuration.setAllowedMethods(
-                List.of("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
         );
 
         configuration.setAllowedHeaders(
@@ -82,9 +82,13 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/ativacoes/aluno").permitAll()
+                        .requestMatchers("/api/instituicoes/alunos/**").hasRole("INSTITUICAO")
+                        .requestMatchers(HttpMethod.POST, "/api/processos").denyAll()
                         .requestMatchers(HttpMethod.GET, "/api/processos/meus").hasRole("ALUNO")
+                        .requestMatchers(HttpMethod.GET, "/api/processos").hasAnyRole("INSTITUICAO", "EMPRESA")
                         .requestMatchers(HttpMethod.GET, "/api/processos/*/historico")
-                        .hasAnyRole("ALUNO", "INSTITUICAO")
+                        .hasAnyRole("ALUNO", "INSTITUICAO", "EMPRESA")
                         .requestMatchers("/api/dashboard/**").hasRole("INSTITUICAO")
                         .requestMatchers("/api/processos/**").hasRole("INSTITUICAO")
                         .requestMatchers("/api/auditoria/**").hasRole("INSTITUICAO")

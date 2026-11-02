@@ -3,6 +3,7 @@ package Gaea.Api.service;
 import Gaea.Api.dto.CadastroProcessoRequest;
 import Gaea.Api.dto.ReaberturaProcessoRequest;
 import Gaea.Api.exception.ConflitoDadosException;
+import Gaea.Api.exception.RecursoNaoEncontradoException;
 import Gaea.Api.model.HistoricoStatusProcesso;
 import Gaea.Api.model.ProcessoEstagio;
 import Gaea.Api.model.TipoOperacaoStatus;
@@ -17,7 +18,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.access.AccessDeniedException;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -42,6 +43,9 @@ class ProcessoEstagioServiceTests {
 
     @Mock
     private LogAuditoriaService logAuditoriaService;
+
+    @Mock
+    private ProcessoAutorizacaoService autorizacaoService;
 
     @InjectMocks
     private ProcessoEstagioService service;
@@ -80,7 +84,7 @@ class ProcessoEstagioServiceTests {
         when(repository.findById(1L)).thenReturn(Optional.of(processo));
         when(repository.save(processo)).thenReturn(processo);
 
-        ProcessoEstagio atualizado = service.alterarStatus(1L, statusNovo, "instituicao@example.com");
+        ProcessoEstagio atualizado = service.alterarStatus(1L, statusNovo, usuarioInstituicao());
 
         assertEquals(statusNovo, atualizado.getStatus());
         ArgumentCaptor<HistoricoStatusProcesso> captor =
@@ -93,7 +97,8 @@ class ProcessoEstagioServiceTests {
         verify(logAuditoriaService).registrar(
                 "instituicao@example.com",
                 "ALTERACAO_STATUS",
-                "Processo 1: " + statusAnterior + " -> " + statusNovo);
+                "Processo 1: " + statusAnterior + " -> " + statusNovo,
+                processo.getInstituicao());
     }
 
     @ParameterizedTest
@@ -118,7 +123,7 @@ class ProcessoEstagioServiceTests {
 
         assertThrows(
                 ConflitoDadosException.class,
-                () -> service.alterarStatus(1L, statusNovo, "instituicao@example.com"));
+                () -> service.alterarStatus(1L, statusNovo, usuarioInstituicao()));
 
         verify(repository, never()).save(any());
         verify(historicoRepository, never()).save(any());
@@ -132,7 +137,7 @@ class ProcessoEstagioServiceTests {
 
         assertThrows(
                 ConflitoDadosException.class,
-                () -> service.alterarStatus(1L, "CANCELADO", "instituicao@example.com"));
+                () -> service.alterarStatus(1L, "CANCELADO", usuarioInstituicao()));
     }
 
     @ParameterizedTest
@@ -145,7 +150,7 @@ class ProcessoEstagioServiceTests {
         ProcessoEstagio atualizado = service.reabrir(
                 1L,
                 new ReaberturaProcessoRequest("Novos documentos foram recebidos"),
-                "instituicao@example.com");
+                usuarioInstituicao());
 
         assertEquals("EM_ANALISE", atualizado.getStatus());
         ArgumentCaptor<HistoricoStatusProcesso> captor =
@@ -167,7 +172,7 @@ class ProcessoEstagioServiceTests {
                 () -> service.reabrir(
                         1L,
                         new ReaberturaProcessoRequest("curta"),
-                        "instituicao@example.com"));
+                        usuarioInstituicao()));
     }
 
     @ParameterizedTest
@@ -181,7 +186,7 @@ class ProcessoEstagioServiceTests {
                 () -> service.reabrir(
                         1L,
                         new ReaberturaProcessoRequest("Justificativa suficiente"),
-                        "instituicao@example.com"));
+                        usuarioInstituicao()));
     }
 
     @Test
@@ -201,7 +206,10 @@ class ProcessoEstagioServiceTests {
         when(repository.findById(1L))
                 .thenReturn(Optional.of(processo(1L, "aluno@example.com", "EM_ANALISE")));
 
-        assertThrows(AccessDeniedException.class, () -> service.listarHistorico(1L, aluno));
+        doThrow(new RecursoNaoEncontradoException("Processo não encontrado"))
+                .when(autorizacaoService).validarAcesso(any(), any());
+
+        assertThrows(RecursoNaoEncontradoException.class, () -> service.listarHistorico(1L, aluno));
         verify(historicoRepository, never()).findByProcessoIdOrderByDataHoraAscIdAsc(any());
     }
 
@@ -218,5 +226,9 @@ class ProcessoEstagioServiceTests {
         usuario.setEmail(email);
         usuario.setPerfil(perfil);
         return usuario;
+    }
+
+    private Usuario usuarioInstituicao() {
+        return usuario("instituicao@example.com", "INSTITUICAO");
     }
 }
