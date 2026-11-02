@@ -10,6 +10,55 @@ const rotulosStatus = {
   REPROVADO: 'Reprovado'
 }
 
+function emailValido(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+}
+
+function cnpjValido(cnpj) {
+  const numeros = cnpj.replace(/\D/g, '')
+
+  if (numeros.length !== 14 || /^(\d)\1+$/.test(numeros)) {
+    return false
+  }
+
+  function calcularDigito(tamanho) {
+    let soma = 0
+    let peso = tamanho - 7
+
+    for (let indice = 0; indice < tamanho; indice += 1) {
+      soma += Number(numeros[indice]) * peso
+      peso -= 1
+
+      if (peso === 1) {
+        peso = 9
+      }
+    }
+
+    const resto = soma % 11
+    return resto < 2 ? 0 : 11 - resto
+  }
+
+  return Number(numeros[12]) === calcularDigito(12) &&
+    Number(numeros[13]) === calcularDigito(13)
+}
+
+async function mensagemDaApi(resposta, mensagemPadrao) {
+  try {
+    const dados = await resposta.json()
+    const mensagensDosCampos = dados.campos
+      ? [...new Set(Object.values(dados.campos))]
+      : []
+
+    if (mensagensDosCampos.length > 0) {
+      return mensagensDosCampos.join('. ')
+    }
+
+    return dados.mensagem || mensagemPadrao
+  } catch {
+    return mensagemPadrao
+  }
+}
+
 function App() {
   const [usuario, setUsuario] = useState(null)
   const [token, setToken] = useState('')
@@ -33,6 +82,7 @@ function App() {
   const [cnpjEmpresa, setCnpjEmpresa] = useState('')
   const [dataInicio, setDataInicio] = useState('')
   const [dataFim, setDataFim] = useState('')
+  const [erroProcesso, setErroProcesso] = useState('')
   const [processos, setProcessos] = useState([])
   const [cepEmpresa, setCepEmpresa] = useState('')
   const [enderecoEmpresa, setEnderecoEmpresa] = useState(null)
@@ -57,7 +107,7 @@ function App() {
       })
 
       if (!resposta.ok) {
-        setErroLogin('E-mail ou senha inválidos.')
+        setErroLogin(await mensagemDaApi(resposta, 'E-mail ou senha inválidos.'))
         return
       }
 
@@ -72,7 +122,7 @@ function App() {
       setToken(dados.token)
       setSenhaLogin('')
       setTela('sistema')
-    } catch (erro) {
+    } catch {
       setErroLogin('Não foi possível conectar com o servidor.')
     }
   }
@@ -80,6 +130,24 @@ function App() {
   async function fazerCadastro(event) {
     event.preventDefault()
     setErroCadastro('')
+
+    const nome = nomeCadastro.trim()
+    const email = emailCadastro.trim().toLowerCase()
+
+    if (!nome) {
+      setErroCadastro('Informe o nome.')
+      return
+    }
+
+    if (!emailValido(email)) {
+      setErroCadastro('Informe um e-mail válido.')
+      return
+    }
+
+    if (senhaCadastro.length < 8) {
+      setErroCadastro('A senha deve ter pelo menos 8 caracteres.')
+      return
+    }
 
     if (!termosAceitos) {
       setErroCadastro(
@@ -95,8 +163,8 @@ function App() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          nome: nomeCadastro,
-          email: emailCadastro,
+          nome,
+          email,
           senha: senhaCadastro,
           perfil: perfilCadastro,
           termosAceitos
@@ -104,7 +172,9 @@ function App() {
       })
 
       if (!resposta.ok) {
-        setErroCadastro('Não foi possível realizar o cadastro.')
+        setErroCadastro(
+          await mensagemDaApi(resposta, 'Não foi possível realizar o cadastro.')
+        )
         return
       }
 
@@ -116,7 +186,7 @@ function App() {
       setPerfilCadastro('ALUNO')
       setTermosAceitos(false)
       setTela('login')
-    } catch (erro) {
+    } catch {
       setErroCadastro('Não foi possível conectar com o servidor.')
     }
   }
@@ -142,7 +212,7 @@ function App() {
         const dados = await resposta.json()
         setProcessos(dados)
       }
-    } catch (erro) {
+    } catch {
       console.log('Erro ao buscar processos')
     }
   }
@@ -159,7 +229,7 @@ function App() {
         const dados = await resposta.json()
         setProcessos(dados)
       }
-    } catch (erro) {
+    } catch {
       console.log('Erro ao buscar processos do aluno')
     }
   }
@@ -204,7 +274,7 @@ function App() {
       } else {
         alert('Erro ao alterar status.')
       }
-    } catch (erro) {
+    } catch {
       alert('Não foi possível conectar com o servidor.')
     }
   }
@@ -225,7 +295,7 @@ function App() {
     const dados = await resposta.json()
     setLogsAuditoria(dados)
     setMostrarAuditoria(true)
-  } catch (erro) {
+  } catch {
     alert('Não foi possível conectar com o servidor.')
   }
 }
@@ -252,7 +322,7 @@ function App() {
 
     const dados = await resposta.json()
     setEnderecoEmpresa(dados)
-  } catch (erro) {
+  } catch {
     setErroCep('Não foi possível conectar com o servidor.')
   }
 }
@@ -260,10 +330,41 @@ function App() {
   async function cadastrarEstagio(event) {
     event.preventDefault()
 
+    setErroProcesso('')
+
+    const nomeDoAluno = nomeAluno.trim()
+    const emailDoAluno = emailAluno.trim().toLowerCase()
+    const empresa = nomeEmpresa.trim()
+
+    if (!nomeDoAluno || !empresa) {
+      setErroProcesso('Preencha o nome do aluno e o nome da empresa.')
+      return
+    }
+
+    if (!emailValido(emailDoAluno)) {
+      setErroProcesso('Informe um e-mail de aluno válido.')
+      return
+    }
+
+    if (!cnpjValido(cnpjEmpresa)) {
+      setErroProcesso('Informe um CNPJ válido.')
+      return
+    }
+
+    if (!dataInicio || !dataFim) {
+      setErroProcesso('Informe as datas inicial e final.')
+      return
+    }
+
+    if (dataFim < dataInicio) {
+      setErroProcesso('A data final não pode ser anterior à data inicial.')
+      return
+    }
+
     const processo = {
-      nomeAluno,
-      emailAluno,
-      nomeEmpresa,
+      nomeAluno: nomeDoAluno,
+      emailAluno: emailDoAluno,
+      nomeEmpresa: empresa,
       cnpjEmpresa,
       dataInicio,
       dataFim
@@ -296,10 +397,12 @@ function App() {
 
         alert('Estágio cadastrado com sucesso!')
       } else {
-        alert('Erro ao cadastrar estágio.')
+        setErroProcesso(
+          await mensagemDaApi(resposta, 'Não foi possível cadastrar o estágio.')
+        )
       }
-    } catch (erro) {
-      alert('Não foi possível conectar com o servidor.')
+    } catch {
+      setErroProcesso('Não foi possível conectar com o servidor.')
     }
   }
 
@@ -649,6 +752,7 @@ function App() {
                   type="password"
                   value={senhaCadastro}
                   onChange={(e) => setSenhaCadastro(e.target.value)}
+                  minLength="8"
                   required
                 />
               </div>
@@ -977,6 +1081,8 @@ function App() {
                 type="text"
                 value={cnpjEmpresa}
                 onChange={(e) => setCnpjEmpresa(e.target.value)}
+              placeholder="00.000.000/0000-00"
+              maxLength="18"
                 required
               />
             </div>
@@ -1049,9 +1155,14 @@ function App() {
                 type="date"
                 value={dataFim}
                 onChange={(e) => setDataFim(e.target.value)}
+                min={dataInicio}
                 required
               />
             </div>
+
+            {erroProcesso && (
+              <p className="mensagem-erro">{erroProcesso}</p>
+            )}
 
             <button type="submit">
               Cadastrar estágio

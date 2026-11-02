@@ -1,15 +1,17 @@
 package Gaea.Api.controller;
 
+import Gaea.Api.dto.CadastroUsuarioRequest;
 import Gaea.Api.model.Usuario;
 import Gaea.Api.repository.UsuarioRepository;
 import Gaea.Api.service.JwtService;
 import Gaea.Api.service.LogAuditoriaService;
+import Gaea.Api.service.UsuarioService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.LocalDateTime;
 import java.util.Map;
 
 @RestController
@@ -21,48 +23,25 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final LogAuditoriaService logAuditoriaService;
+    private final UsuarioService usuarioService;
 
     public AuthController(
             UsuarioRepository usuarioRepository,
             PasswordEncoder passwordEncoder,
             JwtService jwtService,
-            LogAuditoriaService logAuditoriaService) {
+            LogAuditoriaService logAuditoriaService,
+            UsuarioService usuarioService) {
 
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.logAuditoriaService = logAuditoriaService;
+        this.usuarioService = usuarioService;
     }
 
     @PostMapping("/cadastro")
-    public Map<String, String> cadastrar(@RequestBody Usuario usuario) {
-
-        String perfil = usuario.getPerfil();
-
-        if (!"ALUNO".equals(perfil) && !"EMPRESA".equals(perfil)) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Perfil inválido para cadastro público"
-            );
-        }
-
-        if (!Boolean.TRUE.equals(usuario.getTermosAceitos())) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "É necessário aceitar os Termos de Uso e a Política de Privacidade"
-            );
-        }
-
-        if (usuarioRepository.findByEmail(usuario.getEmail()).isPresent()) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "E-mail já cadastrado"
-            );
-        }
-
-        usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
-        usuario.setTermosAceitosEm(LocalDateTime.now());
-        Usuario usuarioSalvo = usuarioRepository.save(usuario);
+    public Map<String, String> cadastrar(@Valid @RequestBody CadastroUsuarioRequest dados) {
+        Usuario usuarioSalvo = usuarioService.cadastrar(dados);
 
         logAuditoriaService.registrar(
                 usuarioSalvo.getEmail(),
@@ -80,10 +59,10 @@ public class AuthController {
     @PostMapping("/login")
     public Map<String, String> login(@RequestBody Map<String, String> dados) {
 
-        String email = dados.get("email");
+        String email = usuarioService.normalizarEmail(dados.get("email"));
         String senha = dados.get("senha");
 
-        Usuario usuario = usuarioRepository.findByEmail(email)
+        Usuario usuario = usuarioRepository.findByEmailNormalizado(email)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.UNAUTHORIZED,
                         "Credenciais inválidas"

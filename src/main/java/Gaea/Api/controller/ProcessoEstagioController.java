@@ -1,11 +1,13 @@
 package Gaea.Api.controller;
 
+import Gaea.Api.dto.CadastroProcessoRequest;
 import Gaea.Api.model.ProcessoEstagio;
 import Gaea.Api.service.LogAuditoriaService;
 import Gaea.Api.service.ProcessoEstagioService;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import Gaea.Api.model.Usuario;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -27,7 +29,7 @@ public class ProcessoEstagioController {
 
     @PostMapping
     public ProcessoEstagio cadastrar(
-            @RequestBody ProcessoEstagio processo,
+            @Valid @RequestBody CadastroProcessoRequest processo,
             Authentication authentication) {
 
         ProcessoEstagio processoSalvo = service.cadastrar(processo);
