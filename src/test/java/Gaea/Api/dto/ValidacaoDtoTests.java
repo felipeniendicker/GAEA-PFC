@@ -110,6 +110,14 @@ class ValidacaoDtoTests {
                 .anyMatch(violacao -> violacao.getMessage().contains("data final")));
     }
 
+    @Test
+    void deveRejeitarReaberturaSemJustificativa() {
+        ReaberturaProcessoRequest request = new ReaberturaProcessoRequest(" ");
+
+        assertTrue(validator.validate(request).stream()
+                .anyMatch(violacao -> violacao.getPropertyPath().toString().equals("justificativa")));
+    }
+
     private CadastroProcessoRequest processoValido(
             String cnpj,
             LocalDate dataInicio,

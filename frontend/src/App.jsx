@@ -59,6 +59,36 @@ async function mensagemDaApi(resposta, mensagemPadrao) {
   }
 }
 
+function HistoricoProcesso({ itens }) {
+  return (
+    <div className="historico-processo">
+      <h4>Histórico de status</h4>
+
+      {itens.length === 0 ? (
+        <p>Nenhuma alteração de status registrada.</p>
+      ) : (
+        itens.map((item) => (
+          <div className="historico-item" key={item.id}>
+            <div>
+              <strong>
+                {rotulosStatus[item.statusAnterior] || item.statusAnterior}
+                {' → '}
+                {rotulosStatus[item.statusNovo] || item.statusNovo}
+              </strong>
+              <span>{item.tipoOperacao === 'REABERTURA' ? 'Reabertura' : 'Alteração normal'}</span>
+            </div>
+            <span>{item.usuarioResponsavel}</span>
+            <span>{new Date(item.dataHora).toLocaleString('pt-BR')}</span>
+            {item.justificativa && (
+              <p><strong>Justificativa:</strong> {item.justificativa}</p>
+            )}
+          </div>
+        ))
+      )}
+    </div>
+  )
+}
+
 function App() {
   const [usuario, setUsuario] = useState(null)
   const [token, setToken] = useState('')
@@ -89,6 +119,8 @@ function App() {
   const [erroCep, setErroCep] = useState('')
   const [logsAuditoria, setLogsAuditoria] = useState([])
   const [mostrarAuditoria, setMostrarAuditoria] = useState(false)
+  const [historicos, setHistoricos] = useState({})
+  const [historicoAberto, setHistoricoAberto] = useState(null)
 
   async function fazerLogin(event) {
     event.preventDefault()
@@ -271,9 +303,85 @@ function App() {
             return processo
           })
         )
+        alert('Status atualizado com sucesso.')
+
+        if (historicoAberto === id) {
+          await buscarHistorico(id, true)
+        }
       } else {
-        alert('Erro ao alterar status.')
+        alert(await mensagemDaApi(resposta, 'Erro ao alterar status.'))
       }
+    } catch {
+      alert('Não foi possível conectar com o servidor.')
+    }
+  }
+
+  async function reabrirProcesso(id) {
+    const justificativa = window.prompt(
+      'Informe a justificativa para reabrir o processo:'
+    )
+
+    if (justificativa === null) {
+      return
+    }
+
+    if (justificativa.trim().length < 10) {
+      alert('A justificativa deve ter pelo menos 10 caracteres.')
+      return
+    }
+
+    try {
+      const resposta = await fetch(`${API}/api/processos/${id}/reabrir`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ justificativa: justificativa.trim() })
+      })
+
+      if (!resposta.ok) {
+        alert(await mensagemDaApi(resposta, 'Não foi possível reabrir o processo.'))
+        return
+      }
+
+      const processoAtualizado = await resposta.json()
+      setProcessos((listaAtual) =>
+        listaAtual.map((processo) =>
+          processo.id === processoAtualizado.id ? processoAtualizado : processo
+        )
+      )
+      alert('Processo reaberto para análise.')
+
+      if (historicoAberto === id) {
+        await buscarHistorico(id, true)
+      }
+    } catch {
+      alert('Não foi possível conectar com o servidor.')
+    }
+  }
+
+  async function buscarHistorico(id, manterAberto = false) {
+    if (!manterAberto && historicoAberto === id) {
+      setHistoricoAberto(null)
+      return
+    }
+
+    try {
+      const resposta = await fetch(`${API}/api/processos/${id}/historico`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+
+      if (!resposta.ok) {
+        alert(await mensagemDaApi(resposta, 'Não foi possível consultar o histórico.'))
+        return
+      }
+
+      const dados = await resposta.json()
+      setHistoricos((atuais) => ({ ...atuais, [id]: dados }))
+      setHistoricoAberto(id)
     } catch {
       alert('Não foi possível conectar com o servidor.')
     }
@@ -926,28 +1034,45 @@ function App() {
                     <span>Empresa</span>
                     <span>Período</span>
                     <span>Status</span>
+                    <span>Ações</span>
                   </div>
 
                   {processos.map((processo) => (
-                    <div className="processo" key={processo.id}>
-                      <p>
-                        <strong>Empresa</strong>
-                        <span>{processo.nomeEmpresa}</span>
-                      </p>
+                    <div className="processo-container" key={processo.id}>
+                      <div className="processo">
+                        <p>
+                          <strong>Empresa</strong>
+                          <span>{processo.nomeEmpresa}</span>
+                        </p>
 
-                      <p>
-                        <strong>Período</strong>
-                        <span>
-                          {processo.dataInicio} — {processo.dataFim}
-                        </span>
-                      </p>
+                        <p>
+                          <strong>Período</strong>
+                          <span>
+                            {processo.dataInicio} — {processo.dataFim}
+                          </span>
+                        </p>
 
-                      <p>
-                        <strong>Status</strong>
-                        <span className={`status status-${processo.status}`}>
-                          {rotulosStatus[processo.status] || processo.status}
-                        </span>
-                      </p>
+                        <p>
+                          <strong>Status</strong>
+                          <span className={`status status-${processo.status}`}>
+                            {rotulosStatus[processo.status] || processo.status}
+                          </span>
+                        </p>
+
+                        <div className="processo-acoes">
+                          <button
+                            className="acao-historico"
+                            type="button"
+                            onClick={() => buscarHistorico(processo.id)}
+                          >
+                            {historicoAberto === processo.id ? 'Fechar histórico' : 'Ver histórico'}
+                          </button>
+                        </div>
+                      </div>
+
+                      {historicoAberto === processo.id && (
+                        <HistoricoProcesso itens={historicos[processo.id] || []} />
+                      )}
                     </div>
                   ))}
                 </div>
@@ -1196,74 +1321,87 @@ function App() {
               </div>
 
               {processos.map((processo) => (
-                <div
-                  className="processo"
-                  key={processo.id}
-                >
-                  <p>
-                    <strong>Aluno</strong>
-                    <span>{processo.nomeAluno}</span>
-                  </p>
+                <div className="processo-container" key={processo.id}>
+                  <div className="processo">
+                    <p>
+                      <strong>Aluno</strong>
+                      <span>{processo.nomeAluno}</span>
+                    </p>
 
-                  <p>
-                    <strong>Empresa</strong>
-                    <span>{processo.nomeEmpresa}</span>
-                  </p>
+                    <p>
+                      <strong>Empresa</strong>
+                      <span>{processo.nomeEmpresa}</span>
+                    </p>
 
-                  <p>
-                    <strong>Período</strong>
-                    <span>
-                      {processo.dataInicio} — {processo.dataFim}
-                    </span>
-                  </p>
+                    <p>
+                      <strong>Período</strong>
+                      <span>
+                        {processo.dataInicio} — {processo.dataFim}
+                      </span>
+                    </p>
 
-                  <p>
-                    <strong>Status</strong>
-                    <span
-                      className={`status status-${processo.status}`}
-                    >
-                      {rotulosStatus[processo.status] ||
-                        processo.status}
-                    </span>
-                  </p>
+                    <p>
+                      <strong>Status</strong>
+                      <span
+                        className={`status status-${processo.status}`}
+                      >
+                        {rotulosStatus[processo.status] || processo.status}
+                      </span>
+                    </p>
 
-                  <div className="processo-acoes">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        alterarStatus(
-                          processo.id,
-                          'EM_ANALISE'
-                        )
-                      }
-                    >
-                      Em análise
-                    </button>
+                    <div className="processo-acoes">
+                      {processo.status === 'PENDENTE' && (
+                        <button
+                          className="acao-analise"
+                          type="button"
+                          onClick={() => alterarStatus(processo.id, 'EM_ANALISE')}
+                        >
+                          Iniciar análise
+                        </button>
+                      )}
 
-                    <button
-                      type="button"
-                      onClick={() =>
-                        alterarStatus(
-                          processo.id,
-                          'APROVADO'
-                        )
-                      }
-                    >
-                      Aprovar
-                    </button>
+                      {processo.status === 'EM_ANALISE' && (
+                        <>
+                          <button
+                            className="acao-aprovar"
+                            type="button"
+                            onClick={() => alterarStatus(processo.id, 'APROVADO')}
+                          >
+                            Aprovar
+                          </button>
+                          <button
+                            className="acao-reprovar"
+                            type="button"
+                            onClick={() => alterarStatus(processo.id, 'REPROVADO')}
+                          >
+                            Reprovar
+                          </button>
+                        </>
+                      )}
 
-                    <button
-                      type="button"
-                      onClick={() =>
-                        alterarStatus(
-                          processo.id,
-                          'REPROVADO'
-                        )
-                      }
-                    >
-                      Reprovar
-                    </button>
+                      {(processo.status === 'APROVADO' || processo.status === 'REPROVADO') && (
+                        <button
+                          className="acao-reabrir"
+                          type="button"
+                          onClick={() => reabrirProcesso(processo.id)}
+                        >
+                          Reabrir
+                        </button>
+                      )}
+
+                      <button
+                        className="acao-historico"
+                        type="button"
+                        onClick={() => buscarHistorico(processo.id)}
+                      >
+                        {historicoAberto === processo.id ? 'Fechar histórico' : 'Histórico'}
+                      </button>
+                    </div>
                   </div>
+
+                  {historicoAberto === processo.id && (
+                    <HistoricoProcesso itens={historicos[processo.id] || []} />
+                  )}
                 </div>
               ))}
             </div>

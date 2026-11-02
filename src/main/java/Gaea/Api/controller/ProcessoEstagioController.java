@@ -1,6 +1,8 @@
 package Gaea.Api.controller;
 
 import Gaea.Api.dto.CadastroProcessoRequest;
+import Gaea.Api.dto.HistoricoStatusResponse;
+import Gaea.Api.dto.ReaberturaProcessoRequest;
 import Gaea.Api.model.ProcessoEstagio;
 import Gaea.Api.service.LogAuditoriaService;
 import Gaea.Api.service.ProcessoEstagioService;
@@ -61,14 +63,33 @@ public class ProcessoEstagioController {
             Authentication authentication) {
 
         ProcessoEstagio processoAtualizado =
-                service.alterarStatus(id, novoStatus);
-
-        logAuditoriaService.registrar(
-                ((Usuario) authentication.getPrincipal()).getEmail(),
-                "ALTERACAO_STATUS",
-                "Processo de estágio " + id
-        );
+                service.alterarStatus(
+                        id,
+                        novoStatus,
+                        ((Usuario) authentication.getPrincipal()).getEmail());
 
         return processoAtualizado;
+    }
+
+    @PostMapping("/{id}/reabrir")
+    public ProcessoEstagio reabrir(
+            @PathVariable Long id,
+            @Valid @RequestBody ReaberturaProcessoRequest request,
+            Authentication authentication) {
+
+        return service.reabrir(
+                id,
+                request,
+                ((Usuario) authentication.getPrincipal()).getEmail());
+    }
+
+    @GetMapping("/{id}/historico")
+    public List<HistoricoStatusResponse> listarHistorico(
+            @PathVariable Long id,
+            Authentication authentication) {
+
+        return service.listarHistorico(
+                id,
+                (Usuario) authentication.getPrincipal());
     }
 }

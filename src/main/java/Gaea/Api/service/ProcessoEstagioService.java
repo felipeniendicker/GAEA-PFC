@@ -1,11 +1,19 @@
 package Gaea.Api.service;
 
 import Gaea.Api.dto.CadastroProcessoRequest;
-import Gaea.Api.exception.DadosInvalidosException;
+import Gaea.Api.dto.HistoricoStatusResponse;
+import Gaea.Api.dto.ReaberturaProcessoRequest;
+import Gaea.Api.exception.ConflitoDadosException;
 import Gaea.Api.exception.RecursoNaoEncontradoException;
+import Gaea.Api.model.HistoricoStatusProcesso;
 import Gaea.Api.model.ProcessoEstagio;
+import Gaea.Api.model.TipoOperacaoStatus;
+import Gaea.Api.model.Usuario;
+import Gaea.Api.repository.HistoricoStatusProcessoRepository;
 import Gaea.Api.repository.ProcessoEstagioRepository;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Locale;
@@ -14,9 +22,17 @@ import java.util.Locale;
 public class ProcessoEstagioService {
 
     private final ProcessoEstagioRepository repository;
+    private final HistoricoStatusProcessoRepository historicoRepository;
+    private final LogAuditoriaService logAuditoriaService;
 
-    public ProcessoEstagioService(ProcessoEstagioRepository repository) {
+    public ProcessoEstagioService(
+            ProcessoEstagioRepository repository,
+            HistoricoStatusProcessoRepository historicoRepository,
+            LogAuditoriaService logAuditoriaService) {
+
         this.repository = repository;
+        this.historicoRepository = historicoRepository;
+        this.logAuditoriaService = logAuditoriaService;
     }
 
     public ProcessoEstagio cadastrar(CadastroProcessoRequest dados) {
@@ -39,21 +55,133 @@ public class ProcessoEstagioService {
         return repository.findByEmailAluno(emailAluno);
     }
 
-    public ProcessoEstagio alterarStatus(Long id, String novoStatus) {
+    @Transactional
+    public ProcessoEstagio alterarStatus(Long id, String novoStatus, String usuarioResponsavel) {
+        ProcessoEstagio processo = buscarProcesso(id);
+        String statusAnterior = processo.getStatus();
+        String statusNormalizado = normalizarStatus(novoStatus);
 
-        if (novoStatus == null || (!novoStatus.equals("PENDENTE")
-            && !novoStatus.equals("EM_ANALISE")
-            && !novoStatus.equals("APROVADO")
-            && !novoStatus.equals("REPROVADO"))) {
+        validarTransicaoNormal(statusAnterior, statusNormalizado);
 
-        throw new DadosInvalidosException("Status inválido");
+        return persistirAlteracao(
+                processo,
+                statusAnterior,
+                statusNormalizado,
+                usuarioResponsavel,
+                null,
+                TipoOperacaoStatus.ALTERACAO_NORMAL,
+                "ALTERACAO_STATUS");
+    }
+
+    @Transactional
+    public ProcessoEstagio reabrir(
+            Long id,
+            ReaberturaProcessoRequest request,
+            String usuarioResponsavel) {
+
+        ProcessoEstagio processo = buscarProcesso(id);
+        String statusAnterior = processo.getStatus();
+        String justificativa = request.justificativa().trim();
+
+        if (!"APROVADO".equals(statusAnterior) && !"REPROVADO".equals(statusAnterior)) {
+            throw new ConflitoDadosException(
+                    "Somente processos aprovados ou reprovados podem ser reabertos");
         }
 
-        ProcessoEstagio processo = repository.findById(id)
-            .orElseThrow(() -> new RecursoNaoEncontradoException("Processo não encontrado"));
+        if (justificativa.length() < 10) {
+            throw new ConflitoDadosException("Informe uma justificativa significativa para a reabertura");
+        }
 
-        processo.setStatus(novoStatus);
+        return persistirAlteracao(
+                processo,
+                statusAnterior,
+                "EM_ANALISE",
+                usuarioResponsavel,
+                justificativa,
+                TipoOperacaoStatus.REABERTURA,
+                "REABERTURA_PROCESSO");
+    }
 
-        return repository.save(processo);
+    @Transactional(readOnly = true)
+    public List<HistoricoStatusResponse> listarHistorico(Long id, Usuario usuario) {
+        ProcessoEstagio processo = buscarProcesso(id);
+
+        if ("ALUNO".equals(usuario.getPerfil())) {
+            String emailProcesso = processo.getEmailAluno();
+            if (emailProcesso == null || !emailProcesso.trim().equalsIgnoreCase(usuario.getEmail())) {
+                throw new AccessDeniedException("Histórico não pertence ao aluno autenticado");
+            }
+        } else if (!"INSTITUICAO".equals(usuario.getPerfil())) {
+            throw new AccessDeniedException("Perfil sem acesso ao histórico");
+        }
+
+        return historicoRepository.findByProcessoIdOrderByDataHoraAscIdAsc(id)
+                .stream()
+                .map(HistoricoStatusResponse::from)
+                .toList();
+    }
+
+    private ProcessoEstagio persistirAlteracao(
+            ProcessoEstagio processo,
+            String statusAnterior,
+            String statusNovo,
+            String usuarioResponsavel,
+            String justificativa,
+            TipoOperacaoStatus tipoOperacao,
+            String acaoAuditoria) {
+
+        processo.setStatus(statusNovo);
+        ProcessoEstagio processoAtualizado = repository.save(processo);
+
+        HistoricoStatusProcesso historico = new HistoricoStatusProcesso(
+                processoAtualizado,
+                statusAnterior,
+                statusNovo,
+                usuarioResponsavel,
+                justificativa,
+                tipoOperacao);
+        historicoRepository.save(historico);
+
+        logAuditoriaService.registrar(
+                usuarioResponsavel,
+                acaoAuditoria,
+                "Processo " + processo.getId() + ": " + statusAnterior + " -> " + statusNovo);
+
+        return processoAtualizado;
+    }
+
+    private void validarTransicaoNormal(String statusAnterior, String statusNovo) {
+        if (statusAnterior == null || statusAnterior.equals(statusNovo)) {
+            throw new ConflitoDadosException("O processo já está no status informado");
+        }
+
+        boolean permitida =
+                ("PENDENTE".equals(statusAnterior) && "EM_ANALISE".equals(statusNovo))
+                || ("EM_ANALISE".equals(statusAnterior)
+                && ("APROVADO".equals(statusNovo) || "REPROVADO".equals(statusNovo)));
+
+        if (!permitida) {
+            throw new ConflitoDadosException(
+                    "Transição de " + statusAnterior + " para " + statusNovo + " não permitida");
+        }
+    }
+
+    private String normalizarStatus(String status) {
+        if (status == null) {
+            throw new ConflitoDadosException("Status desconhecido");
+        }
+
+        String statusNormalizado = status.trim();
+        if (!List.of("PENDENTE", "EM_ANALISE", "APROVADO", "REPROVADO")
+                .contains(statusNormalizado)) {
+            throw new ConflitoDadosException("Status desconhecido: " + statusNormalizado);
+        }
+
+        return statusNormalizado;
+    }
+
+    private ProcessoEstagio buscarProcesso(Long id) {
+        return repository.findById(id)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Processo não encontrado"));
     }
 }

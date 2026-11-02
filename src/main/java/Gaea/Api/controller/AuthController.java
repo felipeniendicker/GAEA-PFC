@@ -1,6 +1,7 @@
 package Gaea.Api.controller;
 
 import Gaea.Api.dto.CadastroUsuarioRequest;
+import Gaea.Api.dto.LoginRequest;
 import Gaea.Api.model.Usuario;
 import Gaea.Api.repository.UsuarioRepository;
 import Gaea.Api.service.JwtService;
@@ -57,10 +58,10 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public Map<String, String> login(@RequestBody Map<String, String> dados) {
+    public Map<String, String> login(@Valid @RequestBody LoginRequest dados) {
 
-        String email = usuarioService.normalizarEmail(dados.get("email"));
-        String senha = dados.get("senha");
+        String email = usuarioService.normalizarEmail(dados.email());
+        String senha = dados.senha();
 
         Usuario usuario = usuarioRepository.findByEmailNormalizado(email)
                 .orElseThrow(() -> new ResponseStatusException(

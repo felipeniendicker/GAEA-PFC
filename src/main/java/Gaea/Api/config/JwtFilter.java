@@ -3,6 +3,7 @@ package Gaea.Api.config;
 import Gaea.Api.model.Usuario;
 import Gaea.Api.repository.UsuarioRepository;
 import Gaea.Api.service.JwtService;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -34,18 +35,24 @@ public class JwtFilter extends OncePerRequestFilter {
         String authorization = request.getHeader("Authorization");
 
         if (authorization != null && authorization.startsWith("Bearer ")) {
-            String token = authorization.substring(7);
-            String email = jwtService.extrairEmail(token);
+            try {
+                String token = authorization.substring(7);
+                String email = jwtService.extrairEmail(token);
 
-            usuarioRepository.findByEmail(email).ifPresent(usuario -> {
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                usuario,
-                                null,
-                                List.of(new SimpleGrantedAuthority("ROLE_" + usuario.getPerfil()))
-                        );
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-            });
+                usuarioRepository.findByEmailNormalizado(email).ifPresent(usuario -> {
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(
+                                    usuario,
+                                    null,
+                                    List.of(new SimpleGrantedAuthority("ROLE_" + usuario.getPerfil()))
+                            );
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                });
+            } catch (JwtException | IllegalArgumentException exception) {
+                SecurityContextHolder.clearContext();
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token inválido ou expirado");
+                return;
+            }
         }
 
         filterChain.doFilter(request, response);

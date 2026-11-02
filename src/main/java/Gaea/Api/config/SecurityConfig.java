@@ -66,10 +66,18 @@ public class SecurityConfig {
                                 SessionCreationPolicy.STATELESS
                         )
                 )
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint((request, response, exception) ->
+                                response.sendError(401, "Autenticação necessária"))
+                        .accessDeniedHandler((request, response, exception) ->
+                                response.sendError(403, "Acesso negado"))
+                )
                 .authorizeHttpRequests(auth -> auth
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/processos/meus").hasRole("ALUNO")
+                        .requestMatchers(HttpMethod.GET, "/api/processos/*/historico")
+                        .hasAnyRole("ALUNO", "INSTITUICAO")
                         .requestMatchers("/api/processos/**").hasRole("INSTITUICAO")
                         .requestMatchers("/api/auditoria/**").hasRole("INSTITUICAO")
                         .requestMatchers("/api/cep/**").hasRole("INSTITUICAO")
