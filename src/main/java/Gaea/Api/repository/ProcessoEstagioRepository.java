@@ -8,4 +8,6 @@ import java.util.List;
 public interface ProcessoEstagioRepository extends JpaRepository<ProcessoEstagio, Long> {
 
     List<ProcessoEstagio> findByEmailAluno(String emailAluno);
+
+    long countByStatus(String status);
 }

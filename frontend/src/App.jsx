@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import './App.css'
 
-const API = 'http://localhost:8080'
+const API = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 
 const rotulosStatus = {
   PENDENTE: 'Pendente',
@@ -89,6 +89,357 @@ function HistoricoProcesso({ itens }) {
   )
 }
 
+function MensagemAcaoProcesso({ mensagem, aoFechar }) {
+  if (!mensagem) {
+    return null
+  }
+
+  return (
+    <div
+      className={`mensagem-acao-processo ${mensagem.tipo}`}
+      role={mensagem.tipo === 'erro' ? 'alert' : 'status'}
+      aria-live={mensagem.tipo === 'erro' ? 'assertive' : 'polite'}
+    >
+      <span>{mensagem.texto}</span>
+      <button type="button" onClick={aoFechar} aria-label="Fechar mensagem">
+        ×
+      </button>
+    </div>
+  )
+}
+
+function ModalReabertura({
+  processo,
+  justificativa,
+  erro,
+  carregando,
+  aoMudarJustificativa,
+  aoCancelar,
+  aoConfirmar
+}) {
+  const modalRef = useRef(null)
+  const campoRef = useRef(null)
+  const focoAnteriorRef = useRef(null)
+
+  useEffect(() => {
+    focoAnteriorRef.current = document.activeElement
+    const overflowAnterior = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    campoRef.current?.focus()
+
+    return () => {
+      document.body.style.overflow = overflowAnterior
+      if (focoAnteriorRef.current?.isConnected) {
+        focoAnteriorRef.current.focus()
+      } else {
+        document.querySelector(`[data-processo-id="${processo.id}"]`)?.focus()
+      }
+    }
+  }, [processo.id])
+
+  function lidarTecla(event) {
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      if (!carregando) {
+        aoCancelar()
+      }
+      return
+    }
+
+    if (event.key !== 'Tab') {
+      return
+    }
+
+    const elementosFocaveis = [...(modalRef.current?.querySelectorAll(
+      'button:not([disabled]), textarea:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    ) || [])]
+
+    if (elementosFocaveis.length === 0) {
+      return
+    }
+
+    const primeiro = elementosFocaveis[0]
+    const ultimo = elementosFocaveis[elementosFocaveis.length - 1]
+    const indiceAtual = elementosFocaveis.indexOf(document.activeElement)
+
+    if (event.shiftKey && indiceAtual <= 0) {
+      event.preventDefault()
+      ultimo.focus()
+    } else if (!event.shiftKey && (indiceAtual === -1 || document.activeElement === ultimo)) {
+      event.preventDefault()
+      primeiro.focus()
+    }
+  }
+
+  function lidarCliqueFora(event) {
+    if (event.target === event.currentTarget && !carregando) {
+      aoCancelar()
+    }
+  }
+
+  return (
+    <div className="modal-sobreposicao" onMouseDown={lidarCliqueFora}>
+      <section
+        className="modal-gaea"
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="titulo-modal-reabertura"
+        aria-describedby="descricao-modal-reabertura"
+        aria-busy={carregando}
+        onKeyDown={lidarTecla}
+      >
+        <div className="modal-cabecalho">
+          <div>
+            <p className="modal-contexto">PROCESSO #{processo.id}</p>
+            <h2 id="titulo-modal-reabertura">Reabrir processo de estágio</h2>
+          </div>
+          <button
+            className="modal-fechar"
+            type="button"
+            onClick={aoCancelar}
+            disabled={carregando}
+            aria-label="Cancelar e fechar modal"
+          >
+            ×
+          </button>
+        </div>
+
+        <p id="descricao-modal-reabertura" className="modal-descricao">
+          O processo retornará para análise. A decisão anterior permanecerá registrada no histórico.
+        </p>
+
+        <div className="modal-status-atual">
+          <span>Status atual</span>
+          <strong className={`status status-${processo.status}`}>
+            {rotulosStatus[processo.status] || processo.status}
+          </strong>
+        </div>
+
+        <form onSubmit={aoConfirmar} noValidate>
+          <label htmlFor="justificativaReabertura">Justificativa</label>
+          <textarea
+            ref={campoRef}
+            id="justificativaReabertura"
+            value={justificativa}
+            onChange={(event) => aoMudarJustificativa(event.target.value)}
+            minLength={10}
+            maxLength={1000}
+            rows={5}
+            required
+            readOnly={carregando}
+            aria-invalid={Boolean(erro)}
+            aria-describedby={erro ? 'erro-modal-reabertura' : 'ajuda-modal-reabertura'}
+          />
+          <span id="ajuda-modal-reabertura" className="modal-ajuda">
+            Informe pelo menos 10 caracteres.
+          </span>
+
+          {erro && (
+            <p id="erro-modal-reabertura" className="modal-erro" role="alert">
+              {erro}
+            </p>
+          )}
+
+          <div className="modal-acoes">
+            <button
+              className="modal-cancelar"
+              type="button"
+              onClick={aoCancelar}
+              disabled={carregando}
+            >
+              Cancelar
+            </button>
+            <button className="modal-confirmar" type="submit" disabled={carregando}>
+              {carregando ? 'Reabrindo...' : 'Confirmar reabertura'}
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
+  )
+}
+
+function DashboardInstitucional({ resumo, carregando, erro, aoTentarNovamente }) {
+  if (carregando) {
+    return (
+      <section className="dashboard-estado" aria-live="polite">
+        <div className="dashboard-carregando" aria-hidden="true" />
+        <p>Carregando indicadores institucionais...</p>
+      </section>
+    )
+  }
+
+  if (erro) {
+    return (
+      <section className="dashboard-estado dashboard-erro" role="alert">
+        <h3>Não foi possível carregar o dashboard</h3>
+        <p>{erro}</p>
+        <button type="button" onClick={aoTentarNovamente}>Tentar novamente</button>
+      </section>
+    )
+  }
+
+  if (!resumo) {
+    return null
+  }
+
+  const indicadores = [
+    { chave: 'pendentes', rotulo: 'Pendentes', valor: resumo.pendentes, classe: 'pendente' },
+    { chave: 'emAnalise', rotulo: 'Em análise', valor: resumo.emAnalise, classe: 'analise' },
+    { chave: 'aprovados', rotulo: 'Aprovados', valor: resumo.aprovados, classe: 'aprovado' },
+    { chave: 'reprovados', rotulo: 'Reprovados', valor: resumo.reprovados, classe: 'reprovado' }
+  ]
+  const percentualAprovacao = Number(resumo.percentualAprovacao)
+
+  return (
+    <>
+      {resumo.totalProcessos === 0 && (
+        <div className="dashboard-vazio">
+          <strong>Nenhum processo cadastrado.</strong>
+          <span>Os indicadores serão exibidos conforme os processos forem registrados.</span>
+        </div>
+      )}
+
+      <section className="dashboard-cards" aria-label="Indicadores dos processos">
+        <article className="dashboard-card total">
+          <span>Total de processos</span>
+          <strong>{resumo.totalProcessos}</strong>
+        </article>
+        {indicadores.map((indicador) => (
+          <article className={`dashboard-card ${indicador.classe}`} key={indicador.chave}>
+            <span>{indicador.rotulo}</span>
+            <strong>{indicador.valor}</strong>
+          </article>
+        ))}
+      </section>
+
+      <section className="dashboard-detalhes">
+        <article className="dashboard-grafico">
+          <div className="secao-cabecalho">
+            <h3>Distribuição por status</h3>
+            <p>Quantidade atual de processos em cada etapa.</p>
+          </div>
+
+          {resumo.totalProcessos === 0 ? (
+            <p className="estado-vazio">Não há dados para apresentar no gráfico.</p>
+          ) : (
+            <div className="grafico-barras">
+              {indicadores.map((indicador) => {
+                const largura = (indicador.valor / resumo.totalProcessos) * 100
+                return (
+                  <div className="grafico-linha" key={indicador.chave}>
+                    <div className="grafico-rotulo">
+                      <span>{indicador.rotulo}</span>
+                      <strong>{indicador.valor}</strong>
+                    </div>
+                    <div className="grafico-trilho" aria-hidden="true">
+                      <div
+                        className={`grafico-barra ${indicador.classe}`}
+                        style={{ width: `${largura}%` }}
+                      />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </article>
+
+        <article className="dashboard-percentual">
+          <span>Percentual de aprovação</span>
+          <strong>
+            {percentualAprovacao.toLocaleString('pt-BR', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            })}%
+          </strong>
+          <p>Calculado somente entre processos aprovados e reprovados.</p>
+        </article>
+      </section>
+    </>
+  )
+}
+
+function Cabecalho({
+  mostrarSair = false,
+  usuario,
+  tela,
+  secaoInstituicao,
+  aoIrInicio,
+  aoIrDashboard,
+  aoIrProcessos,
+  aoIrPrivacidade,
+  aoIrTermos,
+  aoSair
+}) {
+  return (
+    <header className="navbar">
+      <div className="navbar-conteudo">
+        <div className="logo">
+          <div className="logo-marca">G</div>
+
+          <div>
+            <h1>GAEA</h1>
+            <p>Gestão de Estágios</p>
+          </div>
+        </div>
+
+        <nav aria-label="Navegação principal">
+          {usuario?.perfil === 'INSTITUICAO' && mostrarSair ? (
+            <>
+              <button
+                className={tela === 'sistema' && secaoInstituicao === 'dashboard' ? 'ativo' : ''}
+                type="button"
+                onClick={aoIrDashboard}
+              >
+                Dashboard
+              </button>
+              <button
+                className={tela === 'sistema' && secaoInstituicao === 'processos' ? 'ativo' : ''}
+                type="button"
+                onClick={aoIrProcessos}
+              >
+                Processos
+              </button>
+            </>
+          ) : (
+            <button
+              className={tela === 'sistema' ? 'ativo' : ''}
+              type="button"
+              onClick={aoIrInicio}
+            >
+              Início
+            </button>
+          )}
+
+          <button
+            className={tela === 'privacidade' ? 'ativo' : ''}
+            type="button"
+            onClick={aoIrPrivacidade}
+          >
+            Privacidade
+          </button>
+
+          <button
+            className={tela === 'termos' ? 'ativo' : ''}
+            type="button"
+            onClick={aoIrTermos}
+          >
+            Termos
+          </button>
+
+          {mostrarSair && (
+            <button type="button" onClick={aoSair}>
+              Sair
+            </button>
+          )}
+        </nav>
+      </div>
+    </header>
+  )
+}
+
 function App() {
   const [usuario, setUsuario] = useState(null)
   const [token, setToken] = useState('')
@@ -121,6 +472,15 @@ function App() {
   const [mostrarAuditoria, setMostrarAuditoria] = useState(false)
   const [historicos, setHistoricos] = useState({})
   const [historicoAberto, setHistoricoAberto] = useState(null)
+  const [secaoInstituicao, setSecaoInstituicao] = useState('dashboard')
+  const [resumoDashboard, setResumoDashboard] = useState(null)
+  const [carregandoDashboard, setCarregandoDashboard] = useState(false)
+  const [erroDashboard, setErroDashboard] = useState('')
+  const [mensagemAcaoProcesso, setMensagemAcaoProcesso] = useState(null)
+  const [processoReabertura, setProcessoReabertura] = useState(null)
+  const [justificativaReabertura, setJustificativaReabertura] = useState('')
+  const [erroReabertura, setErroReabertura] = useState('')
+  const [reaberturaEmAndamento, setReaberturaEmAndamento] = useState(false)
 
   async function fazerLogin(event) {
     event.preventDefault()
@@ -153,7 +513,15 @@ function App() {
 
       setToken(dados.token)
       setSenhaLogin('')
+      setSecaoInstituicao('dashboard')
       setTela('sistema')
+
+      if (dados.perfil === 'INSTITUICAO') {
+        buscarProcessos(dados.token)
+        buscarResumoDashboard(dados.token)
+      } else if (dados.perfil === 'ALUNO') {
+        buscarMeusProcessos(dados.token)
+      }
     } catch {
       setErroLogin('Não foi possível conectar com o servidor.')
     }
@@ -227,16 +595,21 @@ function App() {
     setUsuario(null)
     setToken('')
     setProcessos([])
+    setResumoDashboard(null)
+    setErroDashboard('')
+    setSecaoInstituicao('dashboard')
+    setMensagemAcaoProcesso(null)
+    setProcessoReabertura(null)
     setEmailLogin('')
     setSenhaLogin('')
     setTela('login')
   }
 
-  async function buscarProcessos() {
+  async function buscarProcessos(tokenAcesso = token) {
     try {
       const resposta = await fetch(`${API}/api/processos`, {
         headers: {
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${tokenAcesso}`
         }
       })
 
@@ -249,11 +622,11 @@ function App() {
     }
   }
 
-  async function buscarMeusProcessos() {
+  async function buscarMeusProcessos(tokenAcesso = token) {
     try {
       const resposta = await fetch(`${API}/api/processos/meus`, {
         headers: {
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${tokenAcesso}`
         }
       })
 
@@ -266,13 +639,56 @@ function App() {
     }
   }
 
-  useEffect(() => {
-    if (token && usuario?.perfil === 'INSTITUICAO') {
-      buscarProcessos()
-    } else if (token && usuario?.perfil === 'ALUNO') {
-      buscarMeusProcessos()
+  async function buscarResumoDashboard(tokenAcesso = token) {
+    setCarregandoDashboard(true)
+    setErroDashboard('')
+
+    try {
+      const resposta = await fetch(`${API}/api/dashboard/resumo`, {
+        headers: {
+          Authorization: `Bearer ${tokenAcesso}`
+        }
+      })
+
+      if (!resposta.ok) {
+        setResumoDashboard(null)
+        if (resposta.status === 401 || resposta.status === 403) {
+          setErroDashboard('Sua sessão não possui autorização para consultar estes indicadores.')
+        } else {
+          setErroDashboard(await mensagemDaApi(resposta, 'O servidor não conseguiu calcular os indicadores.'))
+        }
+        return
+      }
+
+      setResumoDashboard(await resposta.json())
+    } catch {
+      setResumoDashboard(null)
+      setErroDashboard('Não foi possível conectar com o servidor.')
+    } finally {
+      setCarregandoDashboard(false)
     }
-  }, [token, usuario])
+  }
+
+  function exibirMensagemAcao(texto, tipo = 'sucesso') {
+    setMensagemAcaoProcesso({ texto, tipo })
+  }
+
+  function abrirModalReabertura(processo) {
+    setProcessoReabertura(processo)
+    setJustificativaReabertura('')
+    setErroReabertura('')
+    setReaberturaEmAndamento(false)
+  }
+
+  function cancelarReabertura() {
+    if (reaberturaEmAndamento) {
+      return
+    }
+
+    setProcessoReabertura(null)
+    setJustificativaReabertura('')
+    setErroReabertura('')
+  }
 
   async function alterarStatus(id, novoStatus) {
     try {
@@ -303,45 +719,53 @@ function App() {
             return processo
           })
         )
-        alert('Status atualizado com sucesso.')
+        exibirMensagemAcao('Status atualizado com sucesso.')
+        await buscarResumoDashboard()
 
         if (historicoAberto === id) {
           await buscarHistorico(id, true)
         }
       } else {
-        alert(await mensagemDaApi(resposta, 'Erro ao alterar status.'))
+        exibirMensagemAcao(
+          await mensagemDaApi(resposta, 'Erro ao alterar status.'),
+          'erro'
+        )
       }
     } catch {
-      alert('Não foi possível conectar com o servidor.')
+      exibirMensagemAcao('Não foi possível conectar com o servidor.', 'erro')
     }
   }
 
-  async function reabrirProcesso(id) {
-    const justificativa = window.prompt(
-      'Informe a justificativa para reabrir o processo:'
-    )
+  async function confirmarReabertura(event) {
+    event.preventDefault()
 
-    if (justificativa === null) {
+    if (!processoReabertura || reaberturaEmAndamento) {
       return
     }
 
-    if (justificativa.trim().length < 10) {
-      alert('A justificativa deve ter pelo menos 10 caracteres.')
+    const justificativa = justificativaReabertura.trim()
+    if (justificativa.length < 10) {
+      setErroReabertura('A justificativa deve ter pelo menos 10 caracteres.')
       return
     }
+
+    setErroReabertura('')
+    setReaberturaEmAndamento(true)
 
     try {
-      const resposta = await fetch(`${API}/api/processos/${id}/reabrir`, {
+      const resposta = await fetch(`${API}/api/processos/${processoReabertura.id}/reabrir`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ justificativa: justificativa.trim() })
+        body: JSON.stringify({ justificativa })
       })
 
       if (!resposta.ok) {
-        alert(await mensagemDaApi(resposta, 'Não foi possível reabrir o processo.'))
+        setErroReabertura(
+          await mensagemDaApi(resposta, 'Não foi possível reabrir o processo.')
+        )
         return
       }
 
@@ -351,13 +775,20 @@ function App() {
           processo.id === processoAtualizado.id ? processoAtualizado : processo
         )
       )
-      alert('Processo reaberto para análise.')
+      await buscarResumoDashboard()
 
-      if (historicoAberto === id) {
-        await buscarHistorico(id, true)
+      if (historicoAberto === processoAtualizado.id) {
+        await buscarHistorico(processoAtualizado.id, true)
       }
+
+      setProcessoReabertura(null)
+      setJustificativaReabertura('')
+      setErroReabertura('')
+      exibirMensagemAcao('Processo reaberto para análise.')
     } catch {
-      alert('Não foi possível conectar com o servidor.')
+      setErroReabertura('Não foi possível conectar com o servidor.')
+    } finally {
+      setReaberturaEmAndamento(false)
     }
   }
 
@@ -375,7 +806,10 @@ function App() {
       })
 
       if (!resposta.ok) {
-        alert(await mensagemDaApi(resposta, 'Não foi possível consultar o histórico.'))
+        exibirMensagemAcao(
+          await mensagemDaApi(resposta, 'Não foi possível consultar o histórico.'),
+          'erro'
+        )
         return
       }
 
@@ -383,7 +817,7 @@ function App() {
       setHistoricos((atuais) => ({ ...atuais, [id]: dados }))
       setHistoricoAberto(id)
     } catch {
-      alert('Não foi possível conectar com o servidor.')
+      exibirMensagemAcao('Não foi possível conectar com o servidor.', 'erro')
     }
   }
 
@@ -503,7 +937,8 @@ function App() {
         setDataInicio('')
         setDataFim('')
 
-        alert('Estágio cadastrado com sucesso!')
+        exibirMensagemAcao('Estágio cadastrado com sucesso!')
+        await buscarResumoDashboard()
       } else {
         setErroProcesso(
           await mensagemDaApi(resposta, 'Não foi possível cadastrar o estágio.')
@@ -514,56 +949,29 @@ function App() {
     }
   }
 
-  function Cabecalho({ mostrarSair = false }) {
-    return (
-      <header className="navbar">
-        <div className="navbar-conteudo">
-          <div className="logo">
-            <div className="logo-marca">G</div>
-
-            <div>
-              <h1>GAEA</h1>
-              <p>Gestão de Estágios</p>
-            </div>
-          </div>
-
-          <nav aria-label="Navegação principal">
-            <button
-              type="button"
-              onClick={() => setTela(usuario ? 'sistema' : 'login')}
-            >
-              Início
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setTela('privacidade')}
-            >
-              Privacidade
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setTela('termos')}
-            >
-              Termos
-            </button>
-
-            {mostrarSair && (
-              <button type="button" onClick={sair}>
-                Sair
-              </button>
-            )}
-          </nav>
-        </div>
-      </header>
-    )
+  const propriedadesCabecalho = {
+    usuario,
+    tela,
+    secaoInstituicao,
+    aoIrInicio: () => setTela(usuario ? 'sistema' : 'login'),
+    aoIrDashboard: () => {
+      setTela('sistema')
+      setSecaoInstituicao('dashboard')
+      buscarResumoDashboard()
+    },
+    aoIrProcessos: () => {
+      setTela('sistema')
+      setSecaoInstituicao('processos')
+    },
+    aoIrPrivacidade: () => setTela('privacidade'),
+    aoIrTermos: () => setTela('termos'),
+    aoSair: sair
   }
 
   if (tela === 'privacidade') {
     return (
       <div className="app">
-        <Cabecalho mostrarSair={Boolean(usuario)} />
+        <Cabecalho {...propriedadesCabecalho} mostrarSair={Boolean(usuario)} />
 
         <main className="conteudo">
           <header className="cabecalho">
@@ -692,7 +1100,7 @@ function App() {
   if (tela === 'termos') {
     return (
       <div className="app">
-        <Cabecalho mostrarSair={Boolean(usuario)} />
+        <Cabecalho {...propriedadesCabecalho} mostrarSair={Boolean(usuario)} />
 
         <main className="conteudo">
           <header className="cabecalho">
@@ -818,7 +1226,7 @@ function App() {
   if (!usuario && tela === 'cadastro') {
     return (
       <div className="app">
-        <Cabecalho />
+        <Cabecalho {...propriedadesCabecalho} />
 
         <main className="conteudo">
           <header className="cabecalho">
@@ -932,7 +1340,7 @@ function App() {
   if (!usuario) {
     return (
       <div className="app">
-        <Cabecalho />
+        <Cabecalho {...propriedadesCabecalho} />
 
         <main className="conteudo">
           <header className="cabecalho">
@@ -994,7 +1402,11 @@ function App() {
   if (usuario.perfil !== 'INSTITUICAO') {
     return (
       <div className="app">
-        <Cabecalho mostrarSair />
+        <Cabecalho {...propriedadesCabecalho} mostrarSair />
+        <MensagemAcaoProcesso
+          mensagem={mensagemAcaoProcesso}
+          aoFechar={() => setMensagemAcaoProcesso(null)}
+        />
 
         <main className="conteudo">
           <header className="cabecalho">
@@ -1091,9 +1503,49 @@ function App() {
 
   return (
     <div className="app">
-      <Cabecalho mostrarSair />
+      <Cabecalho {...propriedadesCabecalho} mostrarSair />
+      <MensagemAcaoProcesso
+        mensagem={mensagemAcaoProcesso}
+        aoFechar={() => setMensagemAcaoProcesso(null)}
+      />
+
+      {processoReabertura && (
+        <ModalReabertura
+          processo={processoReabertura}
+          justificativa={justificativaReabertura}
+          erro={erroReabertura}
+          carregando={reaberturaEmAndamento}
+          aoMudarJustificativa={(valor) => {
+            setJustificativaReabertura(valor)
+            if (erroReabertura) {
+              setErroReabertura('')
+            }
+          }}
+          aoCancelar={cancelarReabertura}
+          aoConfirmar={confirmarReabertura}
+        />
+      )}
 
       <main className="conteudo">
+        {secaoInstituicao === 'dashboard' ? (
+          <>
+            <header className="cabecalho">
+              <p className="cabecalho-contexto">VISÃO INSTITUCIONAL</p>
+              <h2>Dashboard de Estágios</h2>
+              <p className="cabecalho-descricao">
+                Acompanhe os principais indicadores dos processos cadastrados.
+              </p>
+            </header>
+
+            <DashboardInstitucional
+              resumo={resumoDashboard}
+              carregando={carregandoDashboard}
+              erro={erroDashboard}
+              aoTentarNovamente={() => buscarResumoDashboard()}
+            />
+          </>
+        ) : (
+          <>
         <header className="cabecalho">
           <div>
             <p className="cabecalho-contexto">GESTÃO ACADÊMICA</p>
@@ -1321,7 +1773,12 @@ function App() {
               </div>
 
               {processos.map((processo) => (
-                <div className="processo-container" key={processo.id}>
+                <div
+                  className="processo-container"
+                  key={processo.id}
+                  data-processo-id={processo.id}
+                  tabIndex="-1"
+                >
                   <div className="processo">
                     <p>
                       <strong>Aluno</strong>
@@ -1383,7 +1840,7 @@ function App() {
                         <button
                           className="acao-reabrir"
                           type="button"
-                          onClick={() => reabrirProcesso(processo.id)}
+                          onClick={() => abrirModalReabertura(processo)}
                         >
                           Reabrir
                         </button>
@@ -1407,6 +1864,8 @@ function App() {
             </div>
           )}
         </section>
+          </>
+        )}
       </main>
     </div>
   )

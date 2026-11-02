@@ -13,6 +13,8 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -25,7 +27,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -104,6 +108,60 @@ class SecurityIntegrationTests {
         mockMvc.perform(get("/api/processos")
                         .header("Authorization", "Bearer " + jwtService.gerarToken(empresa)))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void devePermitirDashboardParaInstituicao() throws Exception {
+        Usuario instituicao = salvarUsuario("instituicao@example.com", "INSTITUICAO");
+
+        mockMvc.perform(get("/api/dashboard/resumo")
+                        .header("Authorization", "Bearer " + jwtService.gerarToken(instituicao)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalProcessos").value(0))
+                .andExpect(jsonPath("$.percentualAprovacao").value(0));
+    }
+
+    @Test
+    void deveNegarDashboardParaAluno() throws Exception {
+        Usuario aluno = salvarUsuario("aluno@example.com", "ALUNO");
+
+        mockMvc.perform(get("/api/dashboard/resumo")
+                        .header("Authorization", "Bearer " + jwtService.gerarToken(aluno)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void deveNegarDashboardParaEmpresa() throws Exception {
+        Usuario empresa = salvarUsuario("empresa@example.com", "EMPRESA");
+
+        mockMvc.perform(get("/api/dashboard/resumo")
+                        .header("Authorization", "Bearer " + jwtService.gerarToken(empresa)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void deveNegarDashboardSemAutenticacao() throws Exception {
+        mockMvc.perform(get("/api/dashboard/resumo"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"http://localhost:5173", "http://localhost:5174"})
+    void devePermitirPreflightCorsDasOrigensLocais(String origem) throws Exception {
+        mockMvc.perform(options("/api/auth/login")
+                        .header("Origin", origem)
+                        .header("Access-Control-Request-Method", "POST"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Origin", origem));
+    }
+
+    @Test
+    void deveNegarPreflightCorsDeOrigemNaoAutorizada() throws Exception {
+        mockMvc.perform(options("/api/auth/login")
+                        .header("Origin", "http://localhost:5175")
+                        .header("Access-Control-Request-Method", "POST"))
+                .andExpect(status().isForbidden())
+                .andExpect(header().doesNotExist("Access-Control-Allow-Origin"));
     }
 
     @Test

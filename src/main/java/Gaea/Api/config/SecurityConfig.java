@@ -1,6 +1,7 @@
 package Gaea.Api.config;
 
 import jakarta.servlet.DispatcherType;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -20,9 +21,15 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtFilter jwtFilter;
+    private final List<String> allowedOrigins;
 
-    public SecurityConfig(JwtFilter jwtFilter) {
+    public SecurityConfig(
+            JwtFilter jwtFilter,
+            @Value("${app.cors.allowed-origins:http://localhost:5173,http://localhost:5174}")
+            List<String> allowedOrigins) {
+
         this.jwtFilter = jwtFilter;
+        this.allowedOrigins = allowedOrigins;
     }
 
     @Bean
@@ -35,7 +42,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         configuration.setAllowedOrigins(
-                List.of("http://localhost:5173")
+                allowedOrigins
         );
 
         configuration.setAllowedMethods(
@@ -78,6 +85,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/processos/meus").hasRole("ALUNO")
                         .requestMatchers(HttpMethod.GET, "/api/processos/*/historico")
                         .hasAnyRole("ALUNO", "INSTITUICAO")
+                        .requestMatchers("/api/dashboard/**").hasRole("INSTITUICAO")
                         .requestMatchers("/api/processos/**").hasRole("INSTITUICAO")
                         .requestMatchers("/api/auditoria/**").hasRole("INSTITUICAO")
                         .requestMatchers("/api/cep/**").hasRole("INSTITUICAO")
