@@ -41,6 +41,8 @@ public class Usuario {
 
     private LocalDateTime termosAceitosEm;
 
+    private LocalDateTime emailVerificadoEm;
+
     public Usuario() {
     }
 
@@ -126,5 +128,13 @@ public class Usuario {
 
     public void setTermosAceitosEm(LocalDateTime termosAceitosEm) {
         this.termosAceitosEm = termosAceitosEm;
+    }
+
+    public LocalDateTime getEmailVerificadoEm() {
+        return emailVerificadoEm;
+    }
+
+    public void setEmailVerificadoEm(LocalDateTime emailVerificadoEm) {
+        this.emailVerificadoEm = emailVerificadoEm;
     }
 }

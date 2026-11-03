@@ -6,12 +6,14 @@ import Gaea.Api.dto.ReaberturaProcessoRequest;
 import Gaea.Api.exception.ConflitoDadosException;
 import Gaea.Api.exception.RecursoNaoEncontradoException;
 import Gaea.Api.model.HistoricoStatusProcesso;
+import Gaea.Api.model.HistoricoVinculoSupervisor;
 import Gaea.Api.model.ProcessoEstagio;
 import Gaea.Api.model.SituacaoVinculoSupervisor;
 import Gaea.Api.model.TipoOperacaoStatus;
 import Gaea.Api.model.Usuario;
 import Gaea.Api.model.VinculoSupervisorProcesso;
 import Gaea.Api.repository.HistoricoStatusProcessoRepository;
+import Gaea.Api.repository.HistoricoVinculoSupervisorRepository;
 import Gaea.Api.repository.ProcessoEstagioRepository;
 import Gaea.Api.repository.VinculoSupervisorProcessoRepository;
 import org.springframework.security.access.AccessDeniedException;
@@ -28,19 +30,22 @@ public class ProcessoEstagioService {
     private final LogAuditoriaService logAuditoriaService;
     private final ProcessoAutorizacaoService autorizacaoService;
     private final VinculoSupervisorProcessoRepository vinculoRepository;
+    private final HistoricoVinculoSupervisorRepository historicoVinculoRepository;
 
     public ProcessoEstagioService(
             ProcessoEstagioRepository repository,
             HistoricoStatusProcessoRepository historicoRepository,
             LogAuditoriaService logAuditoriaService,
             ProcessoAutorizacaoService autorizacaoService,
-            VinculoSupervisorProcessoRepository vinculoRepository) {
+            VinculoSupervisorProcessoRepository vinculoRepository,
+            HistoricoVinculoSupervisorRepository historicoVinculoRepository) {
 
         this.repository = repository;
         this.historicoRepository = historicoRepository;
         this.logAuditoriaService = logAuditoriaService;
         this.autorizacaoService = autorizacaoService;
         this.vinculoRepository = vinculoRepository;
+        this.historicoVinculoRepository = historicoVinculoRepository;
     }
 
     @Transactional
@@ -66,6 +71,12 @@ public class ProcessoEstagioService {
         vinculo.setEmailConvidado(dados.emailSupervisor());
         vinculo.setSituacao(SituacaoVinculoSupervisor.PENDENTE);
         vinculoRepository.save(vinculo);
+
+        HistoricoVinculoSupervisor historicoVinculo = new HistoricoVinculoSupervisor();
+        historicoVinculo.setVinculo(vinculo);
+        historicoVinculo.setSituacaoNova(SituacaoVinculoSupervisor.PENDENTE);
+        historicoVinculo.setUsuarioResponsavel(alunoAutenticado.getEmail());
+        historicoVinculoRepository.save(historicoVinculo);
 
         logAuditoriaService.registrar(
                 alunoAutenticado.getEmail(),
@@ -98,7 +109,7 @@ public class ProcessoEstagioService {
         validarTransicaoNormal(statusAnterior, statusNormalizado);
         if ("PENDENTE".equals(statusAnterior)
                 && "EM_ANALISE".equals(statusNormalizado)
-                && !vinculoRepository.existsByProcessoIdAndSituacao(
+                && !vinculoRepository.existsByProcessoIdAndSituacaoAndAtivoTrue(
                         processo.getId(), SituacaoVinculoSupervisor.CONFIRMADO)) {
             throw new ConflitoDadosException(
                     "A análise só pode ser iniciada após a confirmação do supervisor");

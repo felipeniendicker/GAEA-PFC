@@ -19,7 +19,7 @@ class FlywayMigrationTests {
 
         var resultado = flyway(url).migrate();
 
-        assertEquals(4, resultado.migrationsExecuted);
+        assertEquals(5, resultado.migrationsExecuted);
 
         try (var connection = DriverManager.getConnection(url, "sa", "");
              var statement = connection.createStatement()) {
@@ -56,19 +56,42 @@ class FlywayMigrationTests {
                     """);
             statement.executeUpdate("""
                     INSERT INTO vinculo_supervisor_processo
-                        (processo_id, email_convidado, situacao, criado_em, versao)
-                    SELECT id, 'supervisor@example.com', 'PENDENTE', CURRENT_TIMESTAMP, 0
+                        (processo_id, email_convidado, situacao, criado_em, ativo, versao)
+                    SELECT id, 'supervisor@example.com', 'PENDENTE', CURRENT_TIMESTAMP, TRUE, 0
                     FROM processo_estagio
                     WHERE email_aluno = 'aluno@example.com'
                     """);
             assertThrows(SQLException.class, () -> statement.executeUpdate("""
                     INSERT INTO vinculo_supervisor_processo
-                        (processo_id, email_convidado, situacao, criado_em, versao)
-                    SELECT id, 'outro@example.com', 'PENDENTE', CURRENT_TIMESTAMP, 0
+                        (processo_id, email_convidado, situacao, criado_em, ativo, versao)
+                    SELECT id, 'outro@example.com', 'PENDENTE', CURRENT_TIMESTAMP, TRUE, 0
                     FROM processo_estagio
                     WHERE email_aluno = 'aluno@example.com'
                     """));
 
+            statement.executeUpdate("""
+                    INSERT INTO vinculo_supervisor_processo
+                        (processo_id, email_convidado, situacao, criado_em, ativo, versao)
+                    SELECT id, 'recusado@example.com', 'RECUSADO', CURRENT_TIMESTAMP, NULL, 0
+                    FROM processo_estagio
+                    WHERE email_aluno = 'aluno@example.com'
+                    """);
+            statement.executeUpdate("""
+                    INSERT INTO vinculo_supervisor_processo
+                        (processo_id, email_convidado, situacao, criado_em, ativo, versao)
+                    SELECT id, 'cancelado@example.com', 'CANCELADO', CURRENT_TIMESTAMP, NULL, 0
+                    FROM processo_estagio
+                    WHERE email_aluno = 'aluno@example.com'
+                    """);
+            try (var resultSet = statement.executeQuery("""
+                    SELECT COUNT(*)
+                    FROM vinculo_supervisor_processo v
+                    JOIN processo_estagio p ON p.id = v.processo_id
+                    WHERE p.email_aluno = 'aluno@example.com'
+                    """)) {
+                resultSet.next();
+                assertEquals(3, resultSet.getInt(1));
+            }
             statement.executeUpdate("""
                     INSERT INTO instituicao (nome, cnpj, ativa, criada_em)
                     VALUES
@@ -132,7 +155,7 @@ class FlywayMigrationTests {
         }
 
         var resultado = flyway(url).migrate();
-        assertEquals(3, resultado.migrationsExecuted);
+        assertEquals(4, resultado.migrationsExecuted);
 
         try (var connection = DriverManager.getConnection(url, "sa", "");
              var statement = connection.createStatement();
@@ -155,7 +178,7 @@ class FlywayMigrationTests {
         try (var connection = DriverManager.getConnection(url, "sa", "");
              var statement = connection.createStatement();
              var resultSet = statement.executeQuery("""
-                     SELECT ativo, ativado, matricula, senha, instituicao_id
+                     SELECT ativo, ativado, matricula, senha, instituicao_id, email_verificado_em
                      FROM usuario
                      WHERE email = 'usuario.legado@example.com'
                      """)) {
@@ -165,6 +188,7 @@ class FlywayMigrationTests {
             assertNull(resultSet.getObject("matricula"));
             assertEquals("hash-existente", resultSet.getString("senha"));
             assertNull(resultSet.getObject("instituicao_id"));
+            assertNull(resultSet.getObject("email_verificado_em"));
         }
     }
 

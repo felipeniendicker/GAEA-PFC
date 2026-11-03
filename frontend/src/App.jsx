@@ -10,6 +10,13 @@ const rotulosStatus = {
   REPROVADO: 'Reprovado'
 }
 
+const rotulosVinculo = {
+  PENDENTE: 'Aguardando confirmação do supervisor',
+  CONFIRMADO: 'Supervisor confirmado',
+  RECUSADO: 'Solicitação recusada pelo supervisor',
+  CANCELADO: 'Solicitação substituída'
+}
+
 function emailValido(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 }
@@ -803,6 +810,61 @@ function AtivacaoAluno({ tokenAtivacao, aoConcluir }) {
   )
 }
 
+function VerificacaoEmail({ tokenVerificacao, aoConcluir }) {
+  const [erro, setErro] = useState('')
+  const [carregando, setCarregando] = useState(false)
+  const [concluido, setConcluido] = useState(false)
+
+  async function confirmar() {
+    setCarregando(true)
+    setErro('')
+    try {
+      const resposta = await fetch(`${API}/api/verificacoes-email/confirmar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: tokenVerificacao })
+      })
+      if (!resposta.ok) {
+        setErro(await mensagemDaApi(resposta, 'Não foi possível verificar o e-mail.'))
+        return
+      }
+      window.history.replaceState({}, document.title, window.location.pathname)
+      setConcluido(true)
+    } catch {
+      setErro('Não foi possível conectar com o servidor.')
+    } finally {
+      setCarregando(false)
+    }
+  }
+
+  return (
+    <main className="conteudo ativacao-aluno-pagina">
+      <header className="cabecalho">
+        <p className="cabecalho-contexto">VERIFICAÇÃO SEGURA</p>
+        <h2>Confirmar e-mail</h2>
+        <p className="cabecalho-descricao">Confirme a titularidade do e-mail da sua conta de Supervisor da Empresa.</p>
+      </header>
+      <section className="formulario">
+        {concluido ? (
+          <div className="ativacao-concluida" role="status">
+            <h3>E-mail verificado</h3>
+            <p>Agora você pode responder às solicitações de supervisão.</p>
+            <button type="button" onClick={aoConcluir}>Ir para o login</button>
+          </div>
+        ) : (
+          <div className="ativacao-concluida">
+            <p>O link é pessoal e será invalidado após o uso.</p>
+            {erro && <p className="mensagem-erro" role="alert">{erro}</p>}
+            <button type="button" disabled={carregando} onClick={confirmar}>
+              {carregando ? 'Verificando...' : 'Confirmar meu e-mail'}
+            </button>
+          </div>
+        )}
+      </section>
+    </main>
+  )
+}
+
 function Cabecalho({
   mostrarSair = false,
   usuario,
@@ -891,11 +953,15 @@ function Cabecalho({
 }
 
 function App() {
-  const tokenAtivacaoInicial = new URLSearchParams(window.location.hash.slice(1)).get('conviteAluno') || ''
+  const parametrosIniciais = new URLSearchParams(window.location.hash.slice(1))
+  const tokenAtivacaoInicial = parametrosIniciais.get('conviteAluno') || ''
+  const tokenVerificacaoInicial = parametrosIniciais.get('verificarEmail') || ''
   const [usuario, setUsuario] = useState(null)
   const [token, setToken] = useState('')
 
-  const [tela, setTela] = useState(tokenAtivacaoInicial ? 'ativacaoAluno' : 'login')
+  const [tela, setTela] = useState(
+    tokenAtivacaoInicial ? 'ativacaoAluno' : tokenVerificacaoInicial ? 'verificacaoEmail' : 'login'
+  )
 
   const [emailLogin, setEmailLogin] = useState('')
   const [senhaLogin, setSenhaLogin] = useState('')
@@ -906,6 +972,7 @@ function App() {
   const [senhaCadastro, setSenhaCadastro] = useState('')
   const [termosAceitos, setTermosAceitos] = useState(false)
   const [erroCadastro, setErroCadastro] = useState('')
+  const [sucessoCadastro, setSucessoCadastro] = useState('')
 
   const [nomeEmpresa, setNomeEmpresa] = useState('')
   const [cnpjEmpresa, setCnpjEmpresa] = useState('')
@@ -931,6 +998,11 @@ function App() {
   const [justificativaReabertura, setJustificativaReabertura] = useState('')
   const [erroReabertura, setErroReabertura] = useState('')
   const [reaberturaEmAndamento, setReaberturaEmAndamento] = useState(false)
+  const [solicitacoesSupervisao, setSolicitacoesSupervisao] = useState([])
+  const [justificativasRecusa, setJustificativasRecusa] = useState({})
+  const [erroSupervisao, setErroSupervisao] = useState('')
+  const [acaoSupervisao, setAcaoSupervisao] = useState(null)
+  const [novosSupervisores, setNovosSupervisores] = useState({})
 
   async function fazerLogin(event) {
     event.preventDefault()
@@ -960,7 +1032,8 @@ function App() {
         email: dados.email,
         perfil: dados.perfil,
         matricula: dados.matricula,
-        instituicao: dados.instituicao
+        instituicao: dados.instituicao,
+        emailVerificado: dados.emailVerificado
       })
 
       setToken(dados.token)
@@ -973,6 +1046,8 @@ function App() {
         buscarResumoDashboard(dados.token)
       } else if (dados.perfil === 'ALUNO') {
         buscarMeusProcessos(dados.token)
+      } else if (dados.perfil === 'EMPRESA' && dados.emailVerificado) {
+        buscarSolicitacoesSupervisao(dados.token)
       }
     } catch {
       setErroLogin('Não foi possível conectar com o servidor.')
@@ -982,6 +1057,7 @@ function App() {
   async function fazerCadastro(event) {
     event.preventDefault()
     setErroCadastro('')
+    setSucessoCadastro('')
 
     const nome = nomeCadastro.trim()
     const email = emailCadastro.trim().toLowerCase()
@@ -1030,13 +1106,12 @@ function App() {
         return
       }
 
-      alert('Cadastro realizado com sucesso! Agora faça o login.')
+      setSucessoCadastro('Cadastro realizado. Verifique seu e-mail antes de responder solicitações.')
 
       setNomeCadastro('')
       setEmailCadastro('')
       setSenhaCadastro('')
       setTermosAceitos(false)
-      setTela('login')
     } catch {
       setErroCadastro('Não foi possível conectar com o servidor.')
     }
@@ -1051,6 +1126,8 @@ function App() {
     setSecaoInstituicao('dashboard')
     setMensagemAcaoProcesso(null)
     setProcessoReabertura(null)
+    setSolicitacoesSupervisao([])
+    setErroSupervisao('')
     setEmailLogin('')
     setSenhaLogin('')
     setTela('login')
@@ -1087,6 +1164,109 @@ function App() {
       }
     } catch {
       console.log('Erro ao buscar processos do aluno')
+    }
+  }
+
+  async function buscarSolicitacoesSupervisao(tokenAcesso = token) {
+    setErroSupervisao('')
+    try {
+      const resposta = await fetch(`${API}/api/supervisao/solicitacoes`, {
+        headers: { Authorization: `Bearer ${tokenAcesso}` }
+      })
+      if (!resposta.ok) {
+        setErroSupervisao(await mensagemDaApi(resposta, 'Não foi possível consultar as solicitações.'))
+        return
+      }
+      setSolicitacoesSupervisao(await resposta.json())
+    } catch {
+      setErroSupervisao('Não foi possível conectar com o servidor.')
+    }
+  }
+
+  async function responderSupervisao(solicitacao, acao) {
+    const justificativa = (justificativasRecusa[solicitacao.vinculoId] || '').trim()
+    if (acao === 'recusar' && justificativa.length < 10) {
+      setErroSupervisao('Informe uma justificativa de recusa com pelo menos 10 caracteres.')
+      return
+    }
+    setAcaoSupervisao(`${acao}-${solicitacao.vinculoId}`)
+    setErroSupervisao('')
+    try {
+      const resposta = await fetch(
+        `${API}/api/supervisao/solicitacoes/${solicitacao.vinculoId}/${acao}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: acao === 'recusar' ? JSON.stringify({ justificativa }) : null
+        }
+      )
+      if (!resposta.ok) {
+        setErroSupervisao(await mensagemDaApi(resposta, 'Não foi possível responder à solicitação.'))
+        return
+      }
+      setSolicitacoesSupervisao((atuais) =>
+        atuais.filter((item) => item.vinculoId !== solicitacao.vinculoId))
+      exibirMensagemAcao(
+        acao === 'confirmar' ? 'Supervisão confirmada com sucesso.' : 'Solicitação recusada.'
+      )
+    } catch {
+      setErroSupervisao('Não foi possível conectar com o servidor.')
+    } finally {
+      setAcaoSupervisao(null)
+    }
+  }
+
+  async function reenviarVerificacaoEmail() {
+    setAcaoSupervisao('reenviar-email')
+    setErroSupervisao('')
+    try {
+      const resposta = await fetch(`${API}/api/verificacoes-email/reenviar`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (!resposta.ok) {
+        setErroSupervisao(await mensagemDaApi(resposta, 'Não foi possível gerar um novo link.'))
+        return
+      }
+      exibirMensagemAcao('Um novo link foi solicitado. Confira a caixa de entrada configurada.')
+    } catch {
+      setErroSupervisao('Não foi possível conectar com o servidor.')
+    } finally {
+      setAcaoSupervisao(null)
+    }
+  }
+
+  async function indicarNovoSupervisor(processo) {
+    const email = (novosSupervisores[processo.id] || '').trim().toLowerCase()
+    if (!emailValido(email)) {
+      exibirMensagemAcao('Informe um e-mail válido para o novo supervisor.', 'erro')
+      return
+    }
+    setAcaoSupervisao(`troca-${processo.id}`)
+    try {
+      const resposta = await fetch(`${API}/api/processos/${processo.id}/supervisor`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ emailSupervisor: email })
+      })
+      if (!resposta.ok) {
+        exibirMensagemAcao(
+          await mensagemDaApi(resposta, 'Não foi possível indicar outro supervisor.'), 'erro')
+        return
+      }
+      setNovosSupervisores((atuais) => ({ ...atuais, [processo.id]: '' }))
+      await buscarMeusProcessos()
+      exibirMensagemAcao('Nova solicitação enviada ao supervisor informado.')
+    } catch {
+      exibirMensagemAcao('Não foi possível conectar com o servidor.', 'erro')
+    } finally {
+      setAcaoSupervisao(null)
     }
   }
 
@@ -1455,6 +1635,18 @@ function App() {
     )
   }
 
+  if (tela === 'verificacaoEmail') {
+    return (
+      <div className="app">
+        <Cabecalho {...propriedadesCabecalho} />
+        <VerificacaoEmail
+          tokenVerificacao={tokenVerificacaoInicial}
+          aoConcluir={() => setTela('login')}
+        />
+      </div>
+    )
+  }
+
   if (tela === 'privacidade') {
     return (
       <div className="app">
@@ -1801,6 +1993,9 @@ function App() {
               {erroCadastro && (
                 <p className="mensagem-erro">{erroCadastro}</p>
               )}
+              {sucessoCadastro && (
+                <p className="mensagem-sucesso" role="status">{sucessoCadastro}</p>
+              )}
 
               <button type="submit">
                 Criar conta
@@ -1978,13 +2173,13 @@ function App() {
               <h3>
                 {usuario.perfil === 'ALUNO'
                   ? 'Meus processos'
-                  : 'Área da Empresa'}
+                  : 'Solicitações de supervisão'}
               </h3>
 
               <p>
                 {usuario.perfil === 'ALUNO'
                   ? 'Acompanhe suas solicitações de estágio.'
-                  : 'Você está autenticado no GAEA.'}
+                  : 'Confirme ou recuse os vínculos direcionados ao seu e-mail verificado.'}
               </p>
             </div>
 
@@ -2027,11 +2222,36 @@ function App() {
                         <p>
                           <strong>Supervisor</strong>
                           <span>
-                            {processo.vinculoSupervisor?.situacao === 'PENDENTE'
-                              ? 'Aguardando confirmação do supervisor'
-                              : processo.vinculoSupervisor?.situacao || 'Vínculo legado não informado'}
+                            {rotulosVinculo[processo.vinculoSupervisor?.situacao]
+                              || 'Vínculo legado não informado'}
                           </span>
                         </p>
+
+                        {processo.vinculoSupervisor?.situacao === 'RECUSADO' && (
+                          <div className="troca-supervisor">
+                            <p>
+                              <strong>Justificativa da recusa</strong>
+                              <span>{processo.vinculoSupervisor.justificativaRecusa}</span>
+                            </p>
+                            <label htmlFor={`novo-supervisor-${processo.id}`}>Novo e-mail do supervisor</label>
+                            <input
+                              id={`novo-supervisor-${processo.id}`}
+                              type="email"
+                              value={novosSupervisores[processo.id] || ''}
+                              onChange={(event) => setNovosSupervisores((atuais) => ({
+                                ...atuais,
+                                [processo.id]: event.target.value
+                              }))}
+                            />
+                            <button
+                              type="button"
+                              disabled={acaoSupervisao === `troca-${processo.id}`}
+                              onClick={() => indicarNovoSupervisor(processo)}
+                            >
+                              {acaoSupervisao === `troca-${processo.id}` ? 'Enviando...' : 'Indicar outro supervisor'}
+                            </button>
+                          </div>
+                        )}
 
                         <div className="processo-acoes">
                           <button
@@ -2052,10 +2272,53 @@ function App() {
                 </div>
               )
             ) : (
-              <p>
-                As funcionalidades disponíveis são apresentadas conforme
-                o perfil e as permissões do usuário.
-              </p>
+              <div className="solicitacoes-supervisao">
+                {!usuario.emailVerificado ? (
+                  <div className="estado-vazio">
+                    <h4>Verifique seu e-mail</h4>
+                    <p>As solicitações ficam protegidas até a confirmação da titularidade do e-mail.</p>
+                    <button type="button" disabled={acaoSupervisao === 'reenviar-email'} onClick={reenviarVerificacaoEmail}>
+                      {acaoSupervisao === 'reenviar-email' ? 'Solicitando...' : 'Reenviar link de verificação'}
+                    </button>
+                  </div>
+                ) : solicitacoesSupervisao.length === 0 ? (
+                  <p className="estado-vazio">Nenhuma solicitação de supervisão pendente.</p>
+                ) : (
+                  solicitacoesSupervisao.map((solicitacao) => (
+                    <article className="solicitacao-supervisao" key={solicitacao.vinculoId}>
+                      <h4>{solicitacao.empresa}</h4>
+                      <dl>
+                        <div><dt>Aluno</dt><dd>{solicitacao.aluno}</dd></div>
+                        <div><dt>Instituição</dt><dd>{solicitacao.instituicao}</dd></div>
+                        <div><dt>CNPJ</dt><dd>{solicitacao.cnpjEmpresa}</dd></div>
+                        <div><dt>Período</dt><dd>{solicitacao.dataInicio} — {solicitacao.dataFim}</dd></div>
+                      </dl>
+                      <label htmlFor={`justificativa-${solicitacao.vinculoId}`}>
+                        Justificativa para recusa
+                      </label>
+                      <textarea
+                        id={`justificativa-${solicitacao.vinculoId}`}
+                        value={justificativasRecusa[solicitacao.vinculoId] || ''}
+                        onChange={(event) => setJustificativasRecusa((atuais) => ({
+                          ...atuais,
+                          [solicitacao.vinculoId]: event.target.value
+                        }))}
+                        maxLength="1000"
+                        placeholder="Obrigatória somente em caso de recusa"
+                      />
+                      <div className="processo-acoes">
+                        <button type="button" disabled={acaoSupervisao !== null} onClick={() => responderSupervisao(solicitacao, 'confirmar')}>
+                          Confirmar supervisão
+                        </button>
+                        <button className="botao-perigo" type="button" disabled={acaoSupervisao !== null} onClick={() => responderSupervisao(solicitacao, 'recusar')}>
+                          Recusar
+                        </button>
+                      </div>
+                    </article>
+                  ))
+                )}
+                {erroSupervisao && <p className="mensagem-erro" role="alert">{erroSupervisao}</p>}
+              </div>
             )}
           </section>
         </main>

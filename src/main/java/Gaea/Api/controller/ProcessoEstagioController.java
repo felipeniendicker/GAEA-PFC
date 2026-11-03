@@ -4,9 +4,11 @@ import Gaea.Api.dto.CadastroProcessoRequest;
 import Gaea.Api.dto.HistoricoStatusResponse;
 import Gaea.Api.dto.ProcessoEstagioResponse;
 import Gaea.Api.dto.ReaberturaProcessoRequest;
+import Gaea.Api.dto.AlteracaoSupervisorRequest;
 import Gaea.Api.model.ProcessoEstagio;
 import Gaea.Api.service.ProcessoEstagioMapper;
 import Gaea.Api.service.ProcessoEstagioService;
+import Gaea.Api.service.SupervisaoService;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import Gaea.Api.model.Usuario;
@@ -20,13 +22,16 @@ public class ProcessoEstagioController {
 
     private final ProcessoEstagioService service;
     private final ProcessoEstagioMapper mapper;
+    private final SupervisaoService supervisaoService;
 
     public ProcessoEstagioController(
             ProcessoEstagioService service,
-            ProcessoEstagioMapper mapper) {
+            ProcessoEstagioMapper mapper,
+            SupervisaoService supervisaoService) {
 
         this.service = service;
         this.mapper = mapper;
+        this.supervisaoService = supervisaoService;
     }
 
     @PostMapping
@@ -88,5 +93,15 @@ public class ProcessoEstagioController {
         return service.listarHistorico(
                 id,
                 (Usuario) authentication.getPrincipal());
+    }
+
+    @PutMapping("/{id}/supervisor")
+    public java.util.Map<String, String> alterarSupervisor(
+            @PathVariable Long id,
+            @Valid @RequestBody AlteracaoSupervisorRequest request,
+            Authentication authentication) {
+        supervisaoService.alterarSupervisor(
+                id, request, (Usuario) authentication.getPrincipal());
+        return java.util.Map.of("mensagem", "Nova solicitação de supervisão criada");
     }
 }

@@ -10,6 +10,7 @@ import Gaea.Api.model.ProcessoEstagio;
 import Gaea.Api.model.TipoOperacaoStatus;
 import Gaea.Api.model.Usuario;
 import Gaea.Api.repository.HistoricoStatusProcessoRepository;
+import Gaea.Api.repository.HistoricoVinculoSupervisorRepository;
 import Gaea.Api.repository.ProcessoEstagioRepository;
 import Gaea.Api.repository.VinculoSupervisorProcessoRepository;
 import org.junit.jupiter.api.Test;
@@ -51,6 +52,9 @@ class ProcessoEstagioServiceTests {
 
     @Mock
     private VinculoSupervisorProcessoRepository vinculoRepository;
+
+    @Mock
+    private HistoricoVinculoSupervisorRepository historicoVinculoRepository;
 
     @InjectMocks
     private ProcessoEstagioService service;
@@ -94,7 +98,7 @@ class ProcessoEstagioServiceTests {
         when(repository.findById(1L)).thenReturn(Optional.of(processo));
         when(repository.save(processo)).thenReturn(processo);
         if ("PENDENTE".equals(statusAnterior)) {
-            when(vinculoRepository.existsByProcessoIdAndSituacao(any(), any()))
+            when(vinculoRepository.existsByProcessoIdAndSituacaoAndAtivoTrue(any(), any()))
                     .thenReturn(true);
         }
 

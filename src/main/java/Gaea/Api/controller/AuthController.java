@@ -7,6 +7,7 @@ import Gaea.Api.repository.UsuarioRepository;
 import Gaea.Api.service.JwtService;
 import Gaea.Api.service.LogAuditoriaService;
 import Gaea.Api.service.UsuarioService;
+import Gaea.Api.service.VerificacaoEmailService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -25,24 +26,28 @@ public class AuthController {
     private final JwtService jwtService;
     private final LogAuditoriaService logAuditoriaService;
     private final UsuarioService usuarioService;
+    private final VerificacaoEmailService verificacaoEmailService;
 
     public AuthController(
             UsuarioRepository usuarioRepository,
             PasswordEncoder passwordEncoder,
             JwtService jwtService,
             LogAuditoriaService logAuditoriaService,
-            UsuarioService usuarioService) {
+            UsuarioService usuarioService,
+            VerificacaoEmailService verificacaoEmailService) {
 
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.logAuditoriaService = logAuditoriaService;
         this.usuarioService = usuarioService;
+        this.verificacaoEmailService = verificacaoEmailService;
     }
 
     @PostMapping("/cadastro")
     public Map<String, String> cadastrar(@Valid @RequestBody CadastroUsuarioRequest dados) {
         Usuario usuarioSalvo = usuarioService.cadastrar(dados);
+        verificacaoEmailService.gerar(usuarioSalvo);
 
         logAuditoriaService.registrar(
                 usuarioSalvo.getEmail(),
@@ -98,6 +103,7 @@ public class AuthController {
         resposta.put("nome", usuario.getNome());
         resposta.put("email", usuario.getEmail());
         resposta.put("perfil", usuario.getPerfil());
+        resposta.put("emailVerificado", usuario.getEmailVerificadoEm() != null);
         resposta.put("matricula", usuario.getMatricula());
         resposta.put("instituicao", usuario.getInstituicao() == null
                 ? null

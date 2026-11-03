@@ -24,12 +24,13 @@ public class ProcessoEstagioMapper {
                 ? null
                 : new InstituicaoResumoResponse(instituicao.getId(), instituicao.getNome());
         VinculoSupervisorProcesso vinculo = vinculoRepository
-                .findByProcessoId(processo.getId())
+                .findFirstByProcessoIdOrderByCriadoEmDescIdDesc(processo.getId())
                 .orElse(null);
         VinculoSupervisorResumoResponse vinculoResponse = vinculo == null
                 ? null
                 : new VinculoSupervisorResumoResponse(
-                        vinculo.getEmailConvidado(), vinculo.getSituacao().name());
+                        vinculo.getEmailConvidado(), vinculo.getSituacao().name(),
+                        vinculo.getJustificativaRecusa());
 
         return new ProcessoEstagioResponse(
                 processo.getId(),

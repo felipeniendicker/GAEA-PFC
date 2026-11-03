@@ -4,6 +4,7 @@ import Gaea.Api.model.ConviteAtivacaoAluno;
 import Gaea.Api.model.Instituicao;
 import Gaea.Api.model.Usuario;
 import Gaea.Api.repository.ConviteAtivacaoAlunoRepository;
+import Gaea.Api.repository.TokenVerificacaoEmailRepository;
 import Gaea.Api.repository.InstituicaoRepository;
 import Gaea.Api.repository.LogAuditoriaRepository;
 import Gaea.Api.repository.UsuarioRepository;
@@ -53,6 +54,9 @@ class GestaoAlunosIntegrationTests {
     private ConviteAtivacaoAlunoRepository conviteRepository;
 
     @Autowired
+    private TokenVerificacaoEmailRepository tokenVerificacaoEmailRepository;
+
+    @Autowired
     private LogAuditoriaRepository logAuditoriaRepository;
 
     @Autowired
@@ -64,6 +68,7 @@ class GestaoAlunosIntegrationTests {
     @BeforeEach
     @AfterEach
     void limparBanco() {
+        tokenVerificacaoEmailRepository.deleteAll();
         conviteRepository.deleteAll();
         logAuditoriaRepository.deleteAll();
         usuarioRepository.deleteAll();

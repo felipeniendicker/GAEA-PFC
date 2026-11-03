@@ -3,9 +3,12 @@ package Gaea.Api.repository;
 import Gaea.Api.model.ProcessoEstagio;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
+import jakarta.persistence.LockModeType;
 
 public interface ProcessoEstagioRepository extends JpaRepository<ProcessoEstagio, Long> {
 
@@ -19,6 +22,7 @@ public interface ProcessoEstagioRepository extends JpaRepository<ProcessoEstagio
             join VinculoSupervisorProcesso v on v.processo = p
             where v.supervisor.id = :supervisorId
               and v.situacao = Gaea.Api.model.SituacaoVinculoSupervisor.CONFIRMADO
+              and v.ativo = true
             """)
     List<ProcessoEstagio> findAllBySupervisorConfirmadoId(
             @Param("supervisorId") Long supervisorId);
@@ -28,4 +32,8 @@ public interface ProcessoEstagioRepository extends JpaRepository<ProcessoEstagio
     long countByInstituicaoId(Long instituicaoId);
 
     long countByInstituicaoIdAndStatus(Long instituicaoId, String status);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select p from ProcessoEstagio p where p.id = :id")
+    Optional<ProcessoEstagio> findByIdParaAtualizacao(@Param("id") Long id);
 }

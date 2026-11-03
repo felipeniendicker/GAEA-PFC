@@ -43,7 +43,8 @@ public class ProcessoAutorizacaoService {
             case "ALUNO" -> processo.getAluno() != null
                     && processo.getAluno().getId().equals(usuario.getId());
             case "INSTITUICAO" -> mesmaInstituicao(processo, usuario);
-            case "EMPRESA" -> vinculoRepository.existsByProcessoIdAndSupervisorIdAndSituacao(
+            case "EMPRESA" -> vinculoRepository
+                    .existsByProcessoIdAndSupervisorIdAndSituacaoAndAtivoTrue(
                     processo.getId(),
                     usuario.getId(),
                     SituacaoVinculoSupervisor.CONFIRMADO);

@@ -12,11 +12,16 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Version;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 import java.time.LocalDateTime;
 import java.util.Locale;
 
 @Entity
+@Table(uniqueConstraints = @UniqueConstraint(
+        name = "uk_vinculo_supervisor_ativo",
+        columnNames = {"processo_id", "ativo"}))
 public class VinculoSupervisorProcesso {
 
     @Id
@@ -46,6 +51,8 @@ public class VinculoSupervisorProcesso {
 
     private LocalDateTime respondidoEm;
 
+    private Boolean ativo;
+
     @Version
     @Column(nullable = false)
     private Long versao;
@@ -58,6 +65,7 @@ public class VinculoSupervisorProcesso {
         if (criadoEm == null) {
             criadoEm = LocalDateTime.now();
         }
+        sincronizarAtivo();
     }
 
     public Long getId() {
@@ -96,6 +104,7 @@ public class VinculoSupervisorProcesso {
 
     public void setSituacao(SituacaoVinculoSupervisor situacao) {
         this.situacao = situacao;
+        sincronizarAtivo();
     }
 
     public String getJustificativaRecusa() {
@@ -120,5 +129,14 @@ public class VinculoSupervisorProcesso {
 
     public Long getVersao() {
         return versao;
+    }
+
+    public Boolean getAtivo() { return ativo; }
+
+    private void sincronizarAtivo() {
+        ativo = situacao == SituacaoVinculoSupervisor.PENDENTE
+                || situacao == SituacaoVinculoSupervisor.CONFIRMADO
+                ? Boolean.TRUE
+                : null;
     }
 }
