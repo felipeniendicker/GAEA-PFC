@@ -5,11 +5,13 @@ import Gaea.Api.dto.ReaberturaProcessoRequest;
 import Gaea.Api.exception.ConflitoDadosException;
 import Gaea.Api.exception.RecursoNaoEncontradoException;
 import Gaea.Api.model.HistoricoStatusProcesso;
+import Gaea.Api.model.Instituicao;
 import Gaea.Api.model.ProcessoEstagio;
 import Gaea.Api.model.TipoOperacaoStatus;
 import Gaea.Api.model.Usuario;
 import Gaea.Api.repository.HistoricoStatusProcessoRepository;
 import Gaea.Api.repository.ProcessoEstagioRepository;
+import Gaea.Api.repository.VinculoSupervisorProcessoRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -47,23 +49,27 @@ class ProcessoEstagioServiceTests {
     @Mock
     private ProcessoAutorizacaoService autorizacaoService;
 
+    @Mock
+    private VinculoSupervisorProcessoRepository vinculoRepository;
+
     @InjectMocks
     private ProcessoEstagioService service;
 
     @Test
     void deveDefinirStatusInicialNoBackend() {
         CadastroProcessoRequest request = new CadastroProcessoRequest(
-                "  Ana Souza  ",
-                "  ANA@EXAMPLE.COM ",
                 "  Empresa Exemplo  ",
                 "11.222.333/0001-81",
+                "01001-000",
+                "  Praça da Sé, 100  ",
                 LocalDate.of(2026, 11, 1),
-                LocalDate.of(2027, 4, 30));
+                LocalDate.of(2027, 4, 30),
+                " SUPERVISOR@EXAMPLE.COM ");
 
         when(repository.save(any(ProcessoEstagio.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        ProcessoEstagio processo = service.cadastrar(request);
+        ProcessoEstagio processo = service.cadastrar(request, alunoApto());
 
         assertNull(processo.getId());
         assertEquals("PENDENTE", processo.getStatus());
@@ -71,6 +77,10 @@ class ProcessoEstagioServiceTests {
         assertEquals("ana@example.com", processo.getEmailAluno());
         assertEquals("Empresa Exemplo", processo.getNomeEmpresa());
         assertEquals("11222333000181", processo.getCnpjEmpresa());
+        assertEquals("01001000", processo.getCepEmpresa());
+        assertEquals("Praça da Sé, 100", processo.getEnderecoEmpresa());
+        assertEquals("RGM-001", processo.getAluno().getMatricula());
+        verify(vinculoRepository).save(any());
     }
 
     @ParameterizedTest
@@ -83,6 +93,10 @@ class ProcessoEstagioServiceTests {
         ProcessoEstagio processo = processo(1L, "aluno@example.com", statusAnterior);
         when(repository.findById(1L)).thenReturn(Optional.of(processo));
         when(repository.save(processo)).thenReturn(processo);
+        if ("PENDENTE".equals(statusAnterior)) {
+            when(vinculoRepository.existsByProcessoIdAndSituacao(any(), any()))
+                    .thenReturn(true);
+        }
 
         ProcessoEstagio atualizado = service.alterarStatus(1L, statusNovo, usuarioInstituicao());
 
@@ -230,5 +244,18 @@ class ProcessoEstagioServiceTests {
 
     private Usuario usuarioInstituicao() {
         return usuario("instituicao@example.com", "INSTITUICAO");
+    }
+
+    private Usuario alunoApto() {
+        Instituicao instituicao = new Instituicao();
+        instituicao.setNome("Faculdade Teste");
+        instituicao.setCnpj("11222333000181");
+        Usuario aluno = usuario("ana@example.com", "ALUNO");
+        aluno.setNome("Ana Souza");
+        aluno.setMatricula("RGM-001");
+        aluno.setInstituicao(instituicao);
+        aluno.setAtivo(true);
+        aluno.setAtivado(true);
+        return aluno;
     }
 }

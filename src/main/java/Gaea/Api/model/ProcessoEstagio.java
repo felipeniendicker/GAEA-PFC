@@ -22,6 +22,11 @@ public class ProcessoEstagio {
     private String emailAluno;
     private String nomeEmpresa;
     private String cnpjEmpresa;
+    @Column(length = 8)
+    private String cepEmpresa;
+
+    @Column(length = 500)
+    private String enderecoEmpresa;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "aluno_usuario_id")
@@ -78,6 +83,22 @@ public class ProcessoEstagio {
 
     public void setCnpjEmpresa(String cnpjEmpresa) {
         this.cnpjEmpresa = cnpjEmpresa;
+    }
+
+    public String getCepEmpresa() {
+        return cepEmpresa;
+    }
+
+    public void setCepEmpresa(String cepEmpresa) {
+        this.cepEmpresa = cepEmpresa;
+    }
+
+    public String getEnderecoEmpresa() {
+        return enderecoEmpresa;
+    }
+
+    public void setEnderecoEmpresa(String enderecoEmpresa) {
+        this.enderecoEmpresa = enderecoEmpresa;
     }
 
     public Usuario getAluno() {

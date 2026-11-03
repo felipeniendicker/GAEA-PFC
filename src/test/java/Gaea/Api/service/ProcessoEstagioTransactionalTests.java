@@ -4,10 +4,13 @@ import Gaea.Api.model.Instituicao;
 import Gaea.Api.model.ProcessoEstagio;
 import Gaea.Api.model.TipoOperacaoStatus;
 import Gaea.Api.model.Usuario;
+import Gaea.Api.model.SituacaoVinculoSupervisor;
+import Gaea.Api.model.VinculoSupervisorProcesso;
 import Gaea.Api.repository.HistoricoStatusProcessoRepository;
 import Gaea.Api.repository.InstituicaoRepository;
 import Gaea.Api.repository.ProcessoEstagioRepository;
 import Gaea.Api.repository.UsuarioRepository;
+import Gaea.Api.repository.VinculoSupervisorProcessoRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +41,9 @@ class ProcessoEstagioTransactionalTests {
     @Autowired
     private InstituicaoRepository instituicaoRepository;
 
+    @Autowired
+    private VinculoSupervisorProcessoRepository vinculoRepository;
+
     @MockitoBean
     private LogAuditoriaService logAuditoriaService;
 
@@ -45,6 +51,7 @@ class ProcessoEstagioTransactionalTests {
 
     @BeforeEach
     void limparBanco() {
+        vinculoRepository.deleteAll();
         historicoRepository.deleteAll();
         processoRepository.deleteAll();
         usuarioRepository.deleteAll();
@@ -99,7 +106,14 @@ class ProcessoEstagioTransactionalTests {
         processo.setCnpjEmpresa("11222333000181");
         processo.setStatus("PENDENTE");
         processo.setInstituicao(responsavelInstituicao.getInstituicao());
-        return processoRepository.save(processo);
+        processo = processoRepository.save(processo);
+
+        VinculoSupervisorProcesso vinculo = new VinculoSupervisorProcesso();
+        vinculo.setProcesso(processo);
+        vinculo.setEmailConvidado("supervisor@example.com");
+        vinculo.setSituacao(SituacaoVinculoSupervisor.CONFIRMADO);
+        vinculoRepository.save(vinculo);
+        return processo;
     }
 
     private Usuario salvarResponsavelInstituicao() {

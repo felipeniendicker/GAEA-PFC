@@ -7,15 +7,18 @@ import Gaea.Api.exception.ConflitoDadosException;
 import Gaea.Api.exception.RecursoNaoEncontradoException;
 import Gaea.Api.model.HistoricoStatusProcesso;
 import Gaea.Api.model.ProcessoEstagio;
+import Gaea.Api.model.SituacaoVinculoSupervisor;
 import Gaea.Api.model.TipoOperacaoStatus;
 import Gaea.Api.model.Usuario;
+import Gaea.Api.model.VinculoSupervisorProcesso;
 import Gaea.Api.repository.HistoricoStatusProcessoRepository;
 import Gaea.Api.repository.ProcessoEstagioRepository;
+import Gaea.Api.repository.VinculoSupervisorProcessoRepository;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Locale;
 
 @Service
 public class ProcessoEstagioService {
@@ -24,29 +27,53 @@ public class ProcessoEstagioService {
     private final HistoricoStatusProcessoRepository historicoRepository;
     private final LogAuditoriaService logAuditoriaService;
     private final ProcessoAutorizacaoService autorizacaoService;
+    private final VinculoSupervisorProcessoRepository vinculoRepository;
 
     public ProcessoEstagioService(
             ProcessoEstagioRepository repository,
             HistoricoStatusProcessoRepository historicoRepository,
             LogAuditoriaService logAuditoriaService,
-            ProcessoAutorizacaoService autorizacaoService) {
+            ProcessoAutorizacaoService autorizacaoService,
+            VinculoSupervisorProcessoRepository vinculoRepository) {
 
         this.repository = repository;
         this.historicoRepository = historicoRepository;
         this.logAuditoriaService = logAuditoriaService;
         this.autorizacaoService = autorizacaoService;
+        this.vinculoRepository = vinculoRepository;
     }
 
-    public ProcessoEstagio cadastrar(CadastroProcessoRequest dados) {
+    @Transactional
+    public ProcessoEstagio cadastrar(CadastroProcessoRequest dados, Usuario alunoAutenticado) {
+        validarAlunoAptoParaSolicitar(alunoAutenticado);
+
         ProcessoEstagio processo = new ProcessoEstagio();
-        processo.setNomeAluno(dados.nomeAluno().trim());
-        processo.setEmailAluno(dados.emailAluno().trim().toLowerCase(Locale.ROOT));
-        processo.setNomeEmpresa(dados.nomeEmpresa().trim());
-        processo.setCnpjEmpresa(dados.cnpjEmpresa().replaceAll("\\D", ""));
+        processo.setNomeAluno(alunoAutenticado.getNome());
+        processo.setEmailAluno(alunoAutenticado.getEmail());
+        processo.setAluno(alunoAutenticado);
+        processo.setInstituicao(alunoAutenticado.getInstituicao());
+        processo.setNomeEmpresa(dados.nomeEmpresa());
+        processo.setCnpjEmpresa(dados.cnpjEmpresa());
+        processo.setCepEmpresa(dados.cepEmpresa());
+        processo.setEnderecoEmpresa(dados.enderecoEmpresa());
         processo.setDataInicio(dados.dataInicio());
         processo.setDataFim(dados.dataFim());
         processo.setStatus("PENDENTE");
-        return repository.save(processo);
+        ProcessoEstagio processoSalvo = repository.save(processo);
+
+        VinculoSupervisorProcesso vinculo = new VinculoSupervisorProcesso();
+        vinculo.setProcesso(processoSalvo);
+        vinculo.setEmailConvidado(dados.emailSupervisor());
+        vinculo.setSituacao(SituacaoVinculoSupervisor.PENDENTE);
+        vinculoRepository.save(vinculo);
+
+        logAuditoriaService.registrar(
+                alunoAutenticado.getEmail(),
+                "SOLICITACAO_ESTAGIO",
+                "Processo de estágio " + processoSalvo.getId(),
+                alunoAutenticado.getInstituicao());
+
+        return processoSalvo;
     }
 
     @Transactional(readOnly = true)
@@ -69,6 +96,13 @@ public class ProcessoEstagioService {
         String statusNormalizado = normalizarStatus(novoStatus);
 
         validarTransicaoNormal(statusAnterior, statusNormalizado);
+        if ("PENDENTE".equals(statusAnterior)
+                && "EM_ANALISE".equals(statusNormalizado)
+                && !vinculoRepository.existsByProcessoIdAndSituacao(
+                        processo.getId(), SituacaoVinculoSupervisor.CONFIRMADO)) {
+            throw new ConflitoDadosException(
+                    "A análise só pode ser iniciada após a confirmação do supervisor");
+        }
 
         return persistirAlteracao(
                 processo,
@@ -184,5 +218,20 @@ public class ProcessoEstagioService {
     private ProcessoEstagio buscarProcesso(Long id) {
         return repository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Processo não encontrado"));
+    }
+
+    private void validarAlunoAptoParaSolicitar(Usuario aluno) {
+        if (aluno == null || !"ALUNO".equals(aluno.getPerfil())) {
+            throw new AccessDeniedException("Somente alunos podem solicitar estágio");
+        }
+        if (!Boolean.TRUE.equals(aluno.getAtivo()) || !Boolean.TRUE.equals(aluno.getAtivado())) {
+            throw new AccessDeniedException("A conta do aluno não está ativa");
+        }
+        if (aluno.getInstituicao() == null
+                || aluno.getMatricula() == null
+                || aluno.getMatricula().isBlank()) {
+            throw new ConflitoDadosException(
+                    "O aluno precisa ter instituição e matrícula válidas para solicitar estágio");
+        }
     }
 }

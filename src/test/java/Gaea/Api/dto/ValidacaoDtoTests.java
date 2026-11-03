@@ -107,9 +107,9 @@ class ValidacaoDtoTests {
     @Test
     void deveRejeitarCamposObrigatoriosAusentes() {
         CadastroProcessoRequest request = new CadastroProcessoRequest(
-                null, null, null, null, null, null);
+                null, null, null, null, null, null, null);
 
-        assertEquals(6, validator.validate(request).size());
+        assertEquals(7, validator.validate(request).size());
     }
 
     @Test
@@ -137,11 +137,12 @@ class ValidacaoDtoTests {
             LocalDate dataFim) {
 
         return new CadastroProcessoRequest(
-                "Ana Souza",
-                "ana@example.com",
                 "Empresa Exemplo",
                 cnpj,
+                "01001-000",
+                "Praça da Sé, 100 - São Paulo/SP",
                 dataInicio,
-                dataFim);
+                dataFim,
+                "supervisor@example.com");
     }
 }

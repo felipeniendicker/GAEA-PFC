@@ -84,7 +84,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/ativacoes/aluno").permitAll()
                         .requestMatchers("/api/instituicoes/alunos/**").hasRole("INSTITUICAO")
-                        .requestMatchers(HttpMethod.POST, "/api/processos").denyAll()
+                        .requestMatchers(HttpMethod.POST, "/api/processos").hasRole("ALUNO")
                         .requestMatchers(HttpMethod.GET, "/api/processos/meus").hasRole("ALUNO")
                         .requestMatchers(HttpMethod.GET, "/api/processos").hasAnyRole("INSTITUICAO", "EMPRESA")
                         .requestMatchers(HttpMethod.GET, "/api/processos/*/historico")
@@ -92,7 +92,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/dashboard/**").hasRole("INSTITUICAO")
                         .requestMatchers("/api/processos/**").hasRole("INSTITUICAO")
                         .requestMatchers("/api/auditoria/**").hasRole("INSTITUICAO")
-                        .requestMatchers("/api/cep/**").hasRole("INSTITUICAO")
+                        .requestMatchers("/api/cep/**").hasAnyRole("ALUNO", "INSTITUICAO")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(

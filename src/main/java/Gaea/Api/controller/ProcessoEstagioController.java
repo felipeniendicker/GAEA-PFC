@@ -5,7 +5,6 @@ import Gaea.Api.dto.HistoricoStatusResponse;
 import Gaea.Api.dto.ProcessoEstagioResponse;
 import Gaea.Api.dto.ReaberturaProcessoRequest;
 import Gaea.Api.model.ProcessoEstagio;
-import Gaea.Api.service.LogAuditoriaService;
 import Gaea.Api.service.ProcessoEstagioMapper;
 import Gaea.Api.service.ProcessoEstagioService;
 import org.springframework.security.core.Authentication;
@@ -20,16 +19,13 @@ import java.util.List;
 public class ProcessoEstagioController {
 
     private final ProcessoEstagioService service;
-    private final LogAuditoriaService logAuditoriaService;
     private final ProcessoEstagioMapper mapper;
 
     public ProcessoEstagioController(
             ProcessoEstagioService service,
-            LogAuditoriaService logAuditoriaService,
             ProcessoEstagioMapper mapper) {
 
         this.service = service;
-        this.logAuditoriaService = logAuditoriaService;
         this.mapper = mapper;
     }
 
@@ -38,15 +34,8 @@ public class ProcessoEstagioController {
             @Valid @RequestBody CadastroProcessoRequest processo,
             Authentication authentication) {
 
-        ProcessoEstagio processoSalvo = service.cadastrar(processo);
-
         Usuario usuario = (Usuario) authentication.getPrincipal();
-        logAuditoriaService.registrar(
-                usuario.getEmail(),
-                "CADASTRO_PROCESSO",
-                "Processo de estágio " + processoSalvo.getId(),
-                usuario.getInstituicao()
-        );
+        ProcessoEstagio processoSalvo = service.cadastrar(processo, usuario);
 
         return mapper.toResponse(processoSalvo);
     }

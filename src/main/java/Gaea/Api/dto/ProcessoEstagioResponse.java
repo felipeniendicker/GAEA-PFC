@@ -8,10 +8,13 @@ public record ProcessoEstagioResponse(
         String emailAluno,
         String nomeEmpresa,
         String cnpjEmpresa,
+        String cepEmpresa,
+        String enderecoEmpresa,
         LocalDate dataInicio,
         LocalDate dataFim,
         String status,
         Long alunoId,
         InstituicaoResumoResponse instituicao,
+        VinculoSupervisorResumoResponse vinculoSupervisor,
         Long versao) {
 }

@@ -907,17 +907,17 @@ function App() {
   const [termosAceitos, setTermosAceitos] = useState(false)
   const [erroCadastro, setErroCadastro] = useState('')
 
-  const [nomeAluno, setNomeAluno] = useState('')
-  const [emailAluno, setEmailAluno] = useState('')
   const [nomeEmpresa, setNomeEmpresa] = useState('')
   const [cnpjEmpresa, setCnpjEmpresa] = useState('')
+  const [emailSupervisor, setEmailSupervisor] = useState('')
   const [dataInicio, setDataInicio] = useState('')
   const [dataFim, setDataFim] = useState('')
   const [erroProcesso, setErroProcesso] = useState('')
   const [processos, setProcessos] = useState([])
   const [cepEmpresa, setCepEmpresa] = useState('')
-  const [enderecoEmpresa, setEnderecoEmpresa] = useState(null)
+  const [enderecoEmpresa, setEnderecoEmpresa] = useState('')
   const [erroCep, setErroCep] = useState('')
+  const [salvandoProcesso, setSalvandoProcesso] = useState(false)
   const [logsAuditoria, setLogsAuditoria] = useState([])
   const [mostrarAuditoria, setMostrarAuditoria] = useState(false)
   const [historicos, setHistoricos] = useState({})
@@ -958,7 +958,9 @@ function App() {
       setUsuario({
         nome: dados.nome,
         email: dados.email,
-        perfil: dados.perfil
+        perfil: dados.perfil,
+        matricula: dados.matricula,
+        instituicao: dados.instituicao
       })
 
       setToken(dados.token)
@@ -1292,7 +1294,7 @@ function App() {
 }
   async function buscarCep() {
   setErroCep('')
-  setEnderecoEmpresa(null)
+  setEnderecoEmpresa('')
 
   if (!cepEmpresa.trim()) {
     setErroCep('Informe o CEP da empresa.')
@@ -1312,7 +1314,12 @@ function App() {
     }
 
     const dados = await resposta.json()
-    setEnderecoEmpresa(dados)
+    const endereco = [
+      dados.logradouro,
+      dados.bairro,
+      dados.localidade && dados.uf ? `${dados.localidade}/${dados.uf}` : dados.localidade
+    ].filter(Boolean).join(', ')
+    setEnderecoEmpresa(endereco)
   } catch {
     setErroCep('Não foi possível conectar com o servidor.')
   }
@@ -1323,22 +1330,33 @@ function App() {
 
     setErroProcesso('')
 
-    const nomeDoAluno = nomeAluno.trim()
-    const emailDoAluno = emailAluno.trim().toLowerCase()
     const empresa = nomeEmpresa.trim()
+    const cep = cepEmpresa.replace(/\D/g, '')
+    const endereco = enderecoEmpresa.trim()
+    const supervisor = emailSupervisor.trim().toLowerCase()
 
-    if (!nomeDoAluno || !empresa) {
-      setErroProcesso('Preencha o nome do aluno e o nome da empresa.')
+    if (!empresa) {
+      setErroProcesso('Informe o nome da empresa.')
       return
     }
 
-    if (!emailValido(emailDoAluno)) {
-      setErroProcesso('Informe um e-mail de aluno válido.')
+    if (!emailValido(supervisor)) {
+      setErroProcesso('Informe um e-mail válido para o supervisor.')
       return
     }
 
     if (!cnpjValido(cnpjEmpresa)) {
       setErroProcesso('Informe um CNPJ válido.')
+      return
+    }
+
+    if (cep.length !== 8) {
+      setErroProcesso('Informe um CEP válido com 8 dígitos.')
+      return
+    }
+
+    if (!endereco) {
+      setErroProcesso('Informe o endereço da empresa.')
       return
     }
 
@@ -1353,14 +1371,16 @@ function App() {
     }
 
     const processo = {
-      nomeAluno: nomeDoAluno,
-      emailAluno: emailDoAluno,
       nomeEmpresa: empresa,
       cnpjEmpresa,
+      cepEmpresa: cep,
+      enderecoEmpresa: endereco,
       dataInicio,
-      dataFim
+      dataFim,
+      emailSupervisor: supervisor
     }
 
+    setSalvandoProcesso(true)
     try {
       const resposta = await fetch(`${API}/api/processos`, {
         method: 'POST',
@@ -1379,15 +1399,15 @@ function App() {
           novoProcesso
         ])
 
-        setNomeAluno('')
-        setEmailAluno('')
         setNomeEmpresa('')
         setCnpjEmpresa('')
+        setEmailSupervisor('')
+        setCepEmpresa('')
+        setEnderecoEmpresa('')
         setDataInicio('')
         setDataFim('')
 
-        exibirMensagemAcao('Estágio cadastrado com sucesso!')
-        await buscarResumoDashboard()
+        exibirMensagemAcao('Solicitação enviada. Aguardando confirmação do supervisor.')
       } else {
         setErroProcesso(
           await mensagemDaApi(resposta, 'Não foi possível cadastrar o estágio.')
@@ -1395,6 +1415,8 @@ function App() {
       }
     } catch {
       setErroProcesso('Não foi possível conectar com o servidor.')
+    } finally {
+      setSalvandoProcesso(false)
     }
   }
 
@@ -1882,18 +1904,86 @@ function App() {
             </p>
           </header>
 
+          {usuario.perfil === 'ALUNO' && (
+            <section className="formulario">
+              <div className="secao-cabecalho">
+                <h3>Solicitar novo estágio</h3>
+                <p>Informe os dados da empresa e do supervisor responsável.</p>
+              </div>
+
+              <form onSubmit={cadastrarEstagio}>
+                <div className="dados-somente-leitura" aria-label="Dados do aluno">
+                  <div className="campo">
+                    <label htmlFor="alunoNome">Nome do aluno</label>
+                    <input id="alunoNome" value={usuario.nome} readOnly />
+                  </div>
+                  <div className="campo">
+                    <label htmlFor="alunoEmail">E-mail</label>
+                    <input id="alunoEmail" value={usuario.email} readOnly />
+                  </div>
+                  <div className="campo">
+                    <label htmlFor="alunoMatricula">Matrícula (RA/RGM)</label>
+                    <input id="alunoMatricula" value={usuario.matricula || ''} readOnly />
+                  </div>
+                  <div className="campo">
+                    <label htmlFor="alunoInstituicao">Instituição</label>
+                    <input id="alunoInstituicao" value={usuario.instituicao?.nome || ''} readOnly />
+                  </div>
+                </div>
+
+                <div className="campo">
+                  <label htmlFor="nomeEmpresaAluno">Empresa</label>
+                  <input id="nomeEmpresaAluno" value={nomeEmpresa} onChange={(event) => setNomeEmpresa(event.target.value)} maxLength="255" required />
+                </div>
+                <div className="campo">
+                  <label htmlFor="cnpjEmpresaAluno">CNPJ</label>
+                  <input id="cnpjEmpresaAluno" value={cnpjEmpresa} onChange={(event) => setCnpjEmpresa(event.target.value)} placeholder="00.000.000/0000-00" maxLength="18" required />
+                </div>
+                <div className="campo">
+                  <label htmlFor="cepEmpresaAluno">CEP da empresa</label>
+                  <div className="campo-cep">
+                    <input id="cepEmpresaAluno" value={cepEmpresa} onChange={(event) => setCepEmpresa(event.target.value)} placeholder="00000-000" maxLength="9" required />
+                    <button type="button" onClick={buscarCep}>Buscar CEP</button>
+                  </div>
+                  {erroCep && <p className="mensagem-erro">{erroCep}</p>}
+                </div>
+                <div className="campo">
+                  <label htmlFor="enderecoEmpresaAluno">Endereço da empresa</label>
+                  <input id="enderecoEmpresaAluno" value={enderecoEmpresa} onChange={(event) => setEnderecoEmpresa(event.target.value)} maxLength="500" required />
+                </div>
+                <div className="campo">
+                  <label htmlFor="emailSupervisorAluno">E-mail do supervisor</label>
+                  <input id="emailSupervisorAluno" type="email" value={emailSupervisor} onChange={(event) => setEmailSupervisor(event.target.value)} maxLength="255" required />
+                </div>
+                <div className="campo">
+                  <label htmlFor="dataInicioAluno">Data de início</label>
+                  <input id="dataInicioAluno" type="date" value={dataInicio} onChange={(event) => setDataInicio(event.target.value)} required />
+                </div>
+                <div className="campo">
+                  <label htmlFor="dataFimAluno">Data de término</label>
+                  <input id="dataFimAluno" type="date" value={dataFim} onChange={(event) => setDataFim(event.target.value)} min={dataInicio} required />
+                </div>
+
+                {erroProcesso && <p className="mensagem-erro">{erroProcesso}</p>}
+                <button type="submit" disabled={salvandoProcesso}>
+                  {salvandoProcesso ? 'Enviando...' : 'Solicitar estágio'}
+                </button>
+              </form>
+            </section>
+          )}
+
 
           <section className="formulario">
             <div className="secao-cabecalho">
               <h3>
                 {usuario.perfil === 'ALUNO'
-                  ? 'Área do Aluno'
+                  ? 'Meus processos'
                   : 'Área da Empresa'}
               </h3>
 
               <p>
                 {usuario.perfil === 'ALUNO'
-                  ? 'Acompanhe seus processos de estágio.'
+                  ? 'Acompanhe suas solicitações de estágio.'
                   : 'Você está autenticado no GAEA.'}
               </p>
             </div>
@@ -1931,6 +2021,15 @@ function App() {
                           <strong>Status</strong>
                           <span className={`status status-${processo.status}`}>
                             {rotulosStatus[processo.status] || processo.status}
+                          </span>
+                        </p>
+
+                        <p>
+                          <strong>Supervisor</strong>
+                          <span>
+                            {processo.vinculoSupervisor?.situacao === 'PENDENTE'
+                              ? 'Aguardando confirmação do supervisor'
+                              : processo.vinculoSupervisor?.situacao || 'Vínculo legado não informado'}
                           </span>
                         </p>
 
@@ -2074,144 +2173,6 @@ function App() {
   </section>
 )}
 
-        <section className="formulario">
-          <div className="secao-cabecalho">
-            <h3>Novo estágio</h3>
-            <p>
-              Preencha os dados abaixo para iniciar um novo processo.
-            </p>
-          </div>
-
-          <form onSubmit={cadastrarEstagio}>
-            <div className="campo">
-              <label htmlFor="nomeAluno">Nome do aluno</label>
-              <input
-                id="nomeAluno"
-                type="text"
-                value={nomeAluno}
-                onChange={(e) => setNomeAluno(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="campo">
-              <label htmlFor="emailAluno">E-mail do aluno</label>
-              <input
-                id="emailAluno"
-                type="email"
-                value={emailAluno}
-                onChange={(e) => setEmailAluno(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="campo">
-              <label htmlFor="nomeEmpresa">Empresa</label>
-              <input
-                id="nomeEmpresa"
-                type="text"
-                value={nomeEmpresa}
-                onChange={(e) => setNomeEmpresa(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="campo">
-              <label htmlFor="cnpjEmpresa">CNPJ</label>
-              <input
-                id="cnpjEmpresa"
-                type="text"
-                value={cnpjEmpresa}
-                onChange={(e) => setCnpjEmpresa(e.target.value)}
-              placeholder="00.000.000/0000-00"
-              maxLength="18"
-                required
-              />
-            </div>
-
-            <div className="campo">
-  <label htmlFor="cepEmpresa">CEP da empresa</label>
-
-  <div className="campo-cep">
-    <input
-      id="cepEmpresa"
-      type="text"
-      placeholder="00000000"
-      value={cepEmpresa}
-      onChange={(e) => setCepEmpresa(e.target.value)}
-      maxLength="9"
-    />
-
-    <button
-      type="button"
-      onClick={buscarCep}
-    >
-      Buscar CEP
-    </button>
-  </div>
-
-  {erroCep && (
-    <p className="mensagem-erro">{erroCep}</p>
-  )}
-</div>
-
-<div className="campo">
-  <label>Endereço encontrado</label>
-
-  <div className="endereco-cep">
-    {enderecoEmpresa ? (
-      <>
-        <strong>
-          {enderecoEmpresa.logradouro || 'Logradouro não informado'}
-        </strong>
-
-        <span>
-          {enderecoEmpresa.bairro || 'Bairro não informado'}
-        </span>
-
-        <span>
-          {enderecoEmpresa.localidade}/{enderecoEmpresa.uf}
-        </span>
-      </>
-    ) : (
-      <span>Consulte o CEP para visualizar o endereço.</span>
-    )}
-  </div>
-</div>
-
-            <div className="campo">
-              <label htmlFor="dataInicio">Data de início</label>
-              <input
-                id="dataInicio"
-                type="date"
-                value={dataInicio}
-                onChange={(e) => setDataInicio(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="campo">
-              <label htmlFor="dataFim">Data de término</label>
-              <input
-                id="dataFim"
-                type="date"
-                value={dataFim}
-                onChange={(e) => setDataFim(e.target.value)}
-                min={dataInicio}
-                required
-              />
-            </div>
-
-            {erroProcesso && (
-              <p className="mensagem-erro">{erroProcesso}</p>
-            )}
-
-            <button type="submit">
-              Cadastrar estágio
-            </button>
-          </form>
-        </section>
-
         <section className="acompanhamento">
           <div className="secao-cabecalho">
             <h3>Acompanhamento de Estágios</h3>
@@ -2272,7 +2233,8 @@ function App() {
                     </p>
 
                     <div className="processo-acoes">
-                      {processo.status === 'PENDENTE' && (
+                      {processo.status === 'PENDENTE'
+                        && processo.vinculoSupervisor?.situacao === 'CONFIRMADO' && (
                         <button
                           className="acao-analise"
                           type="button"
@@ -2280,6 +2242,13 @@ function App() {
                         >
                           Iniciar análise
                         </button>
+                      )}
+
+                      {processo.status === 'PENDENTE'
+                        && processo.vinculoSupervisor?.situacao !== 'CONFIRMADO' && (
+                        <span className="status status-PENDENTE">
+                          Aguardando confirmação do supervisor
+                        </span>
                       )}
 
                       {processo.status === 'EM_ANALISE' && (

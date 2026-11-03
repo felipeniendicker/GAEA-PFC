@@ -19,7 +19,7 @@ class FlywayMigrationTests {
 
         var resultado = flyway(url).migrate();
 
-        assertEquals(3, resultado.migrationsExecuted);
+        assertEquals(4, resultado.migrationsExecuted);
 
         try (var connection = DriverManager.getConnection(url, "sa", "");
              var statement = connection.createStatement()) {
@@ -132,12 +132,13 @@ class FlywayMigrationTests {
         }
 
         var resultado = flyway(url).migrate();
-        assertEquals(2, resultado.migrationsExecuted);
+        assertEquals(3, resultado.migrationsExecuted);
 
         try (var connection = DriverManager.getConnection(url, "sa", "");
              var statement = connection.createStatement();
              var resultSet = statement.executeQuery("""
-                     SELECT nome_aluno, email_aluno, aluno_usuario_id, instituicao_id, versao
+                     SELECT nome_aluno, email_aluno, aluno_usuario_id, instituicao_id,
+                            cep_empresa, endereco_empresa, versao
                      FROM processo_estagio
                      WHERE email_aluno = 'legado@example.com'
                      """)) {
@@ -146,6 +147,8 @@ class FlywayMigrationTests {
             assertEquals("legado@example.com", resultSet.getString("email_aluno"));
             assertNull(resultSet.getObject("aluno_usuario_id"));
             assertNull(resultSet.getObject("instituicao_id"));
+            assertNull(resultSet.getObject("cep_empresa"));
+            assertNull(resultSet.getObject("endereco_empresa"));
             assertEquals(0, resultSet.getLong("versao"));
         }
 

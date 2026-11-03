@@ -1435,6 +1435,23 @@ button { font-size: 0.9rem; }
   margin: 0;
 }
 
+.dados-somente-leitura {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid #ded4c2;
+  border-radius: 10px;
+  background: #f7f1e5;
+}
+
+.dados-somente-leitura input[readonly] {
+  color: #46534f;
+  background: #eee7da;
+  cursor: not-allowed;
+}
+
 @media (max-width: 850px) {
   .gestao-alunos-formulario form,
   .alunos-grid {
@@ -1447,6 +1464,10 @@ button { font-size: 0.9rem; }
 }
 
 @media (max-width: 560px) {
+  .dados-somente-leitura {
+    grid-template-columns: 1fr;
+  }
+
   .aluno-card-cabecalho,
   .aluno-card dl div {
     flex-direction: column;

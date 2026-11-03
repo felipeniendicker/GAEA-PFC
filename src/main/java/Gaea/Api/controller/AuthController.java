@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Map;
+import java.util.LinkedHashMap;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -57,7 +58,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public Map<String, String> login(@Valid @RequestBody LoginRequest dados) {
+    public Map<String, Object> login(@Valid @RequestBody LoginRequest dados) {
 
         String email = usuarioService.normalizarEmail(dados.email());
         String senha = dados.senha();
@@ -93,11 +94,15 @@ public class AuthController {
                 "Autenticação no sistema"
         );
 
-        return Map.of(
-                "nome", usuario.getNome(),
-                "email", usuario.getEmail(),
-                "perfil", usuario.getPerfil(),
-                "token", token
-        );
+        Map<String, Object> resposta = new LinkedHashMap<>();
+        resposta.put("nome", usuario.getNome());
+        resposta.put("email", usuario.getEmail());
+        resposta.put("perfil", usuario.getPerfil());
+        resposta.put("matricula", usuario.getMatricula());
+        resposta.put("instituicao", usuario.getInstituicao() == null
+                ? null
+                : Map.of("nome", usuario.getInstituicao().getNome()));
+        resposta.put("token", token);
+        return resposta;
     }
 }
