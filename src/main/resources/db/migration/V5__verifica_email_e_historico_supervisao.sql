@@ -17,6 +17,9 @@ CREATE TABLE token_verificacao_email (
         FOREIGN KEY (usuario_id) REFERENCES usuario (id) ON DELETE RESTRICT
 );
 
+CREATE INDEX idx_vinculo_supervisor_processo_fk
+    ON vinculo_supervisor_processo (processo_id);
+
 ALTER TABLE vinculo_supervisor_processo
     DROP INDEX uk_vinculo_supervisor_processo;
 
