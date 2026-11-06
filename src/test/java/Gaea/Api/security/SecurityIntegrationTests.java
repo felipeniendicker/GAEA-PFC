@@ -17,6 +17,7 @@ import Gaea.Api.repository.VinculoSupervisorProcessoRepository;
 import Gaea.Api.service.JwtService;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -33,6 +34,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -76,6 +78,7 @@ class SecurityIntegrationTests {
     private PasswordEncoder passwordEncoder;
 
     @BeforeEach
+    @AfterEach
     void limparBanco() {
         vinculoRepository.deleteAll();
         historicoRepository.deleteAll();
@@ -219,6 +222,99 @@ class SecurityIntegrationTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].acao").value("ACAO_PRIMEIRA"));
+    }
+
+    @Test
+    void deveRegistrarLoginInstitucionalComInstituicaoCorreta() throws Exception {
+        Instituicao instituicao = salvarInstituicao("Faculdade de Teste", "11222333000181");
+        Usuario responsavel = salvarResponsavelInstituicao("instituicao@example.com", instituicao);
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"instituicao@example.com\",\"senha\":\"senha-segura\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.perfil").value("INSTITUICAO"));
+
+        LogAuditoria login = logAuditoriaRepository.findAll().stream()
+                .filter(log -> "LOGIN".equals(log.getAcao()))
+                .findFirst()
+                .orElseThrow();
+        assertNotNull(login.getInstituicao());
+        assertEquals(responsavel.getInstituicao().getId(), login.getInstituicao().getId());
+    }
+
+    @Test
+    void deveRegistrarFalhaDeLoginInstitucionalSemExporContaOuInstituicao() throws Exception {
+        Instituicao instituicao = salvarInstituicao("Faculdade de Teste", "11222333000181");
+        Usuario responsavel = salvarResponsavelInstituicao("instituicao@example.com", instituicao);
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"instituicao@example.com\",\"senha\":\"senha-incorreta\"}"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.mensagem").value("Credenciais inválidas"))
+                .andExpect(jsonPath("$.instituicao").doesNotExist())
+                .andExpect(jsonPath("$.email").doesNotExist());
+
+        LogAuditoria falha = logAuditoriaRepository.findAll().stream()
+                .filter(log -> "LOGIN_FALHA".equals(log.getAcao()))
+                .findFirst()
+                .orElseThrow();
+        assertNotNull(falha.getInstituicao());
+        assertEquals(responsavel.getInstituicao().getId(), falha.getInstituicao().getId());
+    }
+
+    @Test
+    void deveRetornarSomenteEventosDaPropriaInstituicaoIncluindoLogin() throws Exception {
+        Instituicao primeira = salvarInstituicao("Primeira Faculdade", "11222333000181");
+        Instituicao segunda = salvarInstituicao("Segunda Faculdade", "22333444000160");
+        Usuario responsavelPrimeira = salvarResponsavelInstituicao("primeira@example.com", primeira);
+        salvarResponsavelInstituicao("segunda@example.com", segunda);
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"primeira@example.com\",\"senha\":\"senha-segura\"}"))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"segunda@example.com\",\"senha\":\"senha-incorreta\"}"))
+                .andExpect(status().isUnauthorized());
+
+        mockMvc.perform(get("/api/auditoria")
+                        .header("Authorization", "Bearer " + jwtService.gerarToken(responsavelPrimeira)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].acao").value("LOGIN"))
+                .andExpect(jsonPath("$[0].usuario").value("primeira@example.com"));
+    }
+
+    @Test
+    void deveImpedirLoginDeUsuarioVinculadoAInstituicaoInativa() throws Exception {
+        Instituicao instituicao = salvarInstituicao("Faculdade Inativa", "11222333000181");
+        instituicao.setAtiva(false);
+        instituicao = instituicaoRepository.save(instituicao);
+        salvarResponsavelInstituicao("instituicao@example.com", instituicao);
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"instituicao@example.com\",\"senha\":\"senha-segura\"}"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.mensagem").value("Credenciais inválidas"))
+                .andExpect(jsonPath("$.token").doesNotExist());
+    }
+
+    @Test
+    void deveInvalidarJwtEmitidoQuandoInstituicaoForDesativada() throws Exception {
+        Instituicao instituicao = salvarInstituicao("Faculdade de Teste", "11222333000181");
+        Usuario responsavel = salvarResponsavelInstituicao("instituicao@example.com", instituicao);
+        String token = jwtService.gerarToken(responsavel);
+
+        instituicao.setAtiva(false);
+        instituicaoRepository.save(instituicao);
+
+        mockMvc.perform(get("/api/auditoria")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

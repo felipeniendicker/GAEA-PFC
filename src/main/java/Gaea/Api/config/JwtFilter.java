@@ -42,6 +42,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 usuarioRepository.findByEmailNormalizado(email)
                         .filter(usuario -> Boolean.TRUE.equals(usuario.getAtivo()))
                         .filter(usuario -> Boolean.TRUE.equals(usuario.getAtivado()))
+                        .filter(this::instituicaoAtiva)
                         .ifPresent(usuario -> {
                     UsernamePasswordAuthenticationToken authentication =
                             new UsernamePasswordAuthenticationToken(
@@ -59,5 +60,10 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private boolean instituicaoAtiva(Usuario usuario) {
+        return usuario.getInstituicao() == null
+                || Boolean.TRUE.equals(usuario.getInstituicao().getAtiva());
     }
 }

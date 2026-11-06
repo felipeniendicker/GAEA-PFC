@@ -76,13 +76,15 @@ public class AuthController {
 
         if (!Boolean.TRUE.equals(usuario.getAtivo())
                 || !Boolean.TRUE.equals(usuario.getAtivado())
+                || !instituicaoAtiva(usuario)
                 || usuario.getSenha() == null
                 || !passwordEncoder.matches(senha, usuario.getSenha())) {
 
             logAuditoriaService.registrar(
-                    email,
+                    usuario.getEmail(),
                     "LOGIN_FALHA",
-                    "Tentativa de autenticação"
+                    "Tentativa de autenticação",
+                    usuario.getInstituicao()
             );
 
             throw new ResponseStatusException(
@@ -96,7 +98,8 @@ public class AuthController {
         logAuditoriaService.registrar(
                 usuario.getEmail(),
                 "LOGIN",
-                "Autenticação no sistema"
+                "Autenticação no sistema",
+                usuario.getInstituicao()
         );
 
         Map<String, Object> resposta = new LinkedHashMap<>();
@@ -110,5 +113,10 @@ public class AuthController {
                 : Map.of("nome", usuario.getInstituicao().getNome()));
         resposta.put("token", token);
         return resposta;
+    }
+
+    private boolean instituicaoAtiva(Usuario usuario) {
+        return usuario.getInstituicao() == null
+                || Boolean.TRUE.equals(usuario.getInstituicao().getAtiva());
     }
 }
