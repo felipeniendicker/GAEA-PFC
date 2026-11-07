@@ -4,6 +4,9 @@ import Gaea.Api.dto.CadastroProcessoRequest;
 import Gaea.Api.dto.HistoricoStatusResponse;
 import Gaea.Api.dto.CadastroPendenciaRequest;
 import Gaea.Api.dto.PendenciaProcessoResponse;
+import Gaea.Api.dto.AtualizacaoPrazoRequest;
+import Gaea.Api.dto.CadastroPrazoRequest;
+import Gaea.Api.dto.PrazoProcessoResponse;
 import Gaea.Api.dto.ProcessoEstagioResponse;
 import Gaea.Api.dto.ReaberturaProcessoRequest;
 import Gaea.Api.dto.AlteracaoSupervisorRequest;
@@ -11,6 +14,7 @@ import Gaea.Api.model.ProcessoEstagio;
 import Gaea.Api.service.ProcessoEstagioMapper;
 import Gaea.Api.service.ProcessoEstagioService;
 import Gaea.Api.service.PendenciaProcessoService;
+import Gaea.Api.service.PrazoProcessoService;
 import Gaea.Api.service.SupervisaoService;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -27,17 +31,20 @@ public class ProcessoEstagioController {
     private final ProcessoEstagioMapper mapper;
     private final SupervisaoService supervisaoService;
     private final PendenciaProcessoService pendenciaService;
+    private final PrazoProcessoService prazoService;
 
     public ProcessoEstagioController(
             ProcessoEstagioService service,
             ProcessoEstagioMapper mapper,
             SupervisaoService supervisaoService,
-            PendenciaProcessoService pendenciaService) {
+            PendenciaProcessoService pendenciaService,
+            PrazoProcessoService prazoService) {
 
         this.service = service;
         this.mapper = mapper;
         this.supervisaoService = supervisaoService;
         this.pendenciaService = pendenciaService;
+        this.prazoService = prazoService;
     }
 
     @PostMapping
@@ -127,6 +134,34 @@ public class ProcessoEstagioController {
 
         return pendenciaService.resolver(
                 id, pendenciaId, (Usuario) authentication.getPrincipal());
+    }
+
+    @PostMapping("/{id}/prazos")
+    public PrazoProcessoResponse registrarPrazo(
+            @PathVariable Long id,
+            @Valid @RequestBody CadastroPrazoRequest request,
+            Authentication authentication) {
+
+        return prazoService.registrar(id, request, (Usuario) authentication.getPrincipal());
+    }
+
+    @GetMapping("/{id}/prazos")
+    public List<PrazoProcessoResponse> listarPrazos(
+            @PathVariable Long id,
+            Authentication authentication) {
+
+        return prazoService.listar(id, (Usuario) authentication.getPrincipal());
+    }
+
+    @PutMapping("/{id}/prazos/{prazoId}")
+    public PrazoProcessoResponse atualizarPrazo(
+            @PathVariable Long id,
+            @PathVariable Long prazoId,
+            @Valid @RequestBody AtualizacaoPrazoRequest request,
+            Authentication authentication) {
+
+        return prazoService.atualizar(
+                id, prazoId, request, (Usuario) authentication.getPrincipal());
     }
 
     @PutMapping("/{id}/supervisor")

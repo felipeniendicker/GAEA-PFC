@@ -154,6 +154,70 @@ function PendenciasProcesso({
   )
 }
 
+function formatarDataPrazo(data) {
+  return new Date(`${data}T00:00:00`).toLocaleDateString('pt-BR')
+}
+
+function prazoVencido(data) {
+  const hoje = new Date()
+  hoje.setHours(0, 0, 0, 0)
+  return new Date(`${data}T00:00:00`) < hoje
+}
+
+function PrazosProcesso({
+  itens,
+  carregando,
+  erro,
+  podeGerenciar,
+  aoNovoPrazo,
+  aoEditarPrazo
+}) {
+  return (
+    <div className="prazos-processo" aria-live="polite">
+      <div className="prazos-cabecalho">
+        <h4>Prazos do processo</h4>
+        {podeGerenciar && (
+          <button type="button" onClick={aoNovoPrazo}>Registrar prazo</button>
+        )}
+      </div>
+
+      {carregando ? (
+        <p>Carregando prazos...</p>
+      ) : erro ? (
+        <p className="mensagem-erro" role="alert">{erro}</p>
+      ) : itens.length === 0 ? (
+        <p>Nenhum prazo registrado para este processo.</p>
+      ) : (
+        itens.map((item) => {
+          const vencido = prazoVencido(item.dataVencimento)
+          return (
+            <article className="prazo-item" key={item.id}>
+              <div className="prazo-item-cabecalho">
+                <strong>{item.descricao}</strong>
+                <span className={`prazo-situacao ${vencido ? 'prazo-vencido' : 'prazo-em-dia'}`}>
+                  {vencido ? 'Vencido' : 'Dentro do prazo'}
+                </span>
+              </div>
+              <p className="prazo-vencimento">
+                Vencimento: <strong>{formatarDataPrazo(item.dataVencimento)}</strong>
+              </p>
+              <div className="prazo-datas">
+                <span>Criado em {new Date(item.criadaEm).toLocaleString('pt-BR')}</span>
+                <span>Atualizado em {new Date(item.atualizadaEm).toLocaleString('pt-BR')}</span>
+              </div>
+              {podeGerenciar && (
+                <button className="acao-editar-prazo" type="button" onClick={() => aoEditarPrazo(item)}>
+                  Atualizar prazo
+                </button>
+              )}
+            </article>
+          )
+        })
+      )}
+    </div>
+  )
+}
+
 function MensagemAcaoProcesso({ mensagem, aoFechar }) {
   if (!mensagem) {
     return null
@@ -440,6 +504,101 @@ function ModalNovaPendencia({
             </button>
             <button className="modal-confirmar" type="submit" disabled={carregando}>
               {carregando ? 'Registrando...' : 'Registrar pendência'}
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
+  )
+}
+
+function ModalPrazo({
+  processo,
+  prazo,
+  descricao,
+  dataVencimento,
+  erro,
+  carregando,
+  aoMudarDescricao,
+  aoMudarData,
+  aoCancelar,
+  aoConfirmar
+}) {
+  const modalRef = useRef(null)
+  const campoRef = useRef(null)
+  const focoAnteriorRef = useRef(null)
+
+  useEffect(() => {
+    focoAnteriorRef.current = document.activeElement
+    campoRef.current?.focus()
+    return () => focoAnteriorRef.current?.focus()
+  }, [])
+
+  function lidarTecla(event) {
+    if (event.key === 'Escape' && !carregando) {
+      event.preventDefault()
+      aoCancelar()
+    }
+  }
+
+  return (
+    <div className="modal-sobreposicao">
+      <section
+        className="modal-gaea"
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="titulo-modal-prazo"
+        aria-busy={carregando}
+        onKeyDown={lidarTecla}
+      >
+        <div className="modal-cabecalho">
+          <div>
+            <p className="modal-contexto">PROCESSO #{processo.id}</p>
+            <h2 id="titulo-modal-prazo">{prazo ? 'Atualizar prazo' : 'Registrar prazo'}</h2>
+          </div>
+          <button
+            className="modal-fechar"
+            type="button"
+            onClick={aoCancelar}
+            disabled={carregando}
+            aria-label="Cancelar e fechar modal"
+          >
+            ×
+          </button>
+        </div>
+
+        <form onSubmit={aoConfirmar} noValidate>
+          <label htmlFor="descricaoPrazo">Descrição</label>
+          <textarea
+            id="descricaoPrazo"
+            ref={campoRef}
+            value={descricao}
+            onChange={(event) => aoMudarDescricao(event.target.value)}
+            maxLength={1000}
+            rows={4}
+            required
+            readOnly={carregando}
+          />
+
+          <label htmlFor="dataVencimentoPrazo">Data de vencimento</label>
+          <input
+            id="dataVencimentoPrazo"
+            type="date"
+            value={dataVencimento}
+            onChange={(event) => aoMudarData(event.target.value)}
+            required
+            disabled={carregando}
+          />
+
+          {erro && <p className="modal-erro" role="alert">{erro}</p>}
+
+          <div className="modal-acoes">
+            <button className="modal-cancelar" type="button" onClick={aoCancelar} disabled={carregando}>
+              Cancelar
+            </button>
+            <button className="modal-confirmar" type="submit" disabled={carregando}>
+              {carregando ? 'Salvando...' : prazo ? 'Atualizar prazo' : 'Registrar prazo'}
             </button>
           </div>
         </form>
@@ -1179,6 +1338,16 @@ function App() {
   const [erroNovaPendencia, setErroNovaPendencia] = useState('')
   const [salvandoPendencia, setSalvandoPendencia] = useState(false)
   const [resolvendoPendencia, setResolvendoPendencia] = useState(null)
+  const [prazos, setPrazos] = useState({})
+  const [prazosAbertos, setPrazosAbertos] = useState(null)
+  const [carregandoPrazos, setCarregandoPrazos] = useState(null)
+  const [errosPrazos, setErrosPrazos] = useState({})
+  const [processoPrazo, setProcessoPrazo] = useState(null)
+  const [prazoEdicao, setPrazoEdicao] = useState(null)
+  const [descricaoPrazo, setDescricaoPrazo] = useState('')
+  const [dataVencimentoPrazo, setDataVencimentoPrazo] = useState('')
+  const [erroPrazo, setErroPrazo] = useState('')
+  const [salvandoPrazo, setSalvandoPrazo] = useState(false)
   const [secaoInstituicao, setSecaoInstituicao] = useState('dashboard')
   const [resumoDashboard, setResumoDashboard] = useState(null)
   const [carregandoDashboard, setCarregandoDashboard] = useState(false)
@@ -1784,6 +1953,111 @@ function App() {
       }))
     } finally {
       setResolvendoPendencia(null)
+    }
+  }
+
+  async function buscarPrazos(id, manterAberto = false) {
+    if (!manterAberto && prazosAbertos === id) {
+      setPrazosAbertos(null)
+      return
+    }
+
+    setPrazosAbertos(id)
+    setCarregandoPrazos(id)
+    setErrosPrazos((atuais) => ({ ...atuais, [id]: '' }))
+
+    try {
+      const resposta = await fetch(`${API}/api/processos/${id}/prazos`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+
+      if (!resposta.ok) {
+        const mensagem = await mensagemDaApi(resposta, 'Não foi possível consultar os prazos.')
+        setErrosPrazos((atuais) => ({ ...atuais, [id]: mensagem }))
+        return
+      }
+
+      const dados = await resposta.json()
+      setPrazos((atuais) => ({ ...atuais, [id]: dados }))
+    } catch {
+      setErrosPrazos((atuais) => ({
+        ...atuais,
+        [id]: 'Não foi possível conectar com o servidor.'
+      }))
+    } finally {
+      setCarregandoPrazos(null)
+    }
+  }
+
+  function abrirPrazo(processo, prazo = null) {
+    setProcessoPrazo(processo)
+    setPrazoEdicao(prazo)
+    setDescricaoPrazo(prazo?.descricao || '')
+    setDataVencimentoPrazo(prazo?.dataVencimento || '')
+    setErroPrazo('')
+  }
+
+  function cancelarPrazo() {
+    if (salvandoPrazo) {
+      return
+    }
+    setProcessoPrazo(null)
+    setPrazoEdicao(null)
+    setDescricaoPrazo('')
+    setDataVencimentoPrazo('')
+    setErroPrazo('')
+  }
+
+  async function salvarPrazo(event) {
+    event.preventDefault()
+    if (!processoPrazo || salvandoPrazo) {
+      return
+    }
+
+    const descricao = descricaoPrazo.trim()
+    if (!descricao) {
+      setErroPrazo('Informe a descrição do prazo.')
+      return
+    }
+    if (!dataVencimentoPrazo) {
+      setErroPrazo('Informe a data de vencimento.')
+      return
+    }
+
+    const processoId = processoPrazo.id
+    const url = prazoEdicao
+      ? `${API}/api/processos/${processoId}/prazos/${prazoEdicao.id}`
+      : `${API}/api/processos/${processoId}/prazos`
+
+    setErroPrazo('')
+    setSalvandoPrazo(true)
+    try {
+      const resposta = await fetch(url, {
+        method: prazoEdicao ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ descricao, dataVencimento: dataVencimentoPrazo })
+      })
+
+      if (!resposta.ok) {
+        setErroPrazo(await mensagemDaApi(resposta, 'Não foi possível salvar o prazo.'))
+        return
+      }
+
+      const atualizando = Boolean(prazoEdicao)
+      await resposta.json()
+      setProcessoPrazo(null)
+      setPrazoEdicao(null)
+      setDescricaoPrazo('')
+      setDataVencimentoPrazo('')
+      await buscarPrazos(processoId, true)
+      exibirMensagemAcao(atualizando ? 'Prazo atualizado com sucesso.' : 'Prazo registrado com sucesso.')
+    } catch {
+      setErroPrazo('Não foi possível conectar com o servidor.')
+    } finally {
+      setSalvandoPrazo(false)
     }
   }
 
@@ -2603,6 +2877,13 @@ function App() {
                           >
                             {pendenciasAbertas === processo.id ? 'Fechar pendências' : 'Ver pendências'}
                           </button>
+                          <button
+                            className="acao-prazos"
+                            type="button"
+                            onClick={() => buscarPrazos(processo.id)}
+                          >
+                            {prazosAbertos === processo.id ? 'Fechar prazos' : 'Ver prazos'}
+                          </button>
                         </div>
                       </div>
 
@@ -2616,6 +2897,14 @@ function App() {
                           erro={errosPendencias[processo.id]}
                           podeGerenciar={false}
                           resolvendoId={null}
+                        />
+                      )}
+                      {prazosAbertos === processo.id && (
+                        <PrazosProcesso
+                          itens={prazos[processo.id] || []}
+                          carregando={carregandoPrazos === processo.id}
+                          erro={errosPrazos[processo.id]}
+                          podeGerenciar={false}
                         />
                       )}
                     </div>
@@ -2703,6 +2992,13 @@ function App() {
                           >
                             {pendenciasAbertas === processo.id ? 'Fechar pendências' : 'Ver pendências'}
                           </button>
+                          <button
+                            className="acao-prazos"
+                            type="button"
+                            onClick={() => buscarPrazos(processo.id)}
+                          >
+                            {prazosAbertos === processo.id ? 'Fechar prazos' : 'Ver prazos'}
+                          </button>
                         </div>
                       </div>
                       {pendenciasAbertas === processo.id && (
@@ -2712,6 +3008,14 @@ function App() {
                           erro={errosPendencias[processo.id]}
                           podeGerenciar={false}
                           resolvendoId={null}
+                        />
+                      )}
+                      {prazosAbertos === processo.id && (
+                        <PrazosProcesso
+                          itens={prazos[processo.id] || []}
+                          carregando={carregandoPrazos === processo.id}
+                          erro={errosPrazos[processo.id]}
+                          podeGerenciar={false}
                         />
                       )}
                     </div>
@@ -2764,6 +3068,27 @@ function App() {
           }}
           aoCancelar={cancelarNovaPendencia}
           aoConfirmar={registrarPendencia}
+        />
+      )}
+
+      {processoPrazo && (
+        <ModalPrazo
+          processo={processoPrazo}
+          prazo={prazoEdicao}
+          descricao={descricaoPrazo}
+          dataVencimento={dataVencimentoPrazo}
+          erro={erroPrazo}
+          carregando={salvandoPrazo}
+          aoMudarDescricao={(valor) => {
+            setDescricaoPrazo(valor)
+            setErroPrazo('')
+          }}
+          aoMudarData={(valor) => {
+            setDataVencimentoPrazo(valor)
+            setErroPrazo('')
+          }}
+          aoCancelar={cancelarPrazo}
+          aoConfirmar={salvarPrazo}
         />
       )}
 
@@ -2973,6 +3298,13 @@ function App() {
                       >
                         {pendenciasAbertas === processo.id ? 'Fechar pendências' : 'Pendências'}
                       </button>
+                      <button
+                        className="acao-prazos"
+                        type="button"
+                        onClick={() => buscarPrazos(processo.id)}
+                      >
+                        {prazosAbertos === processo.id ? 'Fechar prazos' : 'Prazos'}
+                      </button>
                     </div>
                   </div>
 
@@ -2988,6 +3320,16 @@ function App() {
                       resolvendoId={resolvendoPendencia}
                       aoNovaPendencia={() => abrirNovaPendencia(processo)}
                       aoResolver={(pendenciaId) => resolverPendenciaDoProcesso(processo.id, pendenciaId)}
+                    />
+                  )}
+                  {prazosAbertos === processo.id && (
+                    <PrazosProcesso
+                      itens={prazos[processo.id] || []}
+                      carregando={carregandoPrazos === processo.id}
+                      erro={errosPrazos[processo.id]}
+                      podeGerenciar
+                      aoNovoPrazo={() => abrirPrazo(processo)}
+                      aoEditarPrazo={(prazo) => abrirPrazo(processo, prazo)}
                     />
                   )}
                 </div>

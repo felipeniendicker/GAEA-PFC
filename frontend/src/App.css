@@ -380,6 +380,7 @@ button { font-size: 0.9rem; }
 .processo button.acao-reprovar { background: #934545; }
 .processo button.acao-historico { background: #52605c; }
 .processo button.acao-pendencias { background: #846f32; }
+.processo button.acao-prazos { background: #174a4a; }
 
 .lista-processos-aluno .lista-cabecalho,
 .lista-processos-aluno .processo {
@@ -500,6 +501,83 @@ button { font-size: 0.9rem; }
 .acao-resolver-pendencia:disabled {
   cursor: wait;
   opacity: 0.65;
+}
+
+.prazos-processo {
+  margin: 0 18px 18px;
+  padding: 16px;
+  border: 1px solid #c8d4cf;
+  border-radius: 12px;
+  background: #f5f9f7;
+}
+
+.prazos-cabecalho,
+.prazo-item-cabecalho,
+.prazo-datas {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.prazos-cabecalho h4 {
+  margin: 0;
+  color: #174a4a;
+}
+
+.prazos-cabecalho button,
+.acao-editar-prazo {
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: #fff;
+  background: #174a4a;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.prazo-item {
+  margin-top: 14px;
+  padding: 14px;
+  border-left: 4px solid #c79d5b;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.prazo-item-cabecalho strong {
+  color: #263a34;
+  overflow-wrap: anywhere;
+}
+
+.prazo-situacao {
+  flex: none;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.prazo-vencido {
+  color: #842029;
+  background: #f8d7da;
+}
+
+.prazo-em-dia {
+  color: #0f5132;
+  background: #d1e7dd;
+}
+
+.prazo-vencimento {
+  margin: 10px 0;
+  color: #354640;
+}
+
+.prazo-datas {
+  align-items: flex-start;
+  margin: 9px 0;
+  color: #5e6864;
+  font-size: 0.86rem;
 }
 
 @media (max-width: 1050px) {
@@ -1209,7 +1287,8 @@ button { font-size: 0.9rem; }
   font-weight: 700;
 }
 
-.modal-gaea textarea {
+.modal-gaea textarea,
+.modal-gaea input {
   width: 100%;
   min-height: 130px;
   resize: vertical;
@@ -1223,13 +1302,19 @@ button { font-size: 0.9rem; }
   line-height: 1.5;
 }
 
-.modal-gaea textarea:focus {
+.modal-gaea textarea:focus,
+.modal-gaea input:focus {
   border-color: #174a4a;
   box-shadow: 0 0 0 3px rgba(23, 74, 74, 0.14);
 }
 
 .modal-gaea textarea[aria-invalid="true"] {
   border-color: #934545;
+}
+
+.modal-gaea input {
+  min-height: 44px;
+  resize: none;
 }
 
 .modal-ajuda {
@@ -1635,13 +1720,18 @@ button { font-size: 0.9rem; }
 
   .pendencias-cabecalho,
   .pendencia-item-cabecalho,
-  .pendencia-datas {
+  .pendencia-datas,
+  .prazos-cabecalho,
+  .prazo-item-cabecalho,
+  .prazo-datas {
     align-items: stretch;
     flex-direction: column;
   }
 
   .pendencias-cabecalho button,
-  .acao-resolver-pendencia {
+  .acao-resolver-pendencia,
+  .prazos-cabecalho button,
+  .acao-editar-prazo {
     width: 100%;
   }
 }
