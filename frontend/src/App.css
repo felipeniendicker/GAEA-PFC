@@ -379,6 +379,7 @@ button { font-size: 0.9rem; }
 .processo button.acao-aprovar { background: #32705b; }
 .processo button.acao-reprovar { background: #934545; }
 .processo button.acao-historico { background: #52605c; }
+.processo button.acao-pendencias { background: #846f32; }
 
 .lista-processos-aluno .lista-cabecalho,
 .lista-processos-aluno .processo {
@@ -422,6 +423,83 @@ button { font-size: 0.9rem; }
 .historico-item p {
   grid-column: 1 / -1;
   margin: 0;
+}
+
+.pendencias-processo {
+  margin: 0 18px 18px;
+  padding: 16px;
+  border: 1px solid #d8cfb4;
+  border-radius: 12px;
+  background: #fbf8ed;
+}
+
+.pendencias-cabecalho,
+.pendencia-item-cabecalho,
+.pendencia-datas {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.pendencias-cabecalho h4 {
+  margin: 0;
+  color: #174a4a;
+}
+
+.pendencias-cabecalho button,
+.acao-resolver-pendencia {
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: #fff;
+  background: #846f32;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pendencia-item {
+  margin-top: 14px;
+  padding: 14px;
+  border-left: 4px solid #b49a4a;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.pendencia-item-cabecalho strong {
+  color: #263a34;
+  overflow-wrap: anywhere;
+}
+
+.pendencia-situacao {
+  flex: none;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.pendencia-ABERTA {
+  color: #664d03;
+  background: #fff3cd;
+}
+
+.pendencia-RESOLVIDA {
+  color: #0f5132;
+  background: #d1e7dd;
+}
+
+.pendencia-datas {
+  align-items: flex-start;
+  margin: 9px 0;
+  color: #5e6864;
+  font-size: 0.86rem;
+}
+
+.acao-resolver-pendencia:disabled {
+  cursor: wait;
+  opacity: 0.65;
 }
 
 @media (max-width: 1050px) {
@@ -1552,6 +1630,18 @@ button { font-size: 0.9rem; }
 
   .aluno-acoes button,
   .convite-acoes button {
+    width: 100%;
+  }
+
+  .pendencias-cabecalho,
+  .pendencia-item-cabecalho,
+  .pendencia-datas {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .pendencias-cabecalho button,
+  .acao-resolver-pendencia {
     width: 100%;
   }
 }

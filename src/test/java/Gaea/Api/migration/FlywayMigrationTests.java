@@ -19,7 +19,7 @@ class FlywayMigrationTests {
 
         var resultado = flyway(url).migrate();
 
-        assertEquals(5, resultado.migrationsExecuted);
+        assertEquals(6, resultado.migrationsExecuted);
 
         try (var connection = DriverManager.getConnection(url, "sa", "");
              var statement = connection.createStatement()) {
@@ -31,11 +31,12 @@ class FlywayMigrationTests {
                       AND table_name IN (
                           'instituicao',
                           'vinculo_supervisor_processo',
-                          'convite_ativacao_aluno'
+                           'convite_ativacao_aluno',
+                           'pendencia_processo'
                       )
                     """)) {
                 resultSet.next();
-                assertEquals(3, resultSet.getInt(1));
+                assertEquals(4, resultSet.getInt(1));
             }
 
             assertThrows(SQLException.class, () -> statement.executeUpdate("""
@@ -47,6 +48,15 @@ class FlywayMigrationTests {
                          'PENDENTE', 999999, 0)
                     """));
 
+            assertThrows(SQLException.class, () -> statement.executeUpdate("""
+                    INSERT INTO pendencia_processo
+                        (processo_id, descricao, situacao, criada_em,
+                         responsavel_registro, versao)
+                    VALUES
+                        (999999, 'Pendência inválida', 'ABERTA', CURRENT_TIMESTAMP,
+                         'instituicao@example.com', 0)
+                    """));
+
             statement.executeUpdate("""
                     INSERT INTO processo_estagio
                         (nome_aluno, email_aluno, nome_empresa, cnpj_empresa, status, versao)
@@ -54,6 +64,19 @@ class FlywayMigrationTests {
                         ('Aluno', 'aluno@example.com', 'Empresa', '11222333000181',
                          'PENDENTE', 0)
                     """);
+            statement.executeUpdate("""
+                    INSERT INTO pendencia_processo
+                        (processo_id, descricao, situacao, criada_em,
+                         responsavel_registro, versao)
+                    SELECT id, 'Documento pendente', 'ABERTA', CURRENT_TIMESTAMP,
+                           'instituicao@example.com', 0
+                    FROM processo_estagio
+                    WHERE email_aluno = 'aluno@example.com'
+                    """);
+            assertThrows(SQLException.class, () -> statement.executeUpdate("""
+                    DELETE FROM processo_estagio
+                    WHERE email_aluno = 'aluno@example.com'
+                    """));
             statement.executeUpdate("""
                     INSERT INTO vinculo_supervisor_processo
                         (processo_id, email_convidado, situacao, criado_em, ativo, versao)
@@ -155,7 +178,7 @@ class FlywayMigrationTests {
         }
 
         var resultado = flyway(url).migrate();
-        assertEquals(4, resultado.migrationsExecuted);
+        assertEquals(5, resultado.migrationsExecuted);
 
         try (var connection = DriverManager.getConnection(url, "sa", "");
              var statement = connection.createStatement();

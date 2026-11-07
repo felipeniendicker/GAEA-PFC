@@ -2,12 +2,15 @@ package Gaea.Api.controller;
 
 import Gaea.Api.dto.CadastroProcessoRequest;
 import Gaea.Api.dto.HistoricoStatusResponse;
+import Gaea.Api.dto.CadastroPendenciaRequest;
+import Gaea.Api.dto.PendenciaProcessoResponse;
 import Gaea.Api.dto.ProcessoEstagioResponse;
 import Gaea.Api.dto.ReaberturaProcessoRequest;
 import Gaea.Api.dto.AlteracaoSupervisorRequest;
 import Gaea.Api.model.ProcessoEstagio;
 import Gaea.Api.service.ProcessoEstagioMapper;
 import Gaea.Api.service.ProcessoEstagioService;
+import Gaea.Api.service.PendenciaProcessoService;
 import Gaea.Api.service.SupervisaoService;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -23,15 +26,18 @@ public class ProcessoEstagioController {
     private final ProcessoEstagioService service;
     private final ProcessoEstagioMapper mapper;
     private final SupervisaoService supervisaoService;
+    private final PendenciaProcessoService pendenciaService;
 
     public ProcessoEstagioController(
             ProcessoEstagioService service,
             ProcessoEstagioMapper mapper,
-            SupervisaoService supervisaoService) {
+            SupervisaoService supervisaoService,
+            PendenciaProcessoService pendenciaService) {
 
         this.service = service;
         this.mapper = mapper;
         this.supervisaoService = supervisaoService;
+        this.pendenciaService = pendenciaService;
     }
 
     @PostMapping
@@ -93,6 +99,34 @@ public class ProcessoEstagioController {
         return service.listarHistorico(
                 id,
                 (Usuario) authentication.getPrincipal());
+    }
+
+    @PostMapping("/{id}/pendencias")
+    public PendenciaProcessoResponse registrarPendencia(
+            @PathVariable Long id,
+            @Valid @RequestBody CadastroPendenciaRequest request,
+            Authentication authentication) {
+
+        return pendenciaService.registrar(
+                id, request, (Usuario) authentication.getPrincipal());
+    }
+
+    @GetMapping("/{id}/pendencias")
+    public List<PendenciaProcessoResponse> listarPendencias(
+            @PathVariable Long id,
+            Authentication authentication) {
+
+        return pendenciaService.listar(id, (Usuario) authentication.getPrincipal());
+    }
+
+    @PutMapping("/{id}/pendencias/{pendenciaId}/resolver")
+    public PendenciaProcessoResponse resolverPendencia(
+            @PathVariable Long id,
+            @PathVariable Long pendenciaId,
+            Authentication authentication) {
+
+        return pendenciaService.resolver(
+                id, pendenciaId, (Usuario) authentication.getPrincipal());
     }
 
     @PutMapping("/{id}/supervisor")

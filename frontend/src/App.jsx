@@ -96,6 +96,64 @@ function HistoricoProcesso({ itens }) {
   )
 }
 
+function PendenciasProcesso({
+  itens,
+  carregando,
+  erro,
+  podeGerenciar,
+  resolvendoId,
+  aoNovaPendencia,
+  aoResolver
+}) {
+  return (
+    <div className="pendencias-processo" aria-live="polite">
+      <div className="pendencias-cabecalho">
+        <h4>Pendências do processo</h4>
+        {podeGerenciar && (
+          <button type="button" onClick={aoNovaPendencia}>
+            Registrar pendência
+          </button>
+        )}
+      </div>
+
+      {carregando ? (
+        <p>Carregando pendências...</p>
+      ) : erro ? (
+        <p className="mensagem-erro" role="alert">{erro}</p>
+      ) : itens.length === 0 ? (
+        <p>Nenhuma pendência registrada para este processo.</p>
+      ) : (
+        itens.map((item) => (
+          <article className="pendencia-item" key={item.id}>
+            <div className="pendencia-item-cabecalho">
+              <strong>{item.descricao}</strong>
+              <span className={`pendencia-situacao pendencia-${item.situacao}`}>
+                {item.situacao === 'RESOLVIDA' ? 'Resolvida' : 'Aberta'}
+              </span>
+            </div>
+            <div className="pendencia-datas">
+              <span>Criada em {new Date(item.criadaEm).toLocaleString('pt-BR')}</span>
+              {item.resolvidaEm && (
+                <span>Resolvida em {new Date(item.resolvidaEm).toLocaleString('pt-BR')}</span>
+              )}
+            </div>
+            {podeGerenciar && item.situacao === 'ABERTA' && (
+              <button
+                className="acao-resolver-pendencia"
+                type="button"
+                disabled={resolvendoId === item.id}
+                onClick={() => aoResolver(item.id)}
+              >
+                {resolvendoId === item.id ? 'Resolvendo...' : 'Marcar como resolvida'}
+              </button>
+            )}
+          </article>
+        ))
+      )}
+    </div>
+  )
+}
+
 function MensagemAcaoProcesso({ mensagem, aoFechar }) {
   if (!mensagem) {
     return null
@@ -259,6 +317,129 @@ function ModalReabertura({
             </button>
             <button className="modal-confirmar" type="submit" disabled={carregando}>
               {carregando ? 'Reabrindo...' : 'Confirmar reabertura'}
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
+  )
+}
+
+function ModalNovaPendencia({
+  processo,
+  descricao,
+  erro,
+  carregando,
+  aoMudarDescricao,
+  aoCancelar,
+  aoConfirmar
+}) {
+  const modalRef = useRef(null)
+  const campoRef = useRef(null)
+  const focoAnteriorRef = useRef(null)
+
+  useEffect(() => {
+    focoAnteriorRef.current = document.activeElement
+    const overflowAnterior = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    campoRef.current?.focus()
+
+    return () => {
+      document.body.style.overflow = overflowAnterior
+      focoAnteriorRef.current?.focus()
+    }
+  }, [])
+
+  function lidarTecla(event) {
+    if (event.key === 'Escape' && !carregando) {
+      event.preventDefault()
+      aoCancelar()
+      return
+    }
+
+    if (event.key !== 'Tab') {
+      return
+    }
+
+    const elementos = [...(modalRef.current?.querySelectorAll(
+      'button:not([disabled]), textarea:not([disabled])'
+    ) || [])]
+    const primeiro = elementos[0]
+    const ultimo = elementos[elementos.length - 1]
+
+    if (event.shiftKey && document.activeElement === primeiro) {
+      event.preventDefault()
+      ultimo?.focus()
+    } else if (!event.shiftKey && document.activeElement === ultimo) {
+      event.preventDefault()
+      primeiro?.focus()
+    }
+  }
+
+  return (
+    <div
+      className="modal-sobreposicao"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget && !carregando) {
+          aoCancelar()
+        }
+      }}
+    >
+      <section
+        className="modal-gaea"
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="titulo-modal-pendencia"
+        aria-busy={carregando}
+        onKeyDown={lidarTecla}
+      >
+        <div className="modal-cabecalho">
+          <div>
+            <p className="modal-contexto">PROCESSO #{processo.id}</p>
+            <h2 id="titulo-modal-pendencia">Registrar pendência</h2>
+          </div>
+          <button
+            className="modal-fechar"
+            type="button"
+            onClick={aoCancelar}
+            disabled={carregando}
+            aria-label="Cancelar e fechar modal"
+          >
+            ×
+          </button>
+        </div>
+
+        <p className="modal-descricao">
+          Descreva objetivamente o que precisa ser regularizado neste processo.
+        </p>
+
+        <form onSubmit={aoConfirmar} noValidate>
+          <label htmlFor="descricaoPendencia">Descrição</label>
+          <textarea
+            ref={campoRef}
+            id="descricaoPendencia"
+            value={descricao}
+            onChange={(event) => aoMudarDescricao(event.target.value)}
+            maxLength={1000}
+            rows={5}
+            required
+            readOnly={carregando}
+            aria-invalid={Boolean(erro)}
+            aria-describedby={erro ? 'erro-modal-pendencia' : undefined}
+          />
+          {erro && (
+            <p id="erro-modal-pendencia" className="modal-erro" role="alert">
+              {erro}
+            </p>
+          )}
+
+          <div className="modal-acoes">
+            <button className="modal-cancelar" type="button" onClick={aoCancelar} disabled={carregando}>
+              Cancelar
+            </button>
+            <button className="modal-confirmar" type="submit" disabled={carregando}>
+              {carregando ? 'Registrando...' : 'Registrar pendência'}
             </button>
           </div>
         </form>
@@ -989,6 +1170,15 @@ function App() {
   const [mostrarAuditoria, setMostrarAuditoria] = useState(false)
   const [historicos, setHistoricos] = useState({})
   const [historicoAberto, setHistoricoAberto] = useState(null)
+  const [pendencias, setPendencias] = useState({})
+  const [pendenciasAbertas, setPendenciasAbertas] = useState(null)
+  const [carregandoPendencias, setCarregandoPendencias] = useState(null)
+  const [errosPendencias, setErrosPendencias] = useState({})
+  const [processoNovaPendencia, setProcessoNovaPendencia] = useState(null)
+  const [descricaoPendencia, setDescricaoPendencia] = useState('')
+  const [erroNovaPendencia, setErroNovaPendencia] = useState('')
+  const [salvandoPendencia, setSalvandoPendencia] = useState(false)
+  const [resolvendoPendencia, setResolvendoPendencia] = useState(null)
   const [secaoInstituicao, setSecaoInstituicao] = useState('dashboard')
   const [resumoDashboard, setResumoDashboard] = useState(null)
   const [carregandoDashboard, setCarregandoDashboard] = useState(false)
@@ -1048,6 +1238,7 @@ function App() {
         buscarMeusProcessos(dados.token)
       } else if (dados.perfil === 'EMPRESA' && dados.emailVerificado) {
         buscarSolicitacoesSupervisao(dados.token)
+        buscarProcessos(dados.token)
       }
     } catch {
       setErroLogin('Não foi possível conectar com o servidor.')
@@ -1121,6 +1312,14 @@ function App() {
     setUsuario(null)
     setToken('')
     setProcessos([])
+    setPendencias({})
+    setPendenciasAbertas(null)
+    setCarregandoPendencias(null)
+    setErrosPendencias({})
+    setProcessoNovaPendencia(null)
+    setDescricaoPendencia('')
+    setErroNovaPendencia('')
+    setResolvendoPendencia(null)
     setResumoDashboard(null)
     setErroDashboard('')
     setSecaoInstituicao('dashboard')
@@ -1449,6 +1648,142 @@ function App() {
       setHistoricoAberto(id)
     } catch {
       exibirMensagemAcao('Não foi possível conectar com o servidor.', 'erro')
+    }
+  }
+
+  async function buscarPendencias(id, manterAberto = false) {
+    if (!manterAberto && pendenciasAbertas === id) {
+      setPendenciasAbertas(null)
+      return
+    }
+
+    setPendenciasAbertas(id)
+    setCarregandoPendencias(id)
+    setErrosPendencias((atuais) => ({ ...atuais, [id]: '' }))
+
+    try {
+      const resposta = await fetch(`${API}/api/processos/${id}/pendencias`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+
+      if (!resposta.ok) {
+        const mensagem = await mensagemDaApi(resposta, 'Não foi possível consultar as pendências.')
+        setErrosPendencias((atuais) => ({
+          ...atuais,
+          [id]: mensagem
+        }))
+        return
+      }
+
+      const dados = await resposta.json()
+      setPendencias((atuais) => ({ ...atuais, [id]: dados }))
+    } catch {
+      setErrosPendencias((atuais) => ({
+        ...atuais,
+        [id]: 'Não foi possível conectar com o servidor.'
+      }))
+    } finally {
+      setCarregandoPendencias(null)
+    }
+  }
+
+  function abrirNovaPendencia(processo) {
+    setProcessoNovaPendencia(processo)
+    setDescricaoPendencia('')
+    setErroNovaPendencia('')
+  }
+
+  function cancelarNovaPendencia() {
+    if (salvandoPendencia) {
+      return
+    }
+    setProcessoNovaPendencia(null)
+    setDescricaoPendencia('')
+    setErroNovaPendencia('')
+  }
+
+  async function registrarPendencia(event) {
+    event.preventDefault()
+    if (!processoNovaPendencia || salvandoPendencia) {
+      return
+    }
+
+    const descricao = descricaoPendencia.trim()
+    if (!descricao) {
+      setErroNovaPendencia('Informe a descrição da pendência.')
+      return
+    }
+
+    setErroNovaPendencia('')
+    setSalvandoPendencia(true)
+    try {
+      const resposta = await fetch(`${API}/api/processos/${processoNovaPendencia.id}/pendencias`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ descricao })
+      })
+
+      if (!resposta.ok) {
+        setErroNovaPendencia(await mensagemDaApi(resposta, 'Não foi possível registrar a pendência.'))
+        return
+      }
+
+      const processoId = processoNovaPendencia.id
+      await resposta.json()
+      setProcessoNovaPendencia(null)
+      setDescricaoPendencia('')
+      await buscarPendencias(processoId, true)
+      exibirMensagemAcao('Pendência registrada com sucesso.')
+    } catch {
+      setErroNovaPendencia('Não foi possível conectar com o servidor.')
+    } finally {
+      setSalvandoPendencia(false)
+    }
+  }
+
+  async function resolverPendenciaDoProcesso(processoId, pendenciaId) {
+    if (resolvendoPendencia !== null) {
+      return
+    }
+
+    setResolvendoPendencia(pendenciaId)
+    setErrosPendencias((atuais) => ({ ...atuais, [processoId]: '' }))
+    try {
+      const resposta = await fetch(
+        `${API}/api/processos/${processoId}/pendencias/${pendenciaId}/resolver`,
+        {
+          method: 'PUT',
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      )
+
+      if (!resposta.ok) {
+        const mensagem = await mensagemDaApi(resposta, 'Não foi possível resolver a pendência.')
+        setErrosPendencias((atuais) => ({
+          ...atuais,
+          [processoId]: mensagem
+        }))
+        return
+      }
+
+      const atualizada = await resposta.json()
+      setPendencias((atuais) => ({
+        ...atuais,
+        [processoId]: (atuais[processoId] || []).map((item) =>
+          item.id === atualizada.id ? atualizada : item
+        )
+      }))
+      exibirMensagemAcao('Pendência resolvida com sucesso.')
+    } catch {
+      setErrosPendencias((atuais) => ({
+        ...atuais,
+        [processoId]: 'Não foi possível conectar com o servidor.'
+      }))
+    } finally {
+      setResolvendoPendencia(null)
     }
   }
 
@@ -2261,11 +2596,27 @@ function App() {
                           >
                             {historicoAberto === processo.id ? 'Fechar histórico' : 'Ver histórico'}
                           </button>
+                          <button
+                            className="acao-pendencias"
+                            type="button"
+                            onClick={() => buscarPendencias(processo.id)}
+                          >
+                            {pendenciasAbertas === processo.id ? 'Fechar pendências' : 'Ver pendências'}
+                          </button>
                         </div>
                       </div>
 
                       {historicoAberto === processo.id && (
                         <HistoricoProcesso itens={historicos[processo.id] || []} />
+                      )}
+                      {pendenciasAbertas === processo.id && (
+                        <PendenciasProcesso
+                          itens={pendencias[processo.id] || []}
+                          carregando={carregandoPendencias === processo.id}
+                          erro={errosPendencias[processo.id]}
+                          podeGerenciar={false}
+                          resolvendoId={null}
+                        />
                       )}
                     </div>
                   ))}
@@ -2321,6 +2672,54 @@ function App() {
               </div>
             )}
           </section>
+
+          {usuario.perfil === 'EMPRESA' && usuario.emailVerificado && (
+            <section className="formulario">
+              <div className="secao-cabecalho">
+                <h3>Estágios supervisionados</h3>
+                <p>Consulte as pendências dos processos com supervisão confirmada.</p>
+              </div>
+
+              {processos.length === 0 ? (
+                <p className="estado-vazio">Nenhum processo com supervisão confirmada.</p>
+              ) : (
+                <div className="lista-processos lista-processos-aluno">
+                  {processos.map((processo) => (
+                    <div className="processo-container" key={processo.id}>
+                      <div className="processo">
+                        <p><strong>Aluno</strong><span>{processo.nomeAluno}</span></p>
+                        <p><strong>Empresa</strong><span>{processo.nomeEmpresa}</span></p>
+                        <p>
+                          <strong>Status</strong>
+                          <span className={`status status-${processo.status}`}>
+                            {rotulosStatus[processo.status] || processo.status}
+                          </span>
+                        </p>
+                        <div className="processo-acoes">
+                          <button
+                            className="acao-pendencias"
+                            type="button"
+                            onClick={() => buscarPendencias(processo.id)}
+                          >
+                            {pendenciasAbertas === processo.id ? 'Fechar pendências' : 'Ver pendências'}
+                          </button>
+                        </div>
+                      </div>
+                      {pendenciasAbertas === processo.id && (
+                        <PendenciasProcesso
+                          itens={pendencias[processo.id] || []}
+                          carregando={carregandoPendencias === processo.id}
+                          erro={errosPendencias[processo.id]}
+                          podeGerenciar={false}
+                          resolvendoId={null}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
         </main>
       </div>
     )
@@ -2348,6 +2747,23 @@ function App() {
           }}
           aoCancelar={cancelarReabertura}
           aoConfirmar={confirmarReabertura}
+        />
+      )}
+
+      {processoNovaPendencia && (
+        <ModalNovaPendencia
+          processo={processoNovaPendencia}
+          descricao={descricaoPendencia}
+          erro={erroNovaPendencia}
+          carregando={salvandoPendencia}
+          aoMudarDescricao={(valor) => {
+            setDescricaoPendencia(valor)
+            if (erroNovaPendencia) {
+              setErroNovaPendencia('')
+            }
+          }}
+          aoCancelar={cancelarNovaPendencia}
+          aoConfirmar={registrarPendencia}
         />
       )}
 
@@ -2550,11 +2966,29 @@ function App() {
                       >
                         {historicoAberto === processo.id ? 'Fechar histórico' : 'Histórico'}
                       </button>
+                      <button
+                        className="acao-pendencias"
+                        type="button"
+                        onClick={() => buscarPendencias(processo.id)}
+                      >
+                        {pendenciasAbertas === processo.id ? 'Fechar pendências' : 'Pendências'}
+                      </button>
                     </div>
                   </div>
 
                   {historicoAberto === processo.id && (
                     <HistoricoProcesso itens={historicos[processo.id] || []} />
+                  )}
+                  {pendenciasAbertas === processo.id && (
+                    <PendenciasProcesso
+                      itens={pendencias[processo.id] || []}
+                      carregando={carregandoPendencias === processo.id}
+                      erro={errosPendencias[processo.id]}
+                      podeGerenciar
+                      resolvendoId={resolvendoPendencia}
+                      aoNovaPendencia={() => abrirNovaPendencia(processo)}
+                      aoResolver={(pendenciaId) => resolverPendenciaDoProcesso(processo.id, pendenciaId)}
+                    />
                   )}
                 </div>
               ))}
