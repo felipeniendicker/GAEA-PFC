@@ -108,6 +108,14 @@ class SecurityIntegrationTests {
                 .andExpect(jsonPath("$[0].statusNovo").value("EM_ANALISE"))
                 .andExpect(jsonPath("$[0].senha").doesNotExist())
                 .andExpect(jsonPath("$[0].token").doesNotExist());
+
+        mockMvc.perform(get("/api/processos/{id}/historico-completo", processo.getId())
+                        .header("Authorization", "Bearer " + jwtService.gerarToken(aluno)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].tipo").value("ALTERACAO_STATUS"))
+                .andExpect(jsonPath("$[0].descricao").exists())
+                .andExpect(jsonPath("$[0].senha").doesNotExist())
+                .andExpect(jsonPath("$[0].token").doesNotExist());
     }
 
     @Test
@@ -117,6 +125,10 @@ class SecurityIntegrationTests {
         ProcessoEstagio processo = salvarProcesso(alunoResponsavel, null, "EM_ANALISE");
 
         mockMvc.perform(get("/api/processos/{id}/historico", processo.getId())
+                        .header("Authorization", "Bearer " + jwtService.gerarToken(outroAluno)))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(get("/api/processos/{id}/historico-completo", processo.getId())
                         .header("Authorization", "Bearer " + jwtService.gerarToken(outroAluno)))
                 .andExpect(status().isNotFound());
     }
@@ -147,6 +159,14 @@ class SecurityIntegrationTests {
         mockMvc.perform(get("/api/processos/{id}/historico", processo.getId())
                         .header("Authorization", "Bearer " + jwtService.gerarToken(outroSupervisor)))
                 .andExpect(status().isNotFound());
+
+        mockMvc.perform(get("/api/processos/{id}/historico-completo", processo.getId())
+                        .header("Authorization", "Bearer " + jwtService.gerarToken(supervisor)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/processos/{id}/historico-completo", processo.getId())
+                        .header("Authorization", "Bearer " + jwtService.gerarToken(outroSupervisor)))
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -160,6 +180,10 @@ class SecurityIntegrationTests {
         ProcessoEstagio processoPrimeira = salvarProcesso(null, primeira, "PENDENTE");
         ProcessoEstagio processoSegunda = salvarProcesso(null, segunda, "PENDENTE");
 
+        mockMvc.perform(get("/api/processos/{id}/historico-completo", processoPrimeira.getId())
+                        .header("Authorization", "Bearer " + jwtService.gerarToken(responsavelPrimeira)))
+                .andExpect(status().isOk());
+
         mockMvc.perform(get("/api/processos")
                         .header("Authorization", "Bearer " + jwtService.gerarToken(responsavelPrimeira)))
                 .andExpect(status().isOk())
@@ -171,6 +195,10 @@ class SecurityIntegrationTests {
                 .andExpect(jsonPath("$[0].aluno.senha").doesNotExist());
 
         mockMvc.perform(get("/api/processos/{id}/historico", processoSegunda.getId())
+                        .header("Authorization", "Bearer " + jwtService.gerarToken(responsavelPrimeira)))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(get("/api/processos/{id}/historico-completo", processoSegunda.getId())
                         .header("Authorization", "Bearer " + jwtService.gerarToken(responsavelPrimeira)))
                 .andExpect(status().isNotFound());
 
@@ -412,6 +440,49 @@ class SecurityIntegrationTests {
     void deveNegarEndpointProtegidoSemAutenticacao() throws Exception {
         mockMvc.perform(get("/api/processos"))
                 .andExpect(status().isUnauthorized());
+
+        mockMvc.perform(get("/api/processos/1/historico-completo"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void deveBloquearHistoricoCompletoParaSupervisoesNaoConfirmadasOuInativas()
+            throws Exception {
+        Usuario supervisor = salvarUsuario("empresa@example.com", "EMPRESA");
+
+        ProcessoEstagio pendente = salvarProcesso(null, null, "PENDENTE");
+        salvarVinculo(pendente, supervisor, SituacaoVinculoSupervisor.PENDENTE);
+
+        ProcessoEstagio recusado = salvarProcesso(null, null, "PENDENTE");
+        salvarVinculo(recusado, supervisor, SituacaoVinculoSupervisor.RECUSADO);
+
+        ProcessoEstagio cancelado = salvarProcesso(null, null, "PENDENTE");
+        salvarVinculo(cancelado, supervisor, SituacaoVinculoSupervisor.CANCELADO);
+
+        String bearer = "Bearer " + jwtService.gerarToken(supervisor);
+        for (ProcessoEstagio processo : new ProcessoEstagio[]{pendente, recusado, cancelado}) {
+            mockMvc.perform(get("/api/processos/{id}/historico-completo", processo.getId())
+                            .header("Authorization", bearer))
+                    .andExpect(status().isNotFound());
+        }
+    }
+
+    @Test
+    void deveRetornar404NoHistoricoCompletoDeProcessoInexistente() throws Exception {
+        Usuario aluno = salvarUsuario("aluno@example.com", "ALUNO");
+
+        mockMvc.perform(get("/api/processos/999999/historico-completo")
+                        .header("Authorization", "Bearer " + jwtService.gerarToken(aluno)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deveNegarHistoricoCompletoParaPerfilNaoAutorizado() throws Exception {
+        Usuario administrador = salvarUsuario("administrador@example.com", "ADMIN");
+
+        mockMvc.perform(get("/api/processos/1/historico-completo")
+                        .header("Authorization", "Bearer " + jwtService.gerarToken(administrador)))
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -488,6 +559,18 @@ class SecurityIntegrationTests {
         instituicao.setNome(nome);
         instituicao.setCnpj(cnpj);
         return instituicaoRepository.save(instituicao);
+    }
+
+    private void salvarVinculo(
+            ProcessoEstagio processo,
+            Usuario supervisor,
+            SituacaoVinculoSupervisor situacao) {
+        VinculoSupervisorProcesso vinculo = new VinculoSupervisorProcesso();
+        vinculo.setProcesso(processo);
+        vinculo.setEmailConvidado(supervisor.getEmail());
+        vinculo.setSupervisor(supervisor);
+        vinculo.setSituacao(situacao);
+        vinculoRepository.save(vinculo);
     }
 
     private Usuario salvarResponsavelInstituicao(String email, Instituicao instituicao) {

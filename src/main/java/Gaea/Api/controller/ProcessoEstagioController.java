@@ -2,6 +2,7 @@ package Gaea.Api.controller;
 
 import Gaea.Api.dto.CadastroProcessoRequest;
 import Gaea.Api.dto.HistoricoStatusResponse;
+import Gaea.Api.dto.HistoricoProcessoResponse;
 import Gaea.Api.dto.CadastroPendenciaRequest;
 import Gaea.Api.dto.PendenciaProcessoResponse;
 import Gaea.Api.dto.AtualizacaoPrazoRequest;
@@ -12,6 +13,7 @@ import Gaea.Api.dto.ReaberturaProcessoRequest;
 import Gaea.Api.dto.AlteracaoSupervisorRequest;
 import Gaea.Api.model.ProcessoEstagio;
 import Gaea.Api.service.ProcessoEstagioMapper;
+import Gaea.Api.service.HistoricoProcessoService;
 import Gaea.Api.service.ProcessoEstagioService;
 import Gaea.Api.service.PendenciaProcessoService;
 import Gaea.Api.service.PrazoProcessoService;
@@ -32,19 +34,22 @@ public class ProcessoEstagioController {
     private final SupervisaoService supervisaoService;
     private final PendenciaProcessoService pendenciaService;
     private final PrazoProcessoService prazoService;
+    private final HistoricoProcessoService historicoProcessoService;
 
     public ProcessoEstagioController(
             ProcessoEstagioService service,
             ProcessoEstagioMapper mapper,
             SupervisaoService supervisaoService,
             PendenciaProcessoService pendenciaService,
-            PrazoProcessoService prazoService) {
+            PrazoProcessoService prazoService,
+            HistoricoProcessoService historicoProcessoService) {
 
         this.service = service;
         this.mapper = mapper;
         this.supervisaoService = supervisaoService;
         this.pendenciaService = pendenciaService;
         this.prazoService = prazoService;
+        this.historicoProcessoService = historicoProcessoService;
     }
 
     @PostMapping
@@ -104,6 +109,16 @@ public class ProcessoEstagioController {
             Authentication authentication) {
 
         return service.listarHistorico(
+                id,
+                (Usuario) authentication.getPrincipal());
+    }
+
+    @GetMapping("/{id}/historico-completo")
+    public List<HistoricoProcessoResponse> listarHistoricoCompleto(
+            @PathVariable Long id,
+            Authentication authentication) {
+
+        return historicoProcessoService.listar(
                 id,
                 (Usuario) authentication.getPrincipal());
     }

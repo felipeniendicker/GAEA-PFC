@@ -17,6 +17,20 @@ const rotulosVinculo = {
   CANCELADO: 'Solicitação substituída'
 }
 
+const rotulosEventoHistorico = {
+  CRIACAO_PROCESSO: 'Criação do processo',
+  ALTERACAO_STATUS: 'Alteração de status',
+  REABERTURA: 'Reabertura',
+  INDICACAO_SUPERVISOR: 'Indicação de supervisor',
+  CONFIRMACAO_SUPERVISOR: 'Confirmação do supervisor',
+  RECUSA_SUPERVISOR: 'Recusa do supervisor',
+  SUBSTITUICAO_SUPERVISOR: 'Substituição do supervisor',
+  CRIACAO_PENDENCIA: 'Registro de pendência',
+  RESOLUCAO_PENDENCIA: 'Resolução de pendência',
+  CRIACAO_PRAZO: 'Registro de prazo',
+  ATUALIZACAO_PRAZO: 'Atualização de prazo'
+}
+
 function emailValido(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 }
@@ -66,29 +80,30 @@ async function mensagemDaApi(resposta, mensagemPadrao) {
   }
 }
 
-function HistoricoProcesso({ itens }) {
+function HistoricoProcesso({ itens, carregando, erro }) {
   return (
-    <div className="historico-processo">
-      <h4>Histórico de status</h4>
+    <div className="historico-processo" aria-live="polite">
+      <h4>Histórico do processo</h4>
 
-      {itens.length === 0 ? (
-        <p>Nenhuma alteração de status registrada.</p>
+      {carregando ? (
+        <p>Carregando histórico...</p>
+      ) : erro ? (
+        <p className="mensagem-erro">{erro}</p>
+      ) : itens.length === 0 ? (
+        <p>Nenhuma movimentação registrada.</p>
       ) : (
         itens.map((item) => (
           <div className="historico-item" key={item.id}>
             <div>
-              <strong>
-                {rotulosStatus[item.statusAnterior] || item.statusAnterior}
-                {' → '}
-                {rotulosStatus[item.statusNovo] || item.statusNovo}
-              </strong>
-              <span>{item.tipoOperacao === 'REABERTURA' ? 'Reabertura' : 'Alteração normal'}</span>
+              <strong>{rotulosEventoHistorico[item.tipo] || item.tipo}</strong>
+              <span>{item.descricao}</span>
             </div>
-            <span>{item.usuarioResponsavel}</span>
+            <span>
+              {item.responsavel
+                ? `Responsável: ${item.responsavel}`
+                : 'Responsável não registrado'}
+            </span>
             <span>{new Date(item.dataHora).toLocaleString('pt-BR')}</span>
-            {item.justificativa && (
-              <p><strong>Justificativa:</strong> {item.justificativa}</p>
-            )}
           </div>
         ))
       )}
@@ -1331,6 +1346,8 @@ function App() {
   const [mostrarAuditoria, setMostrarAuditoria] = useState(false)
   const [historicos, setHistoricos] = useState({})
   const [historicoAberto, setHistoricoAberto] = useState(null)
+  const [carregandoHistorico, setCarregandoHistorico] = useState(null)
+  const [errosHistorico, setErrosHistorico] = useState({})
   const [pendencias, setPendencias] = useState({})
   const [pendenciasAbertas, setPendenciasAbertas] = useState(null)
   const [carregandoPendencias, setCarregandoPendencias] = useState(null)
@@ -1632,6 +1649,9 @@ function App() {
       }
       setNovosSupervisores((atuais) => ({ ...atuais, [processo.id]: '' }))
       await buscarMeusProcessos()
+      if (historicoAberto === processo.id) {
+        await buscarHistorico(processo.id, true)
+      }
       exibirMensagemAcao('Nova solicitação enviada ao supervisor informado.')
     } catch {
       exibirMensagemAcao('Não foi possível conectar com o servidor.', 'erro')
@@ -1799,26 +1819,32 @@ function App() {
       return
     }
 
+    setHistoricoAberto(id)
+    setCarregandoHistorico(id)
+    setErrosHistorico((atuais) => ({ ...atuais, [id]: '' }))
+
     try {
-      const resposta = await fetch(`${API}/api/processos/${id}/historico`, {
+      const resposta = await fetch(`${API}/api/processos/${id}/historico-completo`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       })
 
       if (!resposta.ok) {
-        exibirMensagemAcao(
-          await mensagemDaApi(resposta, 'Não foi possível consultar o histórico.'),
-          'erro'
-        )
+        const mensagem = await mensagemDaApi(resposta, 'Não foi possível consultar o histórico.')
+        setErrosHistorico((atuais) => ({ ...atuais, [id]: mensagem }))
         return
       }
 
       const dados = await resposta.json()
       setHistoricos((atuais) => ({ ...atuais, [id]: dados }))
-      setHistoricoAberto(id)
     } catch {
-      exibirMensagemAcao('Não foi possível conectar com o servidor.', 'erro')
+      setErrosHistorico((atuais) => ({
+        ...atuais,
+        [id]: 'Não foi possível conectar com o servidor.'
+      }))
+    } finally {
+      setCarregandoHistorico((atual) => atual === id ? null : atual)
     }
   }
 
@@ -1907,6 +1933,9 @@ function App() {
       setProcessoNovaPendencia(null)
       setDescricaoPendencia('')
       await buscarPendencias(processoId, true)
+      if (historicoAberto === processoId) {
+        await buscarHistorico(processoId, true)
+      }
       exibirMensagemAcao('Pendência registrada com sucesso.')
     } catch {
       setErroNovaPendencia('Não foi possível conectar com o servidor.')
@@ -1947,6 +1976,9 @@ function App() {
           item.id === atualizada.id ? atualizada : item
         )
       }))
+      if (historicoAberto === processoId) {
+        await buscarHistorico(processoId, true)
+      }
       exibirMensagemAcao('Pendência resolvida com sucesso.')
     } catch {
       setErrosPendencias((atuais) => ({
@@ -2055,6 +2087,9 @@ function App() {
       setDescricaoPrazo('')
       setDataVencimentoPrazo('')
       await buscarPrazos(processoId, true)
+      if (historicoAberto === processoId) {
+        await buscarHistorico(processoId, true)
+      }
       exibirMensagemAcao(atualizando ? 'Prazo atualizado com sucesso.' : 'Prazo registrado com sucesso.')
     } catch {
       setErroPrazo('Não foi possível conectar com o servidor.')
@@ -2913,7 +2948,11 @@ function App() {
                       </div>
 
                       {historicoAberto === processo.id && (
-                        <HistoricoProcesso itens={historicos[processo.id] || []} />
+                        <HistoricoProcesso
+                          itens={historicos[processo.id] || []}
+                          carregando={carregandoHistorico === processo.id}
+                          erro={errosHistorico[processo.id]}
+                        />
                       )}
                       {pendenciasAbertas === processo.id && (
                         <PendenciasProcesso
@@ -2991,7 +3030,7 @@ function App() {
             <section className="formulario">
               <div className="secao-cabecalho">
                 <h3>Estágios supervisionados</h3>
-                <p>Consulte as pendências dos processos com supervisão confirmada.</p>
+                <p>Consulte o histórico, as pendências e os prazos dos processos confirmados.</p>
               </div>
 
               {processos.length === 0 ? (
@@ -3011,6 +3050,13 @@ function App() {
                         </p>
                         <div className="processo-acoes">
                           <button
+                            className="acao-historico"
+                            type="button"
+                            onClick={() => buscarHistorico(processo.id)}
+                          >
+                            {historicoAberto === processo.id ? 'Fechar histórico' : 'Ver histórico'}
+                          </button>
+                          <button
                             className="acao-pendencias"
                             type="button"
                             onClick={() => buscarPendencias(processo.id)}
@@ -3026,6 +3072,13 @@ function App() {
                           </button>
                         </div>
                       </div>
+                      {historicoAberto === processo.id && (
+                        <HistoricoProcesso
+                          itens={historicos[processo.id] || []}
+                          carregando={carregandoHistorico === processo.id}
+                          erro={errosHistorico[processo.id]}
+                        />
+                      )}
                       {pendenciasAbertas === processo.id && (
                         <PendenciasProcesso
                           itens={pendencias[processo.id] || []}
@@ -3336,7 +3389,11 @@ function App() {
                   </div>
 
                   {historicoAberto === processo.id && (
-                    <HistoricoProcesso itens={historicos[processo.id] || []} />
+                    <HistoricoProcesso
+                      itens={historicos[processo.id] || []}
+                      carregando={carregandoHistorico === processo.id}
+                      erro={errosHistorico[processo.id]}
+                    />
                   )}
                   {pendenciasAbertas === processo.id && (
                     <PendenciasProcesso

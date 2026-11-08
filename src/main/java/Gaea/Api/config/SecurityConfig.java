@@ -93,6 +93,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/processos").hasAnyRole("INSTITUICAO", "EMPRESA")
                         .requestMatchers(HttpMethod.GET, "/api/processos/*/historico")
                         .hasAnyRole("ALUNO", "INSTITUICAO", "EMPRESA")
+                        .requestMatchers(HttpMethod.GET, "/api/processos/*/historico-completo")
+                        .hasAnyRole("ALUNO", "INSTITUICAO", "EMPRESA")
                         .requestMatchers(HttpMethod.GET, "/api/processos/*/pendencias")
                         .hasAnyRole("ALUNO", "INSTITUICAO", "EMPRESA")
                         .requestMatchers(HttpMethod.POST, "/api/processos/*/pendencias")

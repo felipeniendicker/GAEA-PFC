@@ -8,4 +8,7 @@ import java.util.List;
 public interface HistoricoVinculoSupervisorRepository
         extends JpaRepository<HistoricoVinculoSupervisor, Long> {
     List<HistoricoVinculoSupervisor> findAllByVinculoIdOrderByDataHoraAscIdAsc(Long vinculoId);
+
+    List<HistoricoVinculoSupervisor> findAllByVinculoProcessoIdOrderByDataHoraAscIdAsc(
+            Long processoId);
 }
