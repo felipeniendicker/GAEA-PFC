@@ -21,16 +21,67 @@ public class DashboardService {
 
     @Transactional(readOnly = true)
     public DashboardResumoResponse obterResumo(Usuario usuario) {
-        if (!"INSTITUICAO".equals(usuario.getPerfil()) || usuario.getInstituicao() == null) {
+        if (usuario == null || usuario.getPerfil() == null) {
+            throw new AccessDeniedException("Perfil sem permissão para consultar o dashboard");
+        }
+
+        return switch (usuario.getPerfil()) {
+            case "INSTITUICAO" -> resumoInstituicao(usuario);
+            case "ALUNO" -> resumoAluno(usuario);
+            case "EMPRESA" -> resumoEmpresa(usuario);
+            default -> throw new AccessDeniedException(
+                    "Perfil sem permissão para consultar o dashboard");
+        };
+    }
+
+    private DashboardResumoResponse resumoInstituicao(Usuario usuario) {
+        if (usuario.getInstituicao() == null || usuario.getInstituicao().getId() == null) {
             throw new AccessDeniedException("Usuário institucional sem instituição vinculada");
         }
 
         Long instituicaoId = usuario.getInstituicao().getId();
-        long totalProcessos = processoRepository.countByInstituicaoId(instituicaoId);
-        long pendentes = processoRepository.countByInstituicaoIdAndStatus(instituicaoId, "PENDENTE");
-        long emAnalise = processoRepository.countByInstituicaoIdAndStatus(instituicaoId, "EM_ANALISE");
-        long aprovados = processoRepository.countByInstituicaoIdAndStatus(instituicaoId, "APROVADO");
-        long reprovados = processoRepository.countByInstituicaoIdAndStatus(instituicaoId, "REPROVADO");
+        return criarResumo(
+                processoRepository.countByInstituicaoId(instituicaoId),
+                processoRepository.countByInstituicaoIdAndStatus(instituicaoId, "PENDENTE"),
+                processoRepository.countByInstituicaoIdAndStatus(instituicaoId, "EM_ANALISE"),
+                processoRepository.countByInstituicaoIdAndStatus(instituicaoId, "APROVADO"),
+                processoRepository.countByInstituicaoIdAndStatus(instituicaoId, "REPROVADO"));
+    }
+
+    private DashboardResumoResponse resumoAluno(Usuario usuario) {
+        if (usuario.getId() == null) {
+            throw new AccessDeniedException("Aluno sem identificação válida");
+        }
+
+        Long alunoId = usuario.getId();
+        return criarResumo(
+                processoRepository.countByAlunoId(alunoId),
+                processoRepository.countByAlunoIdAndStatus(alunoId, "PENDENTE"),
+                processoRepository.countByAlunoIdAndStatus(alunoId, "EM_ANALISE"),
+                processoRepository.countByAlunoIdAndStatus(alunoId, "APROVADO"),
+                processoRepository.countByAlunoIdAndStatus(alunoId, "REPROVADO"));
+    }
+
+    private DashboardResumoResponse resumoEmpresa(Usuario usuario) {
+        if (usuario.getId() == null) {
+            throw new AccessDeniedException("Supervisor sem identificação válida");
+        }
+
+        Long supervisorId = usuario.getId();
+        return criarResumo(
+                processoRepository.countBySupervisorConfirmadoId(supervisorId),
+                processoRepository.countBySupervisorConfirmadoIdAndStatus(supervisorId, "PENDENTE"),
+                processoRepository.countBySupervisorConfirmadoIdAndStatus(supervisorId, "EM_ANALISE"),
+                processoRepository.countBySupervisorConfirmadoIdAndStatus(supervisorId, "APROVADO"),
+                processoRepository.countBySupervisorConfirmadoIdAndStatus(supervisorId, "REPROVADO"));
+    }
+
+    private DashboardResumoResponse criarResumo(
+            long totalProcessos,
+            long pendentes,
+            long emAnalise,
+            long aprovados,
+            long reprovados) {
 
         return new DashboardResumoResponse(
                 totalProcessos,

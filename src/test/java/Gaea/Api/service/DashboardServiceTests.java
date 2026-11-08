@@ -3,10 +3,14 @@ package Gaea.Api.service;
 import Gaea.Api.dto.DashboardResumoResponse;
 import Gaea.Api.model.Instituicao;
 import Gaea.Api.model.ProcessoEstagio;
+import Gaea.Api.model.SituacaoVinculoSupervisor;
 import Gaea.Api.model.Usuario;
+import Gaea.Api.model.VinculoSupervisorProcesso;
 import Gaea.Api.repository.HistoricoStatusProcessoRepository;
 import Gaea.Api.repository.InstituicaoRepository;
 import Gaea.Api.repository.ProcessoEstagioRepository;
+import Gaea.Api.repository.UsuarioRepository;
+import Gaea.Api.repository.VinculoSupervisorProcessoRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,13 +35,21 @@ class DashboardServiceTests {
     @Autowired
     private InstituicaoRepository instituicaoRepository;
 
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private VinculoSupervisorProcessoRepository vinculoRepository;
+
     private Instituicao instituicao;
     private Usuario usuarioInstituicao;
 
     @BeforeEach
     void limparBanco() {
+        vinculoRepository.deleteAll();
         historicoRepository.deleteAll();
         processoRepository.deleteAll();
+        usuarioRepository.deleteAll();
         instituicaoRepository.deleteAll();
 
         instituicao = novaInstituicao("Faculdade de Teste", "11222333000181");
@@ -113,13 +125,86 @@ class DashboardServiceTests {
         assertEquals(0, resumo.aprovados());
     }
 
+    @Test
+    void deveContarSomenteProcessosDoAlunoAutenticado() {
+        Usuario aluno = salvarUsuario("aluno@example.com", "ALUNO");
+        Usuario outroAluno = salvarUsuario("outro.aluno@example.com", "ALUNO");
+        salvarProcesso("PENDENTE", instituicao, aluno);
+        salvarProcesso("APROVADO", instituicao, aluno);
+        salvarProcesso("REPROVADO", instituicao, outroAluno);
+
+        DashboardResumoResponse resumo = dashboardService.obterResumo(aluno);
+
+        assertEquals(2, resumo.totalProcessos());
+        assertEquals(1, resumo.pendentes());
+        assertEquals(1, resumo.aprovados());
+        assertEquals(0, resumo.reprovados());
+        assertEquals(new BigDecimal("100.00"), resumo.percentualAprovacao());
+    }
+
+    @Test
+    void deveRetornarResumoZeradoParaAlunoSemProcessos() {
+        Usuario aluno = salvarUsuario("aluno@example.com", "ALUNO");
+
+        DashboardResumoResponse resumo = dashboardService.obterResumo(aluno);
+
+        assertEquals(0, resumo.totalProcessos());
+        assertEquals(new BigDecimal("0.00"), resumo.percentualAprovacao());
+    }
+
+    @Test
+    void deveContarSomenteSupervisoesAtivasEConfirmadasSemDuplicidade() {
+        Usuario supervisor = salvarUsuario("supervisor@example.com", "EMPRESA");
+        Usuario outroSupervisor = salvarUsuario("outro.supervisor@example.com", "EMPRESA");
+        ProcessoEstagio confirmado = salvarProcesso("APROVADO", instituicao);
+        ProcessoEstagio pendente = salvarProcesso("PENDENTE", instituicao);
+        ProcessoEstagio recusado = salvarProcesso("REPROVADO", instituicao);
+        ProcessoEstagio cancelado = salvarProcesso("EM_ANALISE", instituicao);
+        ProcessoEstagio deOutroSupervisor = salvarProcesso("PENDENTE", instituicao);
+
+        salvarVinculo(confirmado, supervisor, SituacaoVinculoSupervisor.CANCELADO);
+        salvarVinculo(confirmado, supervisor, SituacaoVinculoSupervisor.CONFIRMADO);
+        salvarVinculo(pendente, supervisor, SituacaoVinculoSupervisor.PENDENTE);
+        salvarVinculo(recusado, supervisor, SituacaoVinculoSupervisor.RECUSADO);
+        salvarVinculo(cancelado, supervisor, SituacaoVinculoSupervisor.CANCELADO);
+        salvarVinculo(deOutroSupervisor, outroSupervisor, SituacaoVinculoSupervisor.CONFIRMADO);
+
+        DashboardResumoResponse resumo = dashboardService.obterResumo(supervisor);
+
+        assertEquals(1, resumo.totalProcessos());
+        assertEquals(1, resumo.aprovados());
+        assertEquals(0, resumo.pendentes());
+        assertEquals(0, resumo.emAnalise());
+        assertEquals(0, resumo.reprovados());
+        assertEquals(new BigDecimal("100.00"), resumo.percentualAprovacao());
+    }
+
+    @Test
+    void deveRetornarResumoZeradoParaEmpresaSemVinculosConfirmados() {
+        Usuario supervisor = salvarUsuario("supervisor@example.com", "EMPRESA");
+        ProcessoEstagio processo = salvarProcesso("PENDENTE", instituicao);
+        salvarVinculo(processo, supervisor, SituacaoVinculoSupervisor.PENDENTE);
+
+        DashboardResumoResponse resumo = dashboardService.obterResumo(supervisor);
+
+        assertEquals(0, resumo.totalProcessos());
+        assertEquals(new BigDecimal("0.00"), resumo.percentualAprovacao());
+    }
+
     private void salvarProcessos(String status, int quantidade) {
         for (int indice = 0; indice < quantidade; indice += 1) {
             salvarProcesso(status, instituicao);
         }
     }
 
-    private void salvarProcesso(String status, Instituicao instituicaoDoProcesso) {
+    private ProcessoEstagio salvarProcesso(String status, Instituicao instituicaoDoProcesso) {
+        return salvarProcesso(status, instituicaoDoProcesso, null);
+    }
+
+    private ProcessoEstagio salvarProcesso(
+            String status,
+            Instituicao instituicaoDoProcesso,
+            Usuario aluno) {
         ProcessoEstagio processo = new ProcessoEstagio();
         processo.setNomeAluno("Aluno " + status);
         processo.setEmailAluno("aluno" + status + "@example.com");
@@ -127,7 +212,29 @@ class DashboardServiceTests {
         processo.setCnpjEmpresa("11222333000181");
         processo.setStatus(status);
         processo.setInstituicao(instituicaoDoProcesso);
-        processoRepository.save(processo);
+        processo.setAluno(aluno);
+        return processoRepository.save(processo);
+    }
+
+    private Usuario salvarUsuario(String email, String perfil) {
+        Usuario usuario = new Usuario();
+        usuario.setNome("Usuário de Teste");
+        usuario.setEmail(email);
+        usuario.setPerfil(perfil);
+        usuario.setTermosAceitos(true);
+        return usuarioRepository.save(usuario);
+    }
+
+    private void salvarVinculo(
+            ProcessoEstagio processo,
+            Usuario supervisor,
+            SituacaoVinculoSupervisor situacao) {
+        VinculoSupervisorProcesso vinculo = new VinculoSupervisorProcesso();
+        vinculo.setProcesso(processo);
+        vinculo.setEmailConvidado(supervisor.getEmail());
+        vinculo.setSupervisor(supervisor);
+        vinculo.setSituacao(situacao);
+        vinculoRepository.save(vinculo);
     }
 
     private Instituicao novaInstituicao(String nome, String cnpj) {

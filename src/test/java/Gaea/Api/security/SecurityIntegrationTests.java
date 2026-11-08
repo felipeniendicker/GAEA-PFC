@@ -331,26 +331,61 @@ class SecurityIntegrationTests {
     }
 
     @Test
-    void deveNegarDashboardParaAluno() throws Exception {
+    void devePermitirDashboardParaAluno() throws Exception {
         Usuario aluno = salvarUsuario("aluno@example.com", "ALUNO");
+        salvarProcesso(aluno, null, "PENDENTE");
 
         mockMvc.perform(get("/api/dashboard/resumo")
                         .header("Authorization", "Bearer " + jwtService.gerarToken(aluno)))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalProcessos").value(1))
+                .andExpect(jsonPath("$.pendentes").value(1));
     }
 
     @Test
-    void deveNegarDashboardParaEmpresa() throws Exception {
+    void devePermitirDashboardParaEmpresaComSupervisaoConfirmada() throws Exception {
         Usuario empresa = salvarUsuario("empresa@example.com", "EMPRESA");
+        ProcessoEstagio processo = salvarProcesso(null, null, "EM_ANALISE");
+        VinculoSupervisorProcesso vinculo = new VinculoSupervisorProcesso();
+        vinculo.setProcesso(processo);
+        vinculo.setEmailConvidado(empresa.getEmail());
+        vinculo.setSupervisor(empresa);
+        vinculo.setSituacao(SituacaoVinculoSupervisor.CONFIRMADO);
+        vinculoRepository.save(vinculo);
 
         mockMvc.perform(get("/api/dashboard/resumo")
                         .header("Authorization", "Bearer " + jwtService.gerarToken(empresa)))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalProcessos").value(1))
+                .andExpect(jsonPath("$.emAnalise").value(1));
     }
 
     @Test
     void deveNegarDashboardSemAutenticacao() throws Exception {
         mockMvc.perform(get("/api/dashboard/resumo"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void deveNegarDashboardParaPerfilNaoAutorizado() throws Exception {
+        Usuario usuario = salvarUsuario("administrador@example.com", "ADMIN");
+
+        mockMvc.perform(get("/api/dashboard/resumo")
+                        .header("Authorization", "Bearer " + jwtService.gerarToken(usuario)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void deveNegarDashboardComJwtEmitidoAntesDaDesativacaoDaInstituicao() throws Exception {
+        Instituicao instituicao = salvarInstituicao("Faculdade de Teste", "11222333000181");
+        Usuario responsavel = salvarResponsavelInstituicao("instituicao@example.com", instituicao);
+        String token = jwtService.gerarToken(responsavel);
+
+        instituicao.setAtiva(false);
+        instituicaoRepository.save(instituicao);
+
+        mockMvc.perform(get("/api/dashboard/resumo")
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isUnauthorized());
     }
 

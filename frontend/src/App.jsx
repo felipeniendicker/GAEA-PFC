@@ -607,7 +607,7 @@ function ModalPrazo({
   )
 }
 
-function DashboardInstitucional({ resumo, carregando, erro, aoTentarNovamente }) {
+function DashboardProcessos({ resumo, carregando, erro, aoTentarNovamente }) {
   if (carregando) {
     return (
       <section className="dashboard-estado" aria-live="polite">
@@ -1231,7 +1231,7 @@ function Cabecalho({
         </div>
 
         <nav aria-label="Navegação principal">
-          {usuario?.perfil === 'INSTITUICAO' && mostrarSair ? (
+          {usuario && mostrarSair ? (
             <>
               <button
                 className={tela === 'sistema' && secaoInstituicao === 'dashboard' ? 'ativo' : ''}
@@ -1247,13 +1247,15 @@ function Cabecalho({
               >
                 Processos
               </button>
-              <button
-                className={tela === 'sistema' && secaoInstituicao === 'alunos' ? 'ativo' : ''}
-                type="button"
-                onClick={aoIrAlunos}
-              >
-                Gestão de Alunos
-              </button>
+              {usuario.perfil === 'INSTITUICAO' && (
+                <button
+                  className={tela === 'sistema' && secaoInstituicao === 'alunos' ? 'ativo' : ''}
+                  type="button"
+                  onClick={aoIrAlunos}
+                >
+                  Gestão de Alunos
+                </button>
+              )}
             </>
           ) : (
             <button
@@ -1399,10 +1401,10 @@ function App() {
       setSenhaLogin('')
       setSecaoInstituicao('dashboard')
       setTela('sistema')
+      buscarResumoDashboard(dados.token)
 
       if (dados.perfil === 'INSTITUICAO') {
         buscarProcessos(dados.token)
-        buscarResumoDashboard(dados.token)
       } else if (dados.perfil === 'ALUNO') {
         buscarMeusProcessos(dados.token)
       } else if (dados.perfil === 'EMPRESA' && dados.emailVerificado) {
@@ -2698,6 +2700,29 @@ function App() {
         />
 
         <main className="conteudo">
+          {secaoInstituicao === 'dashboard' ? (
+            <>
+              <header className="cabecalho">
+                <p className="cabecalho-contexto">
+                  {usuario.perfil === 'ALUNO' ? 'VISÃO DO ALUNO' : 'VISÃO DO SUPERVISOR'}
+                </p>
+                <h2>Dashboard de Estágios</h2>
+                <p className="cabecalho-descricao">
+                  {usuario.perfil === 'ALUNO'
+                    ? 'Acompanhe os indicadores dos seus processos de estágio.'
+                    : 'Acompanhe os indicadores dos estágios sob sua supervisão confirmada.'}
+                </p>
+              </header>
+
+              <DashboardProcessos
+                resumo={resumoDashboard}
+                carregando={carregandoDashboard}
+                erro={erroDashboard}
+                aoTentarNovamente={() => buscarResumoDashboard()}
+              />
+            </>
+          ) : (
+            <>
           <header className="cabecalho">
             <p className="cabecalho-contexto">
               ÁREA DO USUÁRIO
@@ -3024,6 +3049,8 @@ function App() {
               )}
             </section>
           )}
+            </>
+          )}
         </main>
       </div>
     )
@@ -3103,7 +3130,7 @@ function App() {
               </p>
             </header>
 
-            <DashboardInstitucional
+            <DashboardProcessos
               resumo={resumoDashboard}
               carregando={carregandoDashboard}
               erro={erroDashboard}

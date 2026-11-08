@@ -33,6 +33,33 @@ public interface ProcessoEstagioRepository extends JpaRepository<ProcessoEstagio
 
     long countByInstituicaoIdAndStatus(Long instituicaoId, String status);
 
+    long countByAlunoId(Long alunoId);
+
+    long countByAlunoIdAndStatus(Long alunoId, String status);
+
+    @Query("""
+            select count(distinct p.id)
+            from ProcessoEstagio p
+            join VinculoSupervisorProcesso v on v.processo = p
+            where v.supervisor.id = :supervisorId
+              and v.situacao = Gaea.Api.model.SituacaoVinculoSupervisor.CONFIRMADO
+              and v.ativo = true
+            """)
+    long countBySupervisorConfirmadoId(@Param("supervisorId") Long supervisorId);
+
+    @Query("""
+            select count(distinct p.id)
+            from ProcessoEstagio p
+            join VinculoSupervisorProcesso v on v.processo = p
+            where v.supervisor.id = :supervisorId
+              and v.situacao = Gaea.Api.model.SituacaoVinculoSupervisor.CONFIRMADO
+              and v.ativo = true
+              and p.status = :status
+            """)
+    long countBySupervisorConfirmadoIdAndStatus(
+            @Param("supervisorId") Long supervisorId,
+            @Param("status") String status);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select p from ProcessoEstagio p where p.id = :id")
     Optional<ProcessoEstagio> findByIdParaAtualizacao(@Param("id") Long id);
