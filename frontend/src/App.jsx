@@ -1226,13 +1226,33 @@ function Cabecalho({
   tela,
   secaoInstituicao,
   aoIrInicio,
-  aoIrDashboard,
-  aoIrProcessos,
-  aoIrAlunos,
+  aoIrSecao,
   aoIrPrivacidade,
   aoIrTermos,
   aoSair
 }) {
+  const menusPorPerfil = {
+    INSTITUICAO: [
+      { secao: 'dashboard', rotulo: 'Dashboard' },
+      { secao: 'alunos', rotulo: 'Gestão de alunos' },
+      { secao: 'processos', rotulo: 'Processos de estágio' },
+      { secao: 'acompanhamento', rotulo: 'Pendências e prazos' },
+      { secao: 'auditoria', rotulo: 'Auditoria' }
+    ],
+    ALUNO: [
+      { secao: 'dashboard', rotulo: 'Meu dashboard' },
+      { secao: 'solicitar', rotulo: 'Solicitar estágio' },
+      { secao: 'processos', rotulo: 'Meus processos' }
+    ],
+    EMPRESA: [
+      { secao: 'dashboard', rotulo: 'Meu dashboard' },
+      { secao: 'solicitacoes', rotulo: 'Solicitações de supervisão' },
+      { secao: 'supervisionados', rotulo: 'Estágios supervisionados' },
+      { secao: 'acompanhamento', rotulo: 'Prazos e pendências' }
+    ]
+  }
+  const itensPerfil = usuario ? menusPorPerfil[usuario.perfil] || [] : []
+
   return (
     <header className="navbar">
       <div className="navbar-conteudo">
@@ -1247,31 +1267,19 @@ function Cabecalho({
 
         <nav aria-label="Navegação principal">
           {usuario && mostrarSair ? (
-            <>
+            itensPerfil.map((item) => (
               <button
-                className={tela === 'sistema' && secaoInstituicao === 'dashboard' ? 'ativo' : ''}
+                className={tela === 'sistema' && secaoInstituicao === item.secao ? 'ativo' : ''}
                 type="button"
-                onClick={aoIrDashboard}
+                onClick={() => aoIrSecao(item.secao)}
+                aria-current={tela === 'sistema' && secaoInstituicao === item.secao
+                  ? 'page'
+                  : undefined}
+                key={item.secao}
               >
-                Dashboard
+                {item.rotulo}
               </button>
-              <button
-                className={tela === 'sistema' && secaoInstituicao === 'processos' ? 'ativo' : ''}
-                type="button"
-                onClick={aoIrProcessos}
-              >
-                Processos
-              </button>
-              {usuario.perfil === 'INSTITUICAO' && (
-                <button
-                  className={tela === 'sistema' && secaoInstituicao === 'alunos' ? 'ativo' : ''}
-                  type="button"
-                  onClick={aoIrAlunos}
-                >
-                  Gestão de Alunos
-                </button>
-              )}
-            </>
+            ))
           ) : (
             <button
               className={tela === 'sistema' ? 'ativo' : ''}
@@ -1343,7 +1351,6 @@ function App() {
   const [erroCep, setErroCep] = useState('')
   const [salvandoProcesso, setSalvandoProcesso] = useState(false)
   const [logsAuditoria, setLogsAuditoria] = useState([])
-  const [mostrarAuditoria, setMostrarAuditoria] = useState(false)
   const [historicos, setHistoricos] = useState({})
   const [historicoAberto, setHistoricoAberto] = useState(null)
   const [carregandoHistorico, setCarregandoHistorico] = useState(null)
@@ -1380,6 +1387,7 @@ function App() {
   const [justificativasRecusa, setJustificativasRecusa] = useState({})
   const [erroSupervisao, setErroSupervisao] = useState('')
   const [acaoSupervisao, setAcaoSupervisao] = useState(null)
+  const [recusaSupervisaoAberta, setRecusaSupervisaoAberta] = useState(null)
   const [novosSupervisores, setNovosSupervisores] = useState({})
 
   async function fazerLogin(event) {
@@ -1515,6 +1523,7 @@ function App() {
     setProcessoReabertura(null)
     setSolicitacoesSupervisao([])
     setErroSupervisao('')
+    setRecusaSupervisaoAberta(null)
     setEmailLogin('')
     setSenhaLogin('')
     setTela('login')
@@ -1596,6 +1605,7 @@ function App() {
       }
       setSolicitacoesSupervisao((atuais) =>
         atuais.filter((item) => item.vinculoId !== solicitacao.vinculoId))
+      setRecusaSupervisaoAberta(null)
       exibirMensagemAcao(
         acao === 'confirmar' ? 'Supervisão confirmada com sucesso.' : 'Solicitação recusada.'
       )
@@ -2107,15 +2117,17 @@ function App() {
     })
 
     if (!resposta.ok) {
-      alert('Não foi possível consultar os logs de auditoria.')
+      exibirMensagemAcao(
+        await mensagemDaApi(resposta, 'Não foi possível consultar os logs de auditoria.'),
+        'erro'
+      )
       return
     }
 
     const dados = await resposta.json()
     setLogsAuditoria(dados)
-    setMostrarAuditoria(true)
   } catch {
-    alert('Não foi possível conectar com o servidor.')
+    exibirMensagemAcao('Não foi possível conectar com o servidor.', 'erro')
   }
 }
   async function buscarCep() {
@@ -2251,18 +2263,15 @@ function App() {
     tela,
     secaoInstituicao,
     aoIrInicio: () => setTela(usuario ? 'sistema' : 'login'),
-    aoIrDashboard: () => {
+    aoIrSecao: (secao) => {
       setTela('sistema')
-      setSecaoInstituicao('dashboard')
-      buscarResumoDashboard()
-    },
-    aoIrProcessos: () => {
-      setTela('sistema')
-      setSecaoInstituicao('processos')
-    },
-    aoIrAlunos: () => {
-      setTela('sistema')
-      setSecaoInstituicao('alunos')
+      setSecaoInstituicao(secao)
+      if (secao === 'dashboard') {
+        buscarResumoDashboard()
+      }
+      if (secao === 'auditoria') {
+        buscarAuditoria()
+      }
     },
     aoIrPrivacidade: () => setTela('privacidade'),
     aoIrTermos: () => setTela('termos'),
@@ -2759,16 +2768,24 @@ function App() {
           ) : (
             <>
           <header className="cabecalho">
-            <p className="cabecalho-contexto">
-              ÁREA DO USUÁRIO
-            </p>
-            <h2>Olá, {usuario.nome}</h2>
-            <p className="cabecalho-descricao">
-              Perfil: {usuario.perfil}
-            </p>
+              <p className="cabecalho-contexto">
+                {usuario.perfil === 'ALUNO' ? 'ÁREA DO ALUNO' : 'ÁREA DO SUPERVISOR'}
+              </p>
+              <h2>
+                {usuario.perfil === 'ALUNO'
+                  ? secaoInstituicao === 'solicitar' ? 'Solicitar novo estágio' : 'Meus processos'
+                  : secaoInstituicao === 'solicitacoes'
+                    ? 'Solicitações de supervisão'
+                    : secaoInstituicao === 'acompanhamento'
+                      ? 'Prazos e pendências'
+                      : 'Estágios supervisionados'}
+              </h2>
+              <p className="cabecalho-descricao">
+                Olá, {usuario.nome}. Consulte apenas as informações vinculadas à sua conta.
+              </p>
           </header>
 
-          {usuario.perfil === 'ALUNO' && (
+          {usuario.perfil === 'ALUNO' && secaoInstituicao === 'solicitar' && (
             <section className="formulario">
               <div className="secao-cabecalho">
                 <h3>Solicitar novo estágio</h3>
@@ -2837,6 +2854,8 @@ function App() {
           )}
 
 
+          {((usuario.perfil === 'ALUNO' && secaoInstituicao === 'processos')
+            || (usuario.perfil === 'EMPRESA' && secaoInstituicao === 'solicitacoes')) && (
           <section className="formulario">
             <div className="secao-cabecalho">
               <h3>
@@ -2922,11 +2941,12 @@ function App() {
                           </div>
                         )}
 
-                        <div className="processo-acoes">
+                        <div className="processo-acoes processo-acoes-processo">
                           <button
                             className="acao-historico"
                             type="button"
                             onClick={() => buscarHistorico(processo.id)}
+                            aria-pressed={historicoAberto === processo.id}
                           >
                             {historicoAberto === processo.id ? 'Fechar histórico' : 'Ver histórico'}
                           </button>
@@ -2934,6 +2954,7 @@ function App() {
                             className="acao-pendencias"
                             type="button"
                             onClick={() => buscarPendencias(processo.id)}
+                            aria-pressed={pendenciasAbertas === processo.id}
                           >
                             {pendenciasAbertas === processo.id ? 'Fechar pendências' : 'Ver pendências'}
                           </button>
@@ -2941,6 +2962,7 @@ function App() {
                             className="acao-prazos"
                             type="button"
                             onClick={() => buscarPrazos(processo.id)}
+                            aria-pressed={prazosAbertos === processo.id}
                           >
                             {prazosAbertos === processo.id ? 'Fechar prazos' : 'Ver prazos'}
                           </button>
@@ -2997,27 +3019,57 @@ function App() {
                         <div><dt>CNPJ</dt><dd>{solicitacao.cnpjEmpresa}</dd></div>
                         <div><dt>Período</dt><dd>{solicitacao.dataInicio} — {solicitacao.dataFim}</dd></div>
                       </dl>
-                      <label htmlFor={`justificativa-${solicitacao.vinculoId}`}>
-                        Justificativa para recusa
-                      </label>
-                      <textarea
-                        id={`justificativa-${solicitacao.vinculoId}`}
-                        value={justificativasRecusa[solicitacao.vinculoId] || ''}
-                        onChange={(event) => setJustificativasRecusa((atuais) => ({
-                          ...atuais,
-                          [solicitacao.vinculoId]: event.target.value
-                        }))}
-                        maxLength="1000"
-                        placeholder="Obrigatória somente em caso de recusa"
-                      />
-                      <div className="processo-acoes">
-                        <button type="button" disabled={acaoSupervisao !== null} onClick={() => responderSupervisao(solicitacao, 'confirmar')}>
-                          Confirmar supervisão
-                        </button>
-                        <button className="botao-perigo" type="button" disabled={acaoSupervisao !== null} onClick={() => responderSupervisao(solicitacao, 'recusar')}>
-                          Recusar
-                        </button>
-                      </div>
+                      {recusaSupervisaoAberta === solicitacao.vinculoId ? (
+                        <div className="recusa-supervisao">
+                          <label htmlFor={`justificativa-${solicitacao.vinculoId}`}>
+                            Justificativa para recusa
+                          </label>
+                          <textarea
+                            id={`justificativa-${solicitacao.vinculoId}`}
+                            value={justificativasRecusa[solicitacao.vinculoId] || ''}
+                            onChange={(event) => setJustificativasRecusa((atuais) => ({
+                              ...atuais,
+                              [solicitacao.vinculoId]: event.target.value
+                            }))}
+                            maxLength="1000"
+                            placeholder="Explique por que não poderá supervisionar este estágio"
+                            autoFocus
+                          />
+                          <div className="processo-acoes processo-acoes-confirmacao">
+                            <button
+                              type="button"
+                              disabled={acaoSupervisao !== null}
+                              onClick={() => setRecusaSupervisaoAberta(null)}
+                            >
+                              Cancelar
+                            </button>
+                            <button
+                              className="botao-perigo"
+                              type="button"
+                              disabled={acaoSupervisao !== null}
+                              onClick={() => responderSupervisao(solicitacao, 'recusar')}
+                            >
+                              {acaoSupervisao === `recusar-${solicitacao.vinculoId}`
+                                ? 'Recusando...'
+                                : 'Confirmar recusa'}
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="processo-acoes processo-acoes-confirmacao">
+                          <button type="button" disabled={acaoSupervisao !== null} onClick={() => responderSupervisao(solicitacao, 'confirmar')}>
+                            Confirmar supervisão
+                          </button>
+                          <button
+                            className="botao-perigo"
+                            type="button"
+                            disabled={acaoSupervisao !== null}
+                            onClick={() => setRecusaSupervisaoAberta(solicitacao.vinculoId)}
+                          >
+                            Recusar
+                          </button>
+                        </div>
+                      )}
                     </article>
                   ))
                 )}
@@ -3025,12 +3077,40 @@ function App() {
               </div>
             )}
           </section>
+          )}
 
-          {usuario.perfil === 'EMPRESA' && usuario.emailVerificado && (
+          {usuario.perfil === 'EMPRESA' && !usuario.emailVerificado
+            && (secaoInstituicao === 'supervisionados'
+              || secaoInstituicao === 'acompanhamento') && (
+            <section className="formulario">
+              <div className="estado-vazio">
+                <h3>Verifique seu e-mail para acessar esta seção</h3>
+                <p>Os processos supervisionados ficam disponíveis após a confirmação do e-mail.</p>
+                <button
+                  type="button"
+                  onClick={() => setSecaoInstituicao('solicitacoes')}
+                >
+                  Ir para solicitações de supervisão
+                </button>
+              </div>
+            </section>
+          )}
+
+          {usuario.perfil === 'EMPRESA' && usuario.emailVerificado
+            && (secaoInstituicao === 'supervisionados'
+              || secaoInstituicao === 'acompanhamento') && (
             <section className="formulario">
               <div className="secao-cabecalho">
-                <h3>Estágios supervisionados</h3>
-                <p>Consulte o histórico, as pendências e os prazos dos processos confirmados.</p>
+                <h3>
+                  {secaoInstituicao === 'acompanhamento'
+                    ? 'Prazos e pendências dos estágios'
+                    : 'Estágios supervisionados'}
+                </h3>
+                <p>
+                  {secaoInstituicao === 'acompanhamento'
+                    ? 'Consulte as pendências e os prazos dos processos com supervisão confirmada.'
+                    : 'Consulte o histórico e o andamento dos processos confirmados.'}
+                </p>
               </div>
 
               {processos.length === 0 ? (
@@ -3048,18 +3128,20 @@ function App() {
                             {rotulosStatus[processo.status] || processo.status}
                           </span>
                         </p>
-                        <div className="processo-acoes">
-                          <button
+                        <div className="processo-acoes processo-acoes-processo">
+                          {secaoInstituicao !== 'acompanhamento' && <button
                             className="acao-historico"
                             type="button"
                             onClick={() => buscarHistorico(processo.id)}
+                            aria-pressed={historicoAberto === processo.id}
                           >
                             {historicoAberto === processo.id ? 'Fechar histórico' : 'Ver histórico'}
-                          </button>
+                          </button>}
                           <button
                             className="acao-pendencias"
                             type="button"
                             onClick={() => buscarPendencias(processo.id)}
+                            aria-pressed={pendenciasAbertas === processo.id}
                           >
                             {pendenciasAbertas === processo.id ? 'Fechar pendências' : 'Ver pendências'}
                           </button>
@@ -3067,12 +3149,14 @@ function App() {
                             className="acao-prazos"
                             type="button"
                             onClick={() => buscarPrazos(processo.id)}
+                            aria-pressed={prazosAbertos === processo.id}
                           >
                             {prazosAbertos === processo.id ? 'Fechar prazos' : 'Ver prazos'}
                           </button>
                         </div>
                       </div>
-                      {historicoAberto === processo.id && (
+                      {secaoInstituicao !== 'acompanhamento'
+                        && historicoAberto === processo.id && (
                         <HistoricoProcesso
                           itens={historicos[processo.id] || []}
                           carregando={carregandoHistorico === processo.id}
@@ -3192,76 +3276,78 @@ function App() {
           </>
         ) : secaoInstituicao === 'alunos' ? (
           <GestaoAlunos token={token} />
+        ) : secaoInstituicao === 'auditoria' ? (
+          <>
+            <header className="cabecalho">
+              <p className="cabecalho-contexto">RASTREABILIDADE INSTITUCIONAL</p>
+              <h2>Auditoria</h2>
+              <p className="cabecalho-descricao">
+                Consulte as principais ações registradas para a sua instituição.
+              </p>
+            </header>
+
+            <section className="acompanhamento">
+              <div className="secao-cabecalho">
+                <h3>Logs de auditoria</h3>
+                <p>Os registros são apresentados do mais recente para o mais antigo.</p>
+              </div>
+
+              {logsAuditoria.length === 0 ? (
+                <p className="estado-vazio">Nenhum registro de auditoria encontrado.</p>
+              ) : (
+                <div className="tabela-auditoria">
+                  <div className="auditoria-cabecalho">
+                    <span>Usuário</span>
+                    <span>Ação</span>
+                    <span>Recurso</span>
+                    <span>Data e hora</span>
+                  </div>
+
+                  {logsAuditoria.map((log) => (
+                    <div className="auditoria-linha" key={log.id}>
+                      <span>{log.usuario}</span>
+                      <span>{log.acao}</span>
+                      <span>{log.recurso}</span>
+                      <span>
+                        {log.dataHora
+                          ? new Date(log.dataHora).toLocaleString('pt-BR')
+                          : '-'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          </>
         ) : (
           <>
         <header className="cabecalho">
           <div>
             <p className="cabecalho-contexto">GESTÃO ACADÊMICA</p>
-            <h2>Processos de Estágio</h2>
+            <h2>
+              {secaoInstituicao === 'acompanhamento'
+                ? 'Pendências e prazos'
+                : 'Processos de estágio'}
+            </h2>
             <p className="cabecalho-descricao">
-              Cadastre e acompanhe os processos de estágio.
+              {secaoInstituicao === 'acompanhamento'
+                ? 'Acompanhe o que precisa ser regularizado e os próximos vencimentos.'
+                : 'Consulte e atualize o andamento dos processos de estágio.'}
             </p>
-            <div className="acoes-cabecalho">
-  <button
-    type="button"
-    onClick={() => {
-      if (mostrarAuditoria) {
-        setMostrarAuditoria(false)
-      } else {
-        buscarAuditoria()
-      }
-    }}
-  >
-    {mostrarAuditoria ? 'Voltar aos processos' : 'Consultar auditoria'}
-  </button>
-</div>
           </div>
         </header>
 
-          {mostrarAuditoria && (
-  <section className="acompanhamento">
-    <div className="secao-cabecalho">
-      <h3>Logs de Auditoria</h3>
-      <p>
-        Registro das principais ações realizadas no sistema.
-      </p>
-    </div>
-
-    {logsAuditoria.length === 0 ? (
-      <p className="estado-vazio">
-        Nenhum registro de auditoria encontrado.
-      </p>
-    ) : (
-      <div className="tabela-auditoria">
-        <div className="auditoria-cabecalho">
-          <span>Usuário</span>
-          <span>Ação</span>
-          <span>Recurso</span>
-          <span>Data e hora</span>
-        </div>
-
-        {logsAuditoria.map((log) => (
-          <div className="auditoria-linha" key={log.id}>
-            <span>{log.usuario}</span>
-            <span>{log.acao}</span>
-            <span>{log.recurso}</span>
-            <span>
-              {log.dataHora
-                ? new Date(log.dataHora).toLocaleString('pt-BR')
-                : '-'}
-            </span>
-          </div>
-        ))}
-      </div>
-    )}
-  </section>
-)}
-
         <section className="acompanhamento">
           <div className="secao-cabecalho">
-            <h3>Acompanhamento de Estágios</h3>
+            <h3>
+              {secaoInstituicao === 'acompanhamento'
+                ? 'Acompanhamento por processo'
+                : 'Acompanhamento de estágios'}
+            </h3>
             <p>
-              Consulte e atualize o andamento dos processos cadastrados.
+              {secaoInstituicao === 'acompanhamento'
+                ? 'Abra as pendências e os prazos do processo que deseja acompanhar.'
+                : 'Consulte e atualize o andamento dos processos cadastrados.'}
             </p>
           </div>
 
@@ -3316,7 +3402,8 @@ function App() {
                       </span>
                     </p>
 
-                    <div className="processo-acoes">
+                    <div className="processo-acoes processo-acoes-processo">
+                      {secaoInstituicao !== 'acompanhamento' && <>
                       {processo.status === 'PENDENTE'
                         && processo.vinculoSupervisor?.situacao === 'CONFIRMADO' && (
                         <button
@@ -3368,13 +3455,16 @@ function App() {
                         className="acao-historico"
                         type="button"
                         onClick={() => buscarHistorico(processo.id)}
+                        aria-pressed={historicoAberto === processo.id}
                       >
                         {historicoAberto === processo.id ? 'Fechar histórico' : 'Histórico'}
                       </button>
+                      </>}
                       <button
                         className="acao-pendencias"
                         type="button"
                         onClick={() => buscarPendencias(processo.id)}
+                        aria-pressed={pendenciasAbertas === processo.id}
                       >
                         {pendenciasAbertas === processo.id ? 'Fechar pendências' : 'Pendências'}
                       </button>
@@ -3382,13 +3472,14 @@ function App() {
                         className="acao-prazos"
                         type="button"
                         onClick={() => buscarPrazos(processo.id)}
+                        aria-pressed={prazosAbertos === processo.id}
                       >
                         {prazosAbertos === processo.id ? 'Fechar prazos' : 'Prazos'}
                       </button>
                     </div>
                   </div>
 
-                  {historicoAberto === processo.id && (
+                  {secaoInstituicao !== 'acompanhamento' && historicoAberto === processo.id && (
                     <HistoricoProcesso
                       itens={historicos[processo.id] || []}
                       carregando={carregandoHistorico === processo.id}
