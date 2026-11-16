@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import './App.css'
 import DocumentosProcesso from './components/DocumentosProcesso'
 import PlanoAtividadesProcesso from './components/PlanoAtividadesProcesso'
+import CargaHorariaProcesso from './components/CargaHorariaProcesso'
 import CentralNotificacoes from './components/CentralNotificacoes'
 import RelatoriosProcessos from './components/RelatoriosProcessos'
 
@@ -1388,6 +1389,7 @@ function App() {
   const [prazosAbertos, setPrazosAbertos] = useState(null)
   const [documentosAbertos, setDocumentosAbertos] = useState(null)
   const [planosAbertos, setPlanosAbertos] = useState(null)
+  const [cargasHorariasAbertas, setCargasHorariasAbertas] = useState(null)
   const [carregandoPrazos, setCarregandoPrazos] = useState(null)
   const [errosPrazos, setErrosPrazos] = useState({})
   const [processoPrazo, setProcessoPrazo] = useState(null)
@@ -3042,6 +3044,16 @@ function App() {
                           >
                             {planosAbertos === processo.id ? 'Fechar plano' : 'Plano de atividades'}
                           </button>
+                          <button
+                            className="acao-carga-horaria"
+                            type="button"
+                            onClick={() => setCargasHorariasAbertas(
+                              cargasHorariasAbertas === processo.id ? null : processo.id
+                            )}
+                            aria-pressed={cargasHorariasAbertas === processo.id}
+                          >
+                            {cargasHorariasAbertas === processo.id ? 'Fechar carga horária' : 'Carga horária'}
+                          </button>
                         </div>
                       </div>
 
@@ -3082,6 +3094,14 @@ function App() {
                       )}
                       {planosAbertos === processo.id && (
                         <PlanoAtividadesProcesso
+                          apiBase={API}
+                          token={token}
+                          processoId={processo.id}
+                          perfil={usuario.perfil}
+                        />
+                      )}
+                      {cargasHorariasAbertas === processo.id && (
+                        <CargaHorariaProcesso
                           apiBase={API}
                           token={token}
                           processoId={processo.id}
@@ -3268,6 +3288,16 @@ function App() {
                           >
                             {planosAbertos === processo.id ? 'Fechar plano' : 'Plano de atividades'}
                           </button>
+                          <button
+                            className="acao-carga-horaria"
+                            type="button"
+                            onClick={() => setCargasHorariasAbertas(
+                              cargasHorariasAbertas === processo.id ? null : processo.id
+                            )}
+                            aria-pressed={cargasHorariasAbertas === processo.id}
+                          >
+                            {cargasHorariasAbertas === processo.id ? 'Fechar carga horária' : 'Carga horária'}
+                          </button>
                         </div>
                       </div>
                       {secaoInstituicao !== 'acompanhamento'
@@ -3308,6 +3338,14 @@ function App() {
                       )}
                       {planosAbertos === processo.id && (
                         <PlanoAtividadesProcesso
+                          apiBase={API}
+                          token={token}
+                          processoId={processo.id}
+                          perfil={usuario.perfil}
+                        />
+                      )}
+                      {cargasHorariasAbertas === processo.id && (
+                        <CargaHorariaProcesso
                           apiBase={API}
                           token={token}
                           processoId={processo.id}
@@ -3632,6 +3670,16 @@ function App() {
                       >
                         {planosAbertos === processo.id ? 'Fechar plano' : 'Plano de atividades'}
                       </button>
+                      <button
+                        className="acao-carga-horaria"
+                        type="button"
+                        onClick={() => setCargasHorariasAbertas(
+                          cargasHorariasAbertas === processo.id ? null : processo.id
+                        )}
+                        aria-pressed={cargasHorariasAbertas === processo.id}
+                      >
+                        {cargasHorariasAbertas === processo.id ? 'Fechar carga horária' : 'Carga horária'}
+                      </button>
                     </div>
                   </div>
 
@@ -3676,6 +3724,14 @@ function App() {
                   )}
                   {planosAbertos === processo.id && (
                     <PlanoAtividadesProcesso
+                      apiBase={API}
+                      token={token}
+                      processoId={processo.id}
+                      perfil={usuario.perfil}
+                    />
+                  )}
+                  {cargasHorariasAbertas === processo.id && (
+                    <CargaHorariaProcesso
                       apiBase={API}
                       token={token}
                       processoId={processo.id}

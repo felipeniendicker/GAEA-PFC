@@ -19,7 +19,7 @@ class FlywayMigrationTests {
 
         var resultado = flyway(url).migrate();
 
-        assertEquals(10, resultado.migrationsExecuted);
+        assertEquals(11, resultado.migrationsExecuted);
 
         try (var connection = DriverManager.getConnection(url, "sa", "");
              var statement = connection.createStatement()) {
@@ -37,11 +37,12 @@ class FlywayMigrationTests {
                             'documento_processo',
                             'notificacao',
                             'plano_atividades',
-                            'atividade_plano'
+                            'atividade_plano',
+                            'registro_carga_horaria'
                       )
                     """)) {
                 resultSet.next();
-                assertEquals(9, resultSet.getInt(1));
+                assertEquals(10, resultSet.getInt(1));
             }
 
             assertThrows(SQLException.class, () -> statement.executeUpdate("""
@@ -212,6 +213,38 @@ class FlywayMigrationTests {
                     SELECT id, '   ', 2
                     FROM plano_atividades
                     """));
+
+            statement.executeUpdate("""
+                    INSERT INTO registro_carga_horaria
+                        (processo_id, registrado_por_usuario_id, data_atividade,
+                         duracao_minutos, atividade, atividade_hash, situacao,
+                         criado_em, versao)
+                    SELECT p.id, u.id, CURRENT_DATE, 60, 'Atividade desenvolvida',
+                           'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+                           'PENDENTE', CURRENT_TIMESTAMP, 0
+                    FROM processo_estagio p, usuario u
+                    WHERE p.email_aluno = 'aluno@example.com'
+                      AND u.email = 'aluno.a@example.com'
+                    """);
+            assertThrows(SQLException.class, () -> statement.executeUpdate("""
+                    INSERT INTO registro_carga_horaria
+                        (processo_id, registrado_por_usuario_id, data_atividade,
+                         duracao_minutos, atividade, atividade_hash, situacao,
+                         criado_em, versao)
+                    SELECT p.id, u.id, CURRENT_DATE, 60, 'Atividade desenvolvida',
+                           'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+                           'PENDENTE', CURRENT_TIMESTAMP, 0
+                    FROM processo_estagio p, usuario u
+                    WHERE p.email_aluno = 'aluno@example.com'
+                      AND u.email = 'aluno.a@example.com'
+                    """));
+            assertThrows(SQLException.class, () -> statement.executeUpdate("""
+                    UPDATE registro_carga_horaria
+                    SET situacao = 'REJEITADO', justificativa_rejeicao = NULL
+                    """));
+            assertThrows(SQLException.class, () -> statement.executeUpdate("""
+                    UPDATE registro_carga_horaria SET duracao_minutos = 0
+                    """));
         }
     }
 
@@ -245,7 +278,7 @@ class FlywayMigrationTests {
         }
 
         var resultado = flyway(url).migrate();
-        assertEquals(9, resultado.migrationsExecuted);
+        assertEquals(10, resultado.migrationsExecuted);
 
         try (var connection = DriverManager.getConnection(url, "sa", "");
              var statement = connection.createStatement();

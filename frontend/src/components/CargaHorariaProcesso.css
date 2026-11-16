@@ -1,0 +1,136 @@
+.carga-horaria {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid rgba(164, 124, 45, 0.35);
+  border-radius: 14px;
+  background: #fffdf7;
+}
+
+.carga-cabecalho h4,
+.carga-cabecalho p,
+.carga-item p {
+  margin: 0;
+}
+
+.carga-cabecalho p,
+.carga-metadados,
+.carga-vazia {
+  color: #59645d;
+}
+
+.carga-cabecalho p { margin-top: 0.25rem; }
+
+.carga-totais {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.carga-totais > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.75rem;
+  border-radius: 10px;
+  background: #eef2e8;
+  color: #173f2c;
+}
+
+.carga-totais strong { font-size: 1.15rem; }
+.carga-totais span { font-size: 0.8rem; }
+
+.carga-formulario {
+  display: grid;
+  grid-template-columns: minmax(10rem, 1fr) minmax(10rem, 1fr);
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding: 0.85rem;
+  border-radius: 10px;
+  background: #f4f0e5;
+}
+
+.carga-formulario label,
+.carga-formulario input,
+.carga-formulario textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.carga-formulario label,
+.carga-rejeicao label {
+  margin-bottom: 0.35rem;
+  font-weight: 700;
+  color: #173f2c;
+}
+
+.carga-atividade-campo,
+.carga-formulario button { grid-column: 1 / -1; }
+.carga-formulario button { justify-self: start; }
+
+.carga-lista {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.carga-item {
+  padding: 0.85rem;
+  border: 1px solid #ded8c9;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.carga-item-cabecalho,
+.carga-acoes {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.carga-item > p { margin-top: 0.6rem; overflow-wrap: anywhere; }
+
+.carga-situacao {
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.carga-PENDENTE { color: #6d5011; background: #f6e8b9; }
+.carga-APROVADO { color: #174e32; background: #dcecdf; }
+.carga-REJEITADO { color: #7b2424; background: #f4dddd; }
+
+.carga-metadados {
+  display: flex;
+  gap: 0.35rem 0.8rem;
+  flex-wrap: wrap;
+  margin-top: 0.65rem;
+  font-size: 0.85rem;
+}
+
+.carga-justificativa,
+.carga-rejeicao {
+  padding: 0.75rem;
+  border-left: 3px solid #8a342f;
+  background: #fff4f1;
+}
+
+.carga-avaliacao,
+.carga-rejeicao { margin-top: 0.8rem; }
+.carga-rejeicao textarea { width: 100%; box-sizing: border-box; margin-bottom: 0.65rem; }
+.carga-rejeitar { background: #8a342f; }
+
+@media (max-width: 700px) {
+  .carga-horaria { padding: 0.8rem; }
+  .carga-totais { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .carga-formulario { grid-template-columns: 1fr; }
+  .carga-formulario > *,
+  .carga-atividade-campo,
+  .carga-formulario button { grid-column: 1; }
+  .carga-formulario button,
+  .carga-acoes > * { width: 100%; }
+}
