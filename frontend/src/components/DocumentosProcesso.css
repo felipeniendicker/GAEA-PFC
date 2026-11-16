@@ -1,0 +1,169 @@
+.documentos-processo {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid rgba(164, 124, 45, 0.35);
+  border-radius: 14px;
+  background: #fffdf7;
+}
+
+.documentos-cabecalho h4,
+.documentos-cabecalho p {
+  margin: 0;
+}
+
+.documentos-cabecalho p {
+  margin-top: 0.25rem;
+  color: #526158;
+}
+
+.documento-envio {
+  margin: 1rem 0;
+  padding: 0.9rem;
+  border-radius: 10px;
+  background: #f4eddd;
+}
+
+.documento-envio label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+  color: #173f2c;
+}
+
+.documento-envio-controles,
+.documento-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.documento-envio-controles input {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.documento-envio small {
+  display: block;
+  margin-top: 0.45rem;
+  color: #526158;
+}
+
+.documentos-lista {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+
+.documento-item {
+  padding: 0.9rem;
+  border: 1px solid #ded4bd;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.documento-item-cabecalho {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.8rem;
+}
+
+.documento-item-cabecalho div,
+.documento-metadados {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.documento-item-cabecalho strong {
+  overflow-wrap: anywhere;
+}
+
+.documento-item-cabecalho div span,
+.documento-metadados {
+  color: #59645d;
+  font-size: 0.9rem;
+}
+
+.documento-situacao {
+  flex: 0 0 auto;
+  padding: 0.3rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.documento-PENDENTE {
+  color: #6d5011;
+  background: #f6e8b9;
+}
+
+.documento-APROVADO {
+  color: #174e32;
+  background: #dcecdf;
+}
+
+.documento-REPROVADO {
+  color: #7b2424;
+  background: #f4dddd;
+}
+
+.documento-metadados,
+.documento-justificativa,
+.documento-acoes {
+  margin-top: 0.7rem;
+}
+
+.documento-justificativa {
+  padding: 0.65rem;
+  border-left: 3px solid #9a3e36;
+  background: #fff4f1;
+}
+
+.documento-reprovacao {
+  margin-top: 0.8rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid #ded4bd;
+}
+
+.documento-reprovacao label,
+.documento-reprovacao textarea {
+  display: block;
+  width: 100%;
+}
+
+.documento-reprovacao textarea {
+  box-sizing: border-box;
+  margin-top: 0.4rem;
+}
+
+.botao-secundario {
+  color: #173f2c;
+  background: #fff;
+  border: 1px solid #376249;
+}
+
+.botao-reprovar-documento {
+  background: #8a342f;
+}
+
+.documentos-vazio {
+  margin: 1rem 0 0;
+  color: #59645d;
+}
+
+@media (max-width: 600px) {
+  .documentos-processo {
+    padding: 0.8rem;
+  }
+
+  .documento-item-cabecalho {
+    flex-direction: column;
+  }
+
+  .documento-envio-controles > *,
+  .documento-acoes > * {
+    width: 100%;
+  }
+}

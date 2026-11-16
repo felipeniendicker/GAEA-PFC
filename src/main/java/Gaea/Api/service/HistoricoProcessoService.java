@@ -4,6 +4,7 @@ import Gaea.Api.dto.HistoricoProcessoResponse;
 import Gaea.Api.exception.RecursoNaoEncontradoException;
 import Gaea.Api.model.HistoricoStatusProcesso;
 import Gaea.Api.model.HistoricoVinculoSupervisor;
+import Gaea.Api.model.DocumentoProcesso;
 import Gaea.Api.model.LogAuditoria;
 import Gaea.Api.model.PendenciaProcesso;
 import Gaea.Api.model.PrazoProcesso;
@@ -13,6 +14,7 @@ import Gaea.Api.model.TipoOperacaoStatus;
 import Gaea.Api.model.Usuario;
 import Gaea.Api.repository.HistoricoStatusProcessoRepository;
 import Gaea.Api.repository.HistoricoVinculoSupervisorRepository;
+import Gaea.Api.repository.DocumentoProcessoRepository;
 import Gaea.Api.repository.LogAuditoriaRepository;
 import Gaea.Api.repository.PendenciaProcessoRepository;
 import Gaea.Api.repository.PrazoProcessoRepository;
@@ -37,6 +39,7 @@ public class HistoricoProcessoService {
     private final HistoricoVinculoSupervisorRepository historicoVinculoRepository;
     private final PendenciaProcessoRepository pendenciaRepository;
     private final PrazoProcessoRepository prazoRepository;
+    private final DocumentoProcessoRepository documentoRepository;
     private final LogAuditoriaRepository auditoriaRepository;
 
     public HistoricoProcessoService(
@@ -46,6 +49,7 @@ public class HistoricoProcessoService {
             HistoricoVinculoSupervisorRepository historicoVinculoRepository,
             PendenciaProcessoRepository pendenciaRepository,
             PrazoProcessoRepository prazoRepository,
+            DocumentoProcessoRepository documentoRepository,
             LogAuditoriaRepository auditoriaRepository) {
 
         this.processoRepository = processoRepository;
@@ -54,6 +58,7 @@ public class HistoricoProcessoService {
         this.historicoVinculoRepository = historicoVinculoRepository;
         this.pendenciaRepository = pendenciaRepository;
         this.prazoRepository = prazoRepository;
+        this.documentoRepository = documentoRepository;
         this.auditoriaRepository = auditoriaRepository;
     }
 
@@ -74,6 +79,8 @@ public class HistoricoProcessoService {
                 .forEach(pendencia -> adicionarPendencia(processo, pendencia, eventos));
         prazoRepository.findAllByProcessoIdOrderByDataVencimentoAscIdAsc(processoId)
                 .forEach(prazo -> adicionarPrazo(processo, prazo, eventos));
+        documentoRepository.findAllByProcessoIdOrderByEnviadoEmDescIdDesc(processoId)
+                .forEach(documento -> adicionarDocumento(documento, eventos));
 
         return eventos.stream()
                 .filter(evento -> evento.dataHora() != null)
@@ -214,6 +221,35 @@ public class HistoricoProcessoService {
     private String descreverPrazo(String acao, PrazoProcesso prazo) {
         return acao + ": " + prazo.getDescricao()
                 + " (vencimento em " + DATA.format(prazo.getDataVencimento()) + ").";
+    }
+
+    private void adicionarDocumento(
+            DocumentoProcesso documento,
+            List<HistoricoProcessoResponse> eventos) {
+        eventos.add(new HistoricoProcessoResponse(
+                "DOCUMENTO-ENVIO-" + documento.getId(),
+                documento.getDocumentoAnterior() == null
+                        ? "ENVIO_DOCUMENTO" : "REENVIO_DOCUMENTO",
+                documento.getEnviadoEm(),
+                documento.getEnviadoPor().getNome(),
+                (documento.getDocumentoAnterior() == null
+                        ? "Documento enviado: " : "Nova versão do documento enviada: ")
+                        + documento.getNomeOriginal() + "."));
+
+        if (documento.getAnalisadoEm() != null) {
+            String descricao = documento.getSituacao() == Gaea.Api.model.SituacaoDocumento.APROVADO
+                    ? "Documento aprovado: " + documento.getNomeOriginal() + "."
+                    : "Documento reprovado: " + documento.getNomeOriginal()
+                            + ". Justificativa: " + documento.getJustificativaReprovacao();
+            eventos.add(new HistoricoProcessoResponse(
+                    "DOCUMENTO-ANALISE-" + documento.getId(),
+                    documento.getSituacao() == Gaea.Api.model.SituacaoDocumento.APROVADO
+                            ? "APROVACAO_DOCUMENTO" : "REPROVACAO_DOCUMENTO",
+                    documento.getAnalisadoEm(),
+                    documento.getAnalisadoPor() == null
+                            ? null : documento.getAnalisadoPor().getNome(),
+                    descricao));
+        }
     }
 
     private Optional<LogAuditoria> localizarAuditoria(

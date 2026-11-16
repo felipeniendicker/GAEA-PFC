@@ -9,10 +9,13 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDate;
 
 public interface PrazoProcessoRepository extends JpaRepository<PrazoProcesso, Long> {
 
     List<PrazoProcesso> findAllByProcessoIdOrderByDataVencimentoAscIdAsc(Long processoId);
+
+    List<PrazoProcesso> findAllByDataVencimentoBetween(LocalDate inicio, LocalDate fim);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""

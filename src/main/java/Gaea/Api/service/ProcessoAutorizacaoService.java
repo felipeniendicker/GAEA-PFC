@@ -38,7 +38,7 @@ public class ProcessoAutorizacaoService {
         }
     }
 
-    private boolean possuiAcesso(ProcessoEstagio processo, Usuario usuario) {
+    public boolean possuiAcesso(ProcessoEstagio processo, Usuario usuario) {
         return switch (usuario.getPerfil()) {
             case "ALUNO" -> processo.getAluno() != null
                     && processo.getAluno().getId().equals(usuario.getId());

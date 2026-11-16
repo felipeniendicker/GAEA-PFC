@@ -30,6 +30,8 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
             String perfil,
             Long instituicaoId);
 
+    List<Usuario> findAllByInstituicaoId(Long instituicaoId);
+
     Optional<Usuario> findByIdAndPerfilAndInstituicaoId(
             Long id,
             String perfil,

@@ -14,6 +14,7 @@ import Gaea.Api.model.TipoOperacaoStatus;
 import Gaea.Api.model.Usuario;
 import Gaea.Api.repository.HistoricoStatusProcessoRepository;
 import Gaea.Api.repository.HistoricoVinculoSupervisorRepository;
+import Gaea.Api.repository.DocumentoProcessoRepository;
 import Gaea.Api.repository.LogAuditoriaRepository;
 import Gaea.Api.repository.PendenciaProcessoRepository;
 import Gaea.Api.repository.PrazoProcessoRepository;
@@ -49,6 +50,7 @@ class HistoricoProcessoServiceTests {
     @Mock private HistoricoVinculoSupervisorRepository historicoVinculoRepository;
     @Mock private PendenciaProcessoRepository pendenciaRepository;
     @Mock private PrazoProcessoRepository prazoRepository;
+    @Mock private DocumentoProcessoRepository documentoRepository;
     @Mock private LogAuditoriaRepository auditoriaRepository;
 
     private HistoricoProcessoService service;
@@ -64,6 +66,7 @@ class HistoricoProcessoServiceTests {
                 historicoVinculoRepository,
                 pendenciaRepository,
                 prazoRepository,
+                documentoRepository,
                 auditoriaRepository);
         Instituicao instituicao = mock(Instituicao.class);
         lenient().when(instituicao.getId()).thenReturn(7L);

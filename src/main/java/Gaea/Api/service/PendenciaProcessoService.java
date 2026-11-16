@@ -23,17 +23,20 @@ public class PendenciaProcessoService {
     private final ProcessoEstagioRepository processoRepository;
     private final ProcessoAutorizacaoService autorizacaoService;
     private final LogAuditoriaService auditoriaService;
+    private final NotificacaoService notificacaoService;
 
     public PendenciaProcessoService(
             PendenciaProcessoRepository pendenciaRepository,
             ProcessoEstagioRepository processoRepository,
             ProcessoAutorizacaoService autorizacaoService,
-            LogAuditoriaService auditoriaService) {
+            LogAuditoriaService auditoriaService,
+            NotificacaoService notificacaoService) {
 
         this.pendenciaRepository = pendenciaRepository;
         this.processoRepository = processoRepository;
         this.autorizacaoService = autorizacaoService;
         this.auditoriaService = auditoriaService;
+        this.notificacaoService = notificacaoService;
     }
 
     @Transactional
@@ -57,6 +60,7 @@ public class PendenciaProcessoService {
                 "REGISTRO_PENDENCIA",
                 "Pendência " + salva.getId() + " do processo " + processo.getId(),
                 processo.getInstituicao());
+        notificacaoService.notificarPendencia(processo, salva.getId());
 
         return PendenciaProcessoResponse.from(salva);
     }

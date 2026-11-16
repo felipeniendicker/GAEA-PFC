@@ -1,6 +1,7 @@
 package Gaea.Api.service;
 
 import Gaea.Api.model.ViaCepResponse;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -12,10 +13,8 @@ public class ViaCepService {
 
     private final RestClient restClient;
 
-    public ViaCepService() {
-        this.restClient = RestClient.builder()
-                .baseUrl("https://viacep.com.br")
-                .build();
+    public ViaCepService(@Qualifier("viaCepRestClient") RestClient restClient) {
+        this.restClient = restClient;
     }
 
     public ViaCepResponse buscarCep(String cep) {

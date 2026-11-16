@@ -1,0 +1,122 @@
+.central-notificacoes {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.botao-notificacoes {
+  position: relative;
+  min-width: 40px;
+  min-height: 36px;
+  border: 0;
+  border-radius: 8px;
+  background: #174a4a;
+  color: #fff;
+  cursor: pointer;
+  font-size: 1.05rem;
+}
+
+.contador-notificacoes {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 19px;
+  padding: 2px 5px;
+  border-radius: 999px;
+  background: #934545;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.painel-notificacoes {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 10px);
+  right: 0;
+  width: min(390px, calc(100vw - 28px));
+  max-height: 480px;
+  overflow: auto;
+  padding: 14px;
+  border: 1px solid #d8cfc1;
+  border-radius: 10px;
+  background: #fffdf9;
+  box-shadow: 0 10px 28px rgba(38, 51, 47, 0.18);
+}
+
+.cabecalho-notificacoes,
+.item-notificacao {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cabecalho-notificacoes {
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.cabecalho-notificacoes h2 {
+  margin: 0;
+  color: #174a4a;
+  font-size: 1rem;
+}
+
+.cabecalho-notificacoes button,
+.link-notificacao {
+  border: 0;
+  background: transparent;
+  color: #174a4a;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.item-notificacao {
+  position: relative;
+  padding: 11px 6px 11px 12px;
+  border-top: 1px solid #e4ddd2;
+}
+
+.item-notificacao.nao-lida {
+  background: #f7f3ec;
+}
+
+.conteudo-notificacao {
+  display: grid;
+  flex: 1;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #26332f;
+  text-align: left;
+  cursor: pointer;
+}
+
+.conteudo-notificacao span,
+.conteudo-notificacao small {
+  color: #52605c;
+}
+
+.conteudo-notificacao small {
+  font-size: 0.72rem;
+}
+
+.link-notificacao {
+  flex: none;
+  font-size: 0.78rem;
+}
+
+.marcador-nao-lida {
+  width: 7px;
+  height: 7px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: #c79d5b;
+}
+
+.estado-notificacoes {
+  margin: 18px 4px;
+  color: #52605c;
+}

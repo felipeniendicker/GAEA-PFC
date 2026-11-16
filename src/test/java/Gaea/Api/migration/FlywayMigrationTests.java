@@ -19,7 +19,7 @@ class FlywayMigrationTests {
 
         var resultado = flyway(url).migrate();
 
-        assertEquals(7, resultado.migrationsExecuted);
+        assertEquals(9, resultado.migrationsExecuted);
 
         try (var connection = DriverManager.getConnection(url, "sa", "");
              var statement = connection.createStatement()) {
@@ -33,11 +33,13 @@ class FlywayMigrationTests {
                           'vinculo_supervisor_processo',
                            'convite_ativacao_aluno',
                            'pendencia_processo',
-                           'prazo_processo'
+                           'prazo_processo',
+                            'documento_processo',
+                            'notificacao'
                       )
                     """)) {
                 resultSet.next();
-                assertEquals(5, resultSet.getInt(1));
+                assertEquals(7, resultSet.getInt(1));
             }
 
             assertThrows(SQLException.class, () -> statement.executeUpdate("""
@@ -65,6 +67,17 @@ class FlywayMigrationTests {
                     VALUES
                         (999999, 'Prazo inválido', CURRENT_DATE, CURRENT_TIMESTAMP,
                          CURRENT_TIMESTAMP, 'instituicao@example.com', 0)
+                    """));
+
+            assertThrows(SQLException.class, () -> statement.executeUpdate("""
+                    INSERT INTO documento_processo
+                        (processo_id, enviado_por_usuario_id, nome_original,
+                         chave_armazenamento, tipo_conteudo, tamanho_bytes,
+                         hash_sha256, situacao, enviado_em, versao)
+                    VALUES
+                        (999999, 999999, 'arquivo.pdf', 'arquivo.pdf', 'application/pdf',
+                         10, 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+                         'PENDENTE', CURRENT_TIMESTAMP, 0)
                     """));
 
             statement.executeUpdate("""
@@ -197,7 +210,7 @@ class FlywayMigrationTests {
         }
 
         var resultado = flyway(url).migrate();
-        assertEquals(6, resultado.migrationsExecuted);
+        assertEquals(8, resultado.migrationsExecuted);
 
         try (var connection = DriverManager.getConnection(url, "sa", "");
              var statement = connection.createStatement();

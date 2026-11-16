@@ -31,6 +31,7 @@ public class ProcessoEstagioService {
     private final ProcessoAutorizacaoService autorizacaoService;
     private final VinculoSupervisorProcessoRepository vinculoRepository;
     private final HistoricoVinculoSupervisorRepository historicoVinculoRepository;
+    private final NotificacaoService notificacaoService;
 
     public ProcessoEstagioService(
             ProcessoEstagioRepository repository,
@@ -38,7 +39,8 @@ public class ProcessoEstagioService {
             LogAuditoriaService logAuditoriaService,
             ProcessoAutorizacaoService autorizacaoService,
             VinculoSupervisorProcessoRepository vinculoRepository,
-            HistoricoVinculoSupervisorRepository historicoVinculoRepository) {
+            HistoricoVinculoSupervisorRepository historicoVinculoRepository,
+            NotificacaoService notificacaoService) {
 
         this.repository = repository;
         this.historicoRepository = historicoRepository;
@@ -46,6 +48,7 @@ public class ProcessoEstagioService {
         this.autorizacaoService = autorizacaoService;
         this.vinculoRepository = vinculoRepository;
         this.historicoVinculoRepository = historicoVinculoRepository;
+        this.notificacaoService = notificacaoService;
     }
 
     @Transactional
@@ -192,6 +195,8 @@ public class ProcessoEstagioService {
                 acaoAuditoria,
                 "Processo " + processo.getId() + ": " + statusAnterior + " -> " + statusNovo,
                 processoAtualizado.getInstituicao());
+        notificacaoService.notificarAlteracaoStatus(
+                processoAtualizado, statusAnterior, statusNovo);
 
         return processoAtualizado;
     }

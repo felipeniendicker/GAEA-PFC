@@ -56,6 +56,9 @@ class ProcessoEstagioServiceTests {
     @Mock
     private HistoricoVinculoSupervisorRepository historicoVinculoRepository;
 
+    @Mock
+    private NotificacaoService notificacaoService;
+
     @InjectMocks
     private ProcessoEstagioService service;
 

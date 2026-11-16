@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import './App.css'
+import DocumentosProcesso from './components/DocumentosProcesso'
+import CentralNotificacoes from './components/CentralNotificacoes'
 
 const API = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 
@@ -28,7 +30,11 @@ const rotulosEventoHistorico = {
   CRIACAO_PENDENCIA: 'Registro de pendência',
   RESOLUCAO_PENDENCIA: 'Resolução de pendência',
   CRIACAO_PRAZO: 'Registro de prazo',
-  ATUALIZACAO_PRAZO: 'Atualização de prazo'
+  ATUALIZACAO_PRAZO: 'Atualização de prazo',
+  ENVIO_DOCUMENTO: 'Envio de documento',
+  REENVIO_DOCUMENTO: 'Reenvio de documento',
+  APROVACAO_DOCUMENTO: 'Aprovação de documento',
+  REPROVACAO_DOCUMENTO: 'Reprovação de documento'
 }
 
 function emailValido(email) {
@@ -1229,7 +1235,9 @@ function Cabecalho({
   aoIrSecao,
   aoIrPrivacidade,
   aoIrTermos,
-  aoSair
+  aoSair,
+  token,
+  aoAbrirProcesso
 }) {
   const menusPorPerfil = {
     INSTITUICAO: [
@@ -1288,6 +1296,14 @@ function Cabecalho({
             >
               Início
             </button>
+          )}
+
+          {usuario && mostrarSair && (
+            <CentralNotificacoes
+              apiBase={API}
+              token={token}
+              aoAbrirProcesso={aoAbrirProcesso}
+            />
           )}
 
           <button
@@ -1349,6 +1365,7 @@ function App() {
   const [cepEmpresa, setCepEmpresa] = useState('')
   const [enderecoEmpresa, setEnderecoEmpresa] = useState('')
   const [erroCep, setErroCep] = useState('')
+  const [buscandoCep, setBuscandoCep] = useState(false)
   const [salvandoProcesso, setSalvandoProcesso] = useState(false)
   const [logsAuditoria, setLogsAuditoria] = useState([])
   const [historicos, setHistoricos] = useState({})
@@ -1366,6 +1383,7 @@ function App() {
   const [resolvendoPendencia, setResolvendoPendencia] = useState(null)
   const [prazos, setPrazos] = useState({})
   const [prazosAbertos, setPrazosAbertos] = useState(null)
+  const [documentosAbertos, setDocumentosAbertos] = useState(null)
   const [carregandoPrazos, setCarregandoPrazos] = useState(null)
   const [errosPrazos, setErrosPrazos] = useState({})
   const [processoPrazo, setProcessoPrazo] = useState(null)
@@ -2131,37 +2149,45 @@ function App() {
   }
 }
   async function buscarCep() {
-  setErroCep('')
-  setEnderecoEmpresa('')
-
-  if (!cepEmpresa.trim()) {
-    setErroCep('Informe o CEP da empresa.')
-    return
-  }
-
-  try {
-    const resposta = await fetch(`${API}/api/cep/${cepEmpresa}`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    })
-
-    if (!resposta.ok) {
-      setErroCep('Não foi possível consultar o CEP.')
+    if (buscandoCep) {
       return
     }
 
-    const dados = await resposta.json()
-    const endereco = [
-      dados.logradouro,
-      dados.bairro,
-      dados.localidade && dados.uf ? `${dados.localidade}/${dados.uf}` : dados.localidade
-    ].filter(Boolean).join(', ')
-    setEnderecoEmpresa(endereco)
-  } catch {
-    setErroCep('Não foi possível conectar com o servidor.')
+    setErroCep('')
+    setEnderecoEmpresa('')
+
+    const cep = cepEmpresa.replace(/\D/g, '')
+    if (cep.length !== 8) {
+      setErroCep('Informe um CEP válido com 8 dígitos.')
+      return
+    }
+
+    setBuscandoCep(true)
+    try {
+      const resposta = await fetch(`${API}/api/cep/${cep}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+
+      if (!resposta.ok) {
+        setErroCep(await mensagemDaApi(resposta, 'Não foi possível consultar o CEP.'))
+        return
+      }
+
+      const dados = await resposta.json()
+      const endereco = [
+        dados.logradouro,
+        dados.bairro,
+        dados.localidade && dados.uf ? `${dados.localidade}/${dados.uf}` : dados.localidade
+      ].filter(Boolean).join(', ')
+      setEnderecoEmpresa(endereco)
+    } catch {
+      setErroCep('Não foi possível conectar com o servidor.')
+    } finally {
+      setBuscandoCep(false)
+    }
   }
-}
 
   async function cadastrarEstagio(event) {
     event.preventDefault()
@@ -2275,7 +2301,20 @@ function App() {
     },
     aoIrPrivacidade: () => setTela('privacidade'),
     aoIrTermos: () => setTela('termos'),
-    aoSair: sair
+    aoSair: sair,
+    token,
+    aoAbrirProcesso: (processoId) => {
+      setTela('sistema')
+      setSecaoInstituicao(usuario?.perfil === 'EMPRESA' ? 'supervisionados' : 'processos')
+      if (usuario?.perfil === 'INSTITUICAO') {
+        buscarProcessos()
+      } else if (usuario?.perfil === 'ALUNO') {
+        buscarMeusProcessos()
+      } else {
+        buscarProcessos()
+      }
+      setHistoricoAberto(processoId)
+    }
   }
 
   if (tela === 'ativacaoAluno') {
@@ -2823,10 +2862,23 @@ function App() {
                 <div className="campo">
                   <label htmlFor="cepEmpresaAluno">CEP da empresa</label>
                   <div className="campo-cep">
-                    <input id="cepEmpresaAluno" value={cepEmpresa} onChange={(event) => setCepEmpresa(event.target.value)} placeholder="00000-000" maxLength="9" required />
-                    <button type="button" onClick={buscarCep}>Buscar CEP</button>
+                    <input
+                      id="cepEmpresaAluno"
+                      value={cepEmpresa}
+                      onChange={(event) => {
+                        setCepEmpresa(event.target.value)
+                        setErroCep('')
+                      }}
+                      placeholder="00000-000"
+                      maxLength="9"
+                      inputMode="numeric"
+                      required
+                    />
+                    <button type="button" onClick={buscarCep} disabled={buscandoCep}>
+                      {buscandoCep ? 'Buscando...' : 'Buscar CEP'}
+                    </button>
                   </div>
-                  {erroCep && <p className="mensagem-erro">{erroCep}</p>}
+                  {erroCep && <p className="mensagem-erro" role="alert">{erroCep}</p>}
                 </div>
                 <div className="campo">
                   <label htmlFor="enderecoEmpresaAluno">Endereço da empresa</label>
@@ -2966,6 +3018,16 @@ function App() {
                           >
                             {prazosAbertos === processo.id ? 'Fechar prazos' : 'Ver prazos'}
                           </button>
+                          <button
+                            className="acao-documentos"
+                            type="button"
+                            onClick={() => setDocumentosAbertos(
+                              documentosAbertos === processo.id ? null : processo.id
+                            )}
+                            aria-pressed={documentosAbertos === processo.id}
+                          >
+                            {documentosAbertos === processo.id ? 'Fechar documentos' : 'Ver documentos'}
+                          </button>
                         </div>
                       </div>
 
@@ -2991,6 +3053,17 @@ function App() {
                           carregando={carregandoPrazos === processo.id}
                           erro={errosPrazos[processo.id]}
                           podeGerenciar={false}
+                        />
+                      )}
+                      {documentosAbertos === processo.id && (
+                        <DocumentosProcesso
+                          apiBase={API}
+                          token={token}
+                          processoId={processo.id}
+                          perfil={usuario.perfil}
+                          aoAtualizarHistorico={() => {
+                            if (historicoAberto === processo.id) buscarHistorico(processo.id, true)
+                          }}
                         />
                       )}
                     </div>
@@ -3153,6 +3226,16 @@ function App() {
                           >
                             {prazosAbertos === processo.id ? 'Fechar prazos' : 'Ver prazos'}
                           </button>
+                          <button
+                            className="acao-documentos"
+                            type="button"
+                            onClick={() => setDocumentosAbertos(
+                              documentosAbertos === processo.id ? null : processo.id
+                            )}
+                            aria-pressed={documentosAbertos === processo.id}
+                          >
+                            {documentosAbertos === processo.id ? 'Fechar documentos' : 'Ver documentos'}
+                          </button>
                         </div>
                       </div>
                       {secaoInstituicao !== 'acompanhamento'
@@ -3178,6 +3261,17 @@ function App() {
                           carregando={carregandoPrazos === processo.id}
                           erro={errosPrazos[processo.id]}
                           podeGerenciar={false}
+                        />
+                      )}
+                      {documentosAbertos === processo.id && (
+                        <DocumentosProcesso
+                          apiBase={API}
+                          token={token}
+                          processoId={processo.id}
+                          perfil={usuario.perfil}
+                          aoAtualizarHistorico={() => {
+                            if (historicoAberto === processo.id) buscarHistorico(processo.id, true)
+                          }}
                         />
                       )}
                     </div>
@@ -3476,6 +3570,16 @@ function App() {
                       >
                         {prazosAbertos === processo.id ? 'Fechar prazos' : 'Prazos'}
                       </button>
+                      <button
+                        className="acao-documentos"
+                        type="button"
+                        onClick={() => setDocumentosAbertos(
+                          documentosAbertos === processo.id ? null : processo.id
+                        )}
+                        aria-pressed={documentosAbertos === processo.id}
+                      >
+                        {documentosAbertos === processo.id ? 'Fechar documentos' : 'Documentos'}
+                      </button>
                     </div>
                   </div>
 
@@ -3505,6 +3609,17 @@ function App() {
                       podeGerenciar
                       aoNovoPrazo={() => abrirPrazo(processo)}
                       aoEditarPrazo={(prazo) => abrirPrazo(processo, prazo)}
+                    />
+                  )}
+                  {documentosAbertos === processo.id && (
+                    <DocumentosProcesso
+                      apiBase={API}
+                      token={token}
+                      processoId={processo.id}
+                      perfil={usuario.perfil}
+                      aoAtualizarHistorico={() => {
+                        if (historicoAberto === processo.id) buscarHistorico(processo.id, true)
+                      }}
                     />
                   )}
                 </div>

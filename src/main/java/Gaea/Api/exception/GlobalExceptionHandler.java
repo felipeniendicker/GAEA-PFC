@@ -11,6 +11,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
@@ -71,6 +72,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiError> handleIntegridade() {
         return build(HttpStatus.CONFLICT, "Os dados informados entram em conflito com um registro existente", Map.of());
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiError> handleUploadMuitoGrande() {
+        return build(HttpStatus.BAD_REQUEST, "O arquivo excede o tamanho máximo permitido", Map.of());
     }
 
     @ExceptionHandler(ResponseStatusException.class)

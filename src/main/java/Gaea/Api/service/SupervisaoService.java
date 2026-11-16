@@ -26,18 +26,21 @@ public class SupervisaoService {
     private final HistoricoVinculoSupervisorRepository historicoRepository;
     private final VerificacaoEmailService verificacaoEmailService;
     private final LogAuditoriaService auditoriaService;
+    private final NotificacaoService notificacaoService;
 
     public SupervisaoService(
             VinculoSupervisorProcessoRepository vinculoRepository,
             ProcessoEstagioRepository processoRepository,
             HistoricoVinculoSupervisorRepository historicoRepository,
             VerificacaoEmailService verificacaoEmailService,
-            LogAuditoriaService auditoriaService) {
+            LogAuditoriaService auditoriaService,
+            NotificacaoService notificacaoService) {
         this.vinculoRepository = vinculoRepository;
         this.processoRepository = processoRepository;
         this.historicoRepository = historicoRepository;
         this.verificacaoEmailService = verificacaoEmailService;
         this.auditoriaService = auditoriaService;
+        this.notificacaoService = notificacaoService;
     }
 
     @Transactional(readOnly = true)
@@ -64,6 +67,7 @@ public class SupervisaoService {
                 supervisor.getEmail(), "CONFIRMACAO_SUPERVISAO",
                 "Vínculo " + vinculo.getId() + " do processo " + vinculo.getProcesso().getId(),
                 vinculo.getProcesso().getInstituicao());
+        notificacaoService.notificarSupervisao(vinculo, true);
     }
 
     @Transactional
@@ -80,6 +84,7 @@ public class SupervisaoService {
                 supervisor.getEmail(), "RECUSA_SUPERVISAO",
                 "Vínculo " + vinculo.getId() + " recusado: " + request.justificativa(),
                 vinculo.getProcesso().getInstituicao());
+        notificacaoService.notificarSupervisao(vinculo, false);
     }
 
     @Transactional
