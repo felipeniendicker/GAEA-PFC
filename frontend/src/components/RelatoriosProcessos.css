@@ -1,0 +1,78 @@
+.relatorios-filtros {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: end;
+}
+
+.relatorios-acoes {
+  display: flex;
+  gap: 0.75rem;
+  grid-column: 1 / -1;
+}
+
+.botao-secundario {
+  background: transparent;
+  color: var(--cor-primaria, #14532d);
+  border: 1px solid currentColor;
+}
+
+.indicadores-relatorio {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.indicador-card {
+  background: var(--cor-superficie, #fff);
+  border: 1px solid #dfe7df;
+  border-radius: 0.75rem;
+  padding: 1rem;
+}
+
+.indicador-card span,
+.indicador-card strong {
+  display: block;
+}
+
+.indicador-card strong {
+  font-size: 1.7rem;
+  margin-top: 0.35rem;
+}
+
+.tabela-relatorio {
+  overflow-x: auto;
+  background: var(--cor-superficie, #fff);
+  border: 1px solid #dfe7df;
+  border-radius: 0.75rem;
+}
+
+.relatorio-linha {
+  display: grid;
+  grid-template-columns: 1.2fr 1.2fr 1.2fr 0.9fr 1.2fr;
+  gap: 1rem;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid #edf1ed;
+  min-width: 760px;
+}
+
+.relatorio-linha:last-child {
+  border-bottom: 0;
+}
+
+.relatorio-cabecalho {
+  font-weight: 700;
+  background: #f5f8f5;
+}
+
+@media (max-width: 760px) {
+  .relatorios-filtros {
+    grid-template-columns: 1fr;
+  }
+
+  .relatorios-acoes {
+    grid-column: auto;
+    flex-wrap: wrap;
+  }
+}

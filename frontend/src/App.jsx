@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import './App.css'
 import DocumentosProcesso from './components/DocumentosProcesso'
 import CentralNotificacoes from './components/CentralNotificacoes'
+import RelatoriosProcessos from './components/RelatoriosProcessos'
 
 const API = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 
@@ -1245,6 +1246,7 @@ function Cabecalho({
       { secao: 'alunos', rotulo: 'Gestão de alunos' },
       { secao: 'processos', rotulo: 'Processos de estágio' },
       { secao: 'acompanhamento', rotulo: 'Pendências e prazos' },
+      { secao: 'relatorios', rotulo: 'Relatórios' },
       { secao: 'auditoria', rotulo: 'Auditoria' }
     ],
     ALUNO: [
@@ -3370,6 +3372,8 @@ function App() {
           </>
         ) : secaoInstituicao === 'alunos' ? (
           <GestaoAlunos token={token} />
+        ) : secaoInstituicao === 'relatorios' ? (
+          <RelatoriosProcessos apiBase={API} token={token} />
         ) : secaoInstituicao === 'auditoria' ? (
           <>
             <header className="cabecalho">
