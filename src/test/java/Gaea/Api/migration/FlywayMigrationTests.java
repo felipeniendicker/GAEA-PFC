@@ -19,7 +19,7 @@ class FlywayMigrationTests {
 
         var resultado = flyway(url).migrate();
 
-        assertEquals(11, resultado.migrationsExecuted);
+        assertEquals(12, resultado.migrationsExecuted);
 
         try (var connection = DriverManager.getConnection(url, "sa", "");
              var statement = connection.createStatement()) {
@@ -38,11 +38,12 @@ class FlywayMigrationTests {
                             'notificacao',
                             'plano_atividades',
                             'atividade_plano',
-                            'registro_carga_horaria'
+                            'registro_carga_horaria',
+                            'solicitacao_privacidade'
                       )
                     """)) {
                 resultSet.next();
-                assertEquals(10, resultSet.getInt(1));
+                assertEquals(11, resultSet.getInt(1));
             }
 
             assertThrows(SQLException.class, () -> statement.executeUpdate("""
@@ -278,7 +279,7 @@ class FlywayMigrationTests {
         }
 
         var resultado = flyway(url).migrate();
-        assertEquals(10, resultado.migrationsExecuted);
+        assertEquals(11, resultado.migrationsExecuted);
 
         try (var connection = DriverManager.getConnection(url, "sa", "");
              var statement = connection.createStatement();

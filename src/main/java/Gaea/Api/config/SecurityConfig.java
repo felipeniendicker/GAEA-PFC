@@ -87,6 +87,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/verificacoes-email/reenviar").hasRole("EMPRESA")
                         .requestMatchers("/api/notificacoes/**")
                         .hasAnyRole("ALUNO", "INSTITUICAO", "EMPRESA")
+                        .requestMatchers("/api/privacidade/**")
+                        .hasAnyRole("ALUNO", "INSTITUICAO", "EMPRESA")
                         .requestMatchers("/api/relatorios/**").hasRole("INSTITUICAO")
                         .requestMatchers("/api/supervisao/**").hasRole("EMPRESA")
                         .requestMatchers("/api/instituicoes/alunos/**").hasRole("INSTITUICAO")

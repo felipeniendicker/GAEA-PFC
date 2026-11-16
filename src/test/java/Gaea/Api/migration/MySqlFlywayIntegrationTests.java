@@ -43,7 +43,7 @@ class MySqlFlywayIntegrationTests {
     JdbcTemplate jdbcTemplate;
 
     @Test
-    void deveAplicarV1AV11EValidarMapeamentoJpaNoMySqlReal() {
+    void deveAplicarV1AV12EValidarMapeamentoJpaNoMySqlReal() {
         Integer migracoesAplicadas = jdbcTemplate.queryForObject("""
                 SELECT COUNT(*)
                 FROM flyway_schema_history
@@ -57,7 +57,7 @@ class MySqlFlywayIntegrationTests {
                   AND table_name <> 'flyway_schema_history'
                 """, Integer.class);
 
-        assertEquals(11, migracoesAplicadas);
-        assertEquals(16, tabelasDeNegocio);
+        assertEquals(12, migracoesAplicadas);
+        assertEquals(17, tabelasDeNegocio);
     }
 }

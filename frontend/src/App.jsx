@@ -5,6 +5,7 @@ import PlanoAtividadesProcesso from './components/PlanoAtividadesProcesso'
 import CargaHorariaProcesso from './components/CargaHorariaProcesso'
 import CentralNotificacoes from './components/CentralNotificacoes'
 import RelatoriosProcessos from './components/RelatoriosProcessos'
+import SolicitacoesPrivacidade from './components/SolicitacoesPrivacidade'
 
 const API = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 
@@ -2471,6 +2472,9 @@ function App() {
               </p>
             </section>
           </article>
+          {usuario && (
+            <SolicitacoesPrivacidade apiBase={API} token={token} />
+          )}
         </main>
       </div>
     )

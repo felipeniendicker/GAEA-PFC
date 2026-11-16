@@ -1,0 +1,62 @@
+.solicitacoes-privacidade {
+  margin-top: 1.5rem;
+}
+
+.privacidade-formulario {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.35fr) minmax(260px, 1fr) auto;
+  gap: 1rem;
+  align-items: end;
+}
+
+.privacidade-descricao textarea {
+  width: 100%;
+  resize: vertical;
+}
+
+.historico-privacidade {
+  margin-top: 1.5rem;
+}
+
+.lista-solicitacoes {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.solicitacao-item {
+  border: 1px solid #dfe7df;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  background: var(--cor-superficie, #fff);
+}
+
+.solicitacao-item > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.solicitacao-item p {
+  margin: 0.75rem 0 0;
+  white-space: pre-wrap;
+}
+
+.solicitacao-situacao {
+  display: inline-block;
+  margin-top: 0.6rem;
+  color: #355b3b;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+@media (max-width: 760px) {
+  .privacidade-formulario {
+    grid-template-columns: 1fr;
+  }
+
+  .solicitacao-item > div {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+}
