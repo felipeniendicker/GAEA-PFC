@@ -19,7 +19,7 @@ class FlywayMigrationTests {
 
         var resultado = flyway(url).migrate();
 
-        assertEquals(9, resultado.migrationsExecuted);
+        assertEquals(10, resultado.migrationsExecuted);
 
         try (var connection = DriverManager.getConnection(url, "sa", "");
              var statement = connection.createStatement()) {
@@ -35,11 +35,13 @@ class FlywayMigrationTests {
                            'pendencia_processo',
                            'prazo_processo',
                             'documento_processo',
-                            'notificacao'
+                            'notificacao',
+                            'plano_atividades',
+                            'atividade_plano'
                       )
                     """)) {
                 resultSet.next();
-                assertEquals(7, resultSet.getInt(1));
+                assertEquals(9, resultSet.getInt(1));
             }
 
             assertThrows(SQLException.class, () -> statement.executeUpdate("""
@@ -177,6 +179,39 @@ class FlywayMigrationTests {
                            '000123', TRUE, TRUE, TRUE
                     FROM instituicao WHERE cnpj = '11222333000181'
                     """));
+
+            statement.executeUpdate("""
+                    INSERT INTO plano_atividades
+                        (processo_id, criado_por_usuario_id, carga_horaria_planejada,
+                         situacao, criado_em, versao)
+                    SELECT p.id, u.id, 120.00, 'PENDENTE', CURRENT_TIMESTAMP, 0
+                    FROM processo_estagio p, usuario u
+                    WHERE p.email_aluno = 'aluno@example.com'
+                      AND u.email = 'aluno.a@example.com'
+                    """);
+            statement.executeUpdate("""
+                    INSERT INTO atividade_plano (plano_id, descricao, ordem)
+                    SELECT id, 'Atividade prevista', 1
+                    FROM plano_atividades
+                    """);
+            assertThrows(SQLException.class, () -> statement.executeUpdate("""
+                    INSERT INTO plano_atividades
+                        (processo_id, criado_por_usuario_id, carga_horaria_planejada,
+                         situacao, criado_em, versao)
+                    SELECT p.id, u.id, 80.00, 'PENDENTE', CURRENT_TIMESTAMP, 0
+                    FROM processo_estagio p, usuario u
+                    WHERE p.email_aluno = 'aluno@example.com'
+                      AND u.email = 'aluno.a@example.com'
+                    """));
+            assertThrows(SQLException.class, () -> statement.executeUpdate("""
+                    UPDATE plano_atividades
+                    SET situacao = 'REJEITADO', justificativa_rejeicao = NULL
+                    """));
+            assertThrows(SQLException.class, () -> statement.executeUpdate("""
+                    INSERT INTO atividade_plano (plano_id, descricao, ordem)
+                    SELECT id, '   ', 2
+                    FROM plano_atividades
+                    """));
         }
     }
 
@@ -210,7 +245,7 @@ class FlywayMigrationTests {
         }
 
         var resultado = flyway(url).migrate();
-        assertEquals(8, resultado.migrationsExecuted);
+        assertEquals(9, resultado.migrationsExecuted);
 
         try (var connection = DriverManager.getConnection(url, "sa", "");
              var statement = connection.createStatement();

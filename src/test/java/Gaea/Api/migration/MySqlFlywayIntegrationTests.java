@@ -43,11 +43,11 @@ class MySqlFlywayIntegrationTests {
     JdbcTemplate jdbcTemplate;
 
     @Test
-    void deveAplicarV1AV8EValidarMapeamentoJpaNoMySqlReal() {
+    void deveAplicarV1AV10EValidarMapeamentoJpaNoMySqlReal() {
         Integer migracoesAplicadas = jdbcTemplate.queryForObject("""
                 SELECT COUNT(*)
                 FROM flyway_schema_history
-                WHERE version BETWEEN '1' AND '8'
+                WHERE version IS NOT NULL
                   AND success = 1
                 """, Integer.class);
         Integer tabelasDeNegocio = jdbcTemplate.queryForObject("""
@@ -57,7 +57,7 @@ class MySqlFlywayIntegrationTests {
                   AND table_name <> 'flyway_schema_history'
                 """, Integer.class);
 
-        assertEquals(8, migracoesAplicadas);
-        assertEquals(12, tabelasDeNegocio);
+        assertEquals(10, migracoesAplicadas);
+        assertEquals(15, tabelasDeNegocio);
     }
 }

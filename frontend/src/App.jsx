@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import './App.css'
 import DocumentosProcesso from './components/DocumentosProcesso'
+import PlanoAtividadesProcesso from './components/PlanoAtividadesProcesso'
 import CentralNotificacoes from './components/CentralNotificacoes'
 import RelatoriosProcessos from './components/RelatoriosProcessos'
 
@@ -1386,6 +1387,7 @@ function App() {
   const [prazos, setPrazos] = useState({})
   const [prazosAbertos, setPrazosAbertos] = useState(null)
   const [documentosAbertos, setDocumentosAbertos] = useState(null)
+  const [planosAbertos, setPlanosAbertos] = useState(null)
   const [carregandoPrazos, setCarregandoPrazos] = useState(null)
   const [errosPrazos, setErrosPrazos] = useState({})
   const [processoPrazo, setProcessoPrazo] = useState(null)
@@ -3030,6 +3032,16 @@ function App() {
                           >
                             {documentosAbertos === processo.id ? 'Fechar documentos' : 'Ver documentos'}
                           </button>
+                          <button
+                            className="acao-plano"
+                            type="button"
+                            onClick={() => setPlanosAbertos(
+                              planosAbertos === processo.id ? null : processo.id
+                            )}
+                            aria-pressed={planosAbertos === processo.id}
+                          >
+                            {planosAbertos === processo.id ? 'Fechar plano' : 'Plano de atividades'}
+                          </button>
                         </div>
                       </div>
 
@@ -3066,6 +3078,14 @@ function App() {
                           aoAtualizarHistorico={() => {
                             if (historicoAberto === processo.id) buscarHistorico(processo.id, true)
                           }}
+                        />
+                      )}
+                      {planosAbertos === processo.id && (
+                        <PlanoAtividadesProcesso
+                          apiBase={API}
+                          token={token}
+                          processoId={processo.id}
+                          perfil={usuario.perfil}
                         />
                       )}
                     </div>
@@ -3238,6 +3258,16 @@ function App() {
                           >
                             {documentosAbertos === processo.id ? 'Fechar documentos' : 'Ver documentos'}
                           </button>
+                          <button
+                            className="acao-plano"
+                            type="button"
+                            onClick={() => setPlanosAbertos(
+                              planosAbertos === processo.id ? null : processo.id
+                            )}
+                            aria-pressed={planosAbertos === processo.id}
+                          >
+                            {planosAbertos === processo.id ? 'Fechar plano' : 'Plano de atividades'}
+                          </button>
                         </div>
                       </div>
                       {secaoInstituicao !== 'acompanhamento'
@@ -3274,6 +3304,14 @@ function App() {
                           aoAtualizarHistorico={() => {
                             if (historicoAberto === processo.id) buscarHistorico(processo.id, true)
                           }}
+                        />
+                      )}
+                      {planosAbertos === processo.id && (
+                        <PlanoAtividadesProcesso
+                          apiBase={API}
+                          token={token}
+                          processoId={processo.id}
+                          perfil={usuario.perfil}
                         />
                       )}
                     </div>
@@ -3584,6 +3622,16 @@ function App() {
                       >
                         {documentosAbertos === processo.id ? 'Fechar documentos' : 'Documentos'}
                       </button>
+                      <button
+                        className="acao-plano"
+                        type="button"
+                        onClick={() => setPlanosAbertos(
+                          planosAbertos === processo.id ? null : processo.id
+                        )}
+                        aria-pressed={planosAbertos === processo.id}
+                      >
+                        {planosAbertos === processo.id ? 'Fechar plano' : 'Plano de atividades'}
+                      </button>
                     </div>
                   </div>
 
@@ -3624,6 +3672,14 @@ function App() {
                       aoAtualizarHistorico={() => {
                         if (historicoAberto === processo.id) buscarHistorico(processo.id, true)
                       }}
+                    />
+                  )}
+                  {planosAbertos === processo.id && (
+                    <PlanoAtividadesProcesso
+                      apiBase={API}
+                      token={token}
+                      processoId={processo.id}
+                      perfil={usuario.perfil}
                     />
                   )}
                 </div>

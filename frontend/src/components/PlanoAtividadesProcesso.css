@@ -1,0 +1,120 @@
+.plano-atividades {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid rgba(164, 124, 45, 0.35);
+  border-radius: 14px;
+  background: #fffdf7;
+}
+
+.plano-cabecalho,
+.plano-acoes {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.plano-cabecalho h4,
+.plano-cabecalho p {
+  margin: 0;
+}
+
+.plano-cabecalho p,
+.plano-resumo,
+.plano-vazio {
+  color: #59645d;
+}
+
+.plano-cabecalho p {
+  margin-top: 0.25rem;
+}
+
+.plano-situacao {
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.plano-PENDENTE { color: #6d5011; background: #f6e8b9; }
+.plano-APROVADO { color: #174e32; background: #dcecdf; }
+.plano-REJEITADO { color: #7b2424; background: #f4dddd; }
+
+.plano-conteudo,
+.plano-formulario {
+  margin-top: 1rem;
+}
+
+.plano-resumo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.9rem;
+}
+
+.plano-lista {
+  margin: 1rem 0;
+  padding-left: 1.4rem;
+}
+
+.plano-lista li {
+  margin-bottom: 0.35rem;
+  overflow-wrap: anywhere;
+}
+
+.plano-formulario label,
+.plano-formulario textarea,
+.plano-formulario input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.plano-formulario label {
+  margin: 0.75rem 0 0.35rem;
+  font-weight: 700;
+  color: #173f2c;
+}
+
+.plano-formulario input {
+  max-width: 16rem;
+}
+
+.plano-formulario button {
+  margin-top: 0.85rem;
+}
+
+.plano-justificativa,
+.plano-rejeicao {
+  padding: 0.75rem;
+  border-left: 3px solid #8a342f;
+  background: #fff4f1;
+}
+
+.plano-avaliacao,
+.plano-rejeicao {
+  margin-top: 0.9rem;
+}
+
+.plano-rejeicao label,
+.plano-rejeicao textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.plano-rejeicao textarea {
+  margin: 0.4rem 0 0.7rem;
+}
+
+.plano-rejeitar {
+  background: #8a342f;
+}
+
+@media (max-width: 600px) {
+  .plano-atividades { padding: 0.8rem; }
+  .plano-cabecalho { flex-direction: column; }
+  .plano-acoes > *,
+  .plano-formulario button { width: 100%; }
+}
