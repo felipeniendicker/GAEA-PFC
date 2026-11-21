@@ -35,5 +35,28 @@ build/
 # Frontend
 frontend/node_modules/
 frontend/dist/
-frontend/.env
-frontend/.env.*
+
+# Variáveis locais e segredos
+.env
+.env.*
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example
+*.pem
+*.key
+*.secret
+
+# Dumps e backups de banco (as migrations Flyway permanecem versionáveis)
+*.sql
+!src/main/resources/db/migration/*.sql
+*_backup*
+*backup_*
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*

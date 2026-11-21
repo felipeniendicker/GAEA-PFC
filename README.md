@@ -228,6 +228,9 @@ Na raiz do repositório:
 
 Com a configuração padrão, a API fica disponível em `http://localhost:8080`.
 
+Para publicar os três serviços no Railway, consulte
+[`docs/railway-deploy.md`](docs/railway-deploy.md).
+
 Para uma instalação nova e vazia, as migrations podem ser executadas de forma controlada habilitando `FLYWAY_ENABLED=true`. O projeto usa `ddl-auto=validate`; o Hibernate valida o esquema, mas não substitui as migrations.
 
 ### Frontend

@@ -395,6 +395,17 @@ class SecurityIntegrationTests {
     }
 
     @Test
+    void devePermitirSomenteGetNoHealthcheckSemAutenticacao() throws Exception {
+        mockMvc.perform(get("/actuator/health"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("UP"))
+                .andExpect(jsonPath("$.components").doesNotExist());
+
+        mockMvc.perform(post("/actuator/health"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     void deveNegarDashboardParaPerfilNaoAutorizado() throws Exception {
         Usuario usuario = salvarUsuario("administrador@example.com", "ADMIN");
 

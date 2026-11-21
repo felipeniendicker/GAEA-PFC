@@ -81,6 +81,7 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/ativacoes/aluno").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/verificacoes-email/confirmar").permitAll()
