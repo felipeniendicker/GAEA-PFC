@@ -231,6 +231,10 @@ Com a configuração padrão, a API fica disponível em `http://localhost:8080`.
 Para publicar os três serviços no Railway, consulte
 [`docs/railway-deploy.md`](docs/railway-deploy.md).
 
+Para preparar um ambiente isolado com identidades fictícias, consulte
+[`docs/professional-demo-seed.md`](docs/professional-demo-seed.md). A carga profissional
+fica desativada por padrão e nunca deve ser habilitada em produção.
+
 Para uma instalação nova e vazia, as migrations podem ser executadas de forma controlada habilitando `FLYWAY_ENABLED=true`. O projeto usa `ddl-auto=validate`; o Hibernate valida o esquema, mas não substitui as migrations.
 
 ### Frontend
@@ -265,7 +269,9 @@ Na raiz do projeto:
 .\mvnw.cmd test
 ```
 
-A última auditoria local registrou **146 testes de backend aprovados**. Uma parte dessa contagem correspondia ao teste de integração do `DemoDataSeeder`, mantido em arquivo não rastreado naquele workspace; portanto, um checkout contendo somente os arquivos versionados pode executar **145 testes**. O resultado deve ser confirmado no ambiente usado para a avaliação.
+O resultado e a quantidade de testes devem ser confirmados no ambiente usado para a
+avaliação. A suíte inclui a carga profissional em H2 volátil; ela não acessa o MySQL
+local nem persiste os documentos fictícios no sistema de arquivos.
 
 Não há relatório de cobertura percentual configurado, por isso este README não declara um índice de cobertura.
 
