@@ -6,15 +6,27 @@ import CargaHorariaProcesso from './components/CargaHorariaProcesso'
 import CentralNotificacoes from './components/CentralNotificacoes'
 import RelatoriosProcessos from './components/RelatoriosProcessos'
 import SolicitacoesPrivacidade from './components/SolicitacoesPrivacidade'
+import InstituicoesAdmin, {
+  ConfirmacaoInstituicao,
+  SolicitacaoInstituicaoPublica
+} from './components/admin/InstituicoesAdmin'
+import CampoSenha from './components/auth/CampoSenha'
+import RequisitosSenha from './components/auth/RequisitosSenha'
+import {
+  RedefinicaoSenha,
+  SolicitacaoRecuperacaoSenha
+} from './components/auth/RecuperacaoSenha'
+import { senhaAtendePolitica } from './utils/senha'
+import {
+  formatarData,
+  formatarDataHora,
+  ROTULOS_STATUS_PROCESSO,
+  apresentacaoInstituicao
+} from './utils/apresentacao'
 
 const API = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 
-const rotulosStatus = {
-  PENDENTE: 'Pendente',
-  EM_ANALISE: 'Em análise',
-  APROVADO: 'Aprovado',
-  REPROVADO: 'Reprovado'
-}
+const rotulosStatus = ROTULOS_STATUS_PROCESSO
 
 const rotulosVinculo = {
   PENDENTE: 'Aguardando confirmação do supervisor',
@@ -113,7 +125,7 @@ function HistoricoProcesso({ itens, carregando, erro }) {
                 ? `Responsável: ${item.responsavel}`
                 : 'Responsável não registrado'}
             </span>
-            <span>{new Date(item.dataHora).toLocaleString('pt-BR')}</span>
+            <span>{formatarDataHora(item.dataHora)}</span>
           </div>
         ))
       )}
@@ -157,9 +169,9 @@ function PendenciasProcesso({
               </span>
             </div>
             <div className="pendencia-datas">
-              <span>Criada em {new Date(item.criadaEm).toLocaleString('pt-BR')}</span>
+              <span>Criada em {formatarDataHora(item.criadaEm)}</span>
               {item.resolvidaEm && (
-                <span>Resolvida em {new Date(item.resolvidaEm).toLocaleString('pt-BR')}</span>
+                <span>Resolvida em {formatarDataHora(item.resolvidaEm)}</span>
               )}
             </div>
             {podeGerenciar && item.situacao === 'ABERTA' && (
@@ -180,7 +192,7 @@ function PendenciasProcesso({
 }
 
 function formatarDataPrazo(data) {
-  return new Date(`${data}T00:00:00`).toLocaleDateString('pt-BR')
+  return formatarData(data)
 }
 
 function prazoVencido(data) {
@@ -227,8 +239,8 @@ function PrazosProcesso({
                 Vencimento: <strong>{formatarDataPrazo(item.dataVencimento)}</strong>
               </p>
               <div className="prazo-datas">
-                <span>Criado em {new Date(item.criadaEm).toLocaleString('pt-BR')}</span>
-                <span>Atualizado em {new Date(item.atualizadaEm).toLocaleString('pt-BR')}</span>
+                <span>Criado em {formatarDataHora(item.criadaEm)}</span>
+                <span>Atualizado em {formatarDataHora(item.atualizadaEm)}</span>
               </div>
               {podeGerenciar && (
                 <button className="acao-editar-prazo" type="button" onClick={() => aoEditarPrazo(item)}>
@@ -993,7 +1005,7 @@ function GestaoAlunos({ token }) {
           </div>
           <input value={convite.link} readOnly aria-label="Link de ativação" onFocus={(event) => event.target.select()} />
           <div className="convite-acoes">
-            <small>Expira em {new Date(convite.expiraEm).toLocaleString('pt-BR')}.</small>
+            <small>Expira em {formatarDataHora(convite.expiraEm)}.</small>
             <button type="button" onClick={copiarConvite}>Copiar link</button>
             <button type="button" className="botao-secundario" onClick={() => setConvite(null)}>Ocultar</button>
           </div>
@@ -1066,7 +1078,7 @@ function GestaoAlunos({ token }) {
                     </div>
                     <dl>
                       <div><dt>Matrícula (RA/RGM)</dt><dd>{aluno.matricula || 'Registro legado sem matrícula'}</dd></div>
-                      <div><dt>Convite</dt><dd>{aluno.conviteExpiraEm ? `Expira em ${new Date(aluno.conviteExpiraEm).toLocaleString('pt-BR')}` : 'Não disponível'}</dd></div>
+                      <div><dt>Convite</dt><dd>{aluno.conviteExpiraEm ? `Expira em ${formatarDataHora(aluno.conviteExpiraEm)}` : 'Não disponível'}</dd></div>
                     </dl>
                     <div className="aluno-acoes">
                       <button type="button" className="botao-secundario" onClick={() => iniciarEdicao(aluno)}>Editar</button>
@@ -1101,12 +1113,8 @@ function AtivacaoAluno({ tokenAtivacao, aoConcluir }) {
   async function ativar(event) {
     event.preventDefault()
     setErro('')
-    if (senha.length < 8) {
-      setErro('A senha deve ter pelo menos 8 caracteres.')
-      return
-    }
-    if (senha !== confirmacao) {
-      setErro('A confirmação da senha não corresponde.')
+    if (!senhaAtendePolitica(senha, confirmacao)) {
+      setErro('Revise os requisitos da senha antes de continuar.')
       return
     }
     if (!termos) {
@@ -1154,14 +1162,13 @@ function AtivacaoAluno({ tokenAtivacao, aoConcluir }) {
           </div>
         ) : (
           <form onSubmit={ativar}>
-            <div className="campo">
-              <label htmlFor="senhaAtivacao">Nova senha</label>
-              <input id="senhaAtivacao" type="password" value={senha} onChange={(event) => setSenha(event.target.value)} minLength="8" autoComplete="new-password" required autoFocus />
-            </div>
-            <div className="campo">
-              <label htmlFor="confirmacaoSenhaAtivacao">Confirmar senha</label>
-              <input id="confirmacaoSenhaAtivacao" type="password" value={confirmacao} onChange={(event) => setConfirmacao(event.target.value)} minLength="8" autoComplete="new-password" required />
-            </div>
+            <CampoSenha id="senhaAtivacao" label="Nova senha" value={senha}
+              onChange={(event) => setSenha(event.target.value)} autoComplete="new-password"
+              minLength={8} maxLength={64} describedBy="requisitosAtivacao" autoFocus />
+            <CampoSenha id="confirmacaoSenhaAtivacao" label="Confirmar senha" value={confirmacao}
+              onChange={(event) => setConfirmacao(event.target.value)} autoComplete="new-password"
+              minLength={8} maxLength={64} describedBy="requisitosAtivacao" />
+            <RequisitosSenha senha={senha} confirmacao={confirmacao} id="requisitosAtivacao" />
             <label className="aceite ativacao-aceite">
               <input type="checkbox" checked={termos} onChange={(event) => setTermos(event.target.checked)} />
               Li e aceito os Termos de Uso e a Política de Privacidade.
@@ -1262,6 +1269,9 @@ function Cabecalho({
       { secao: 'solicitacoes', rotulo: 'Solicitações de supervisão' },
       { secao: 'supervisionados', rotulo: 'Estágios supervisionados' },
       { secao: 'acompanhamento', rotulo: 'Prazos e pendências' }
+    ],
+    ADMIN_GAEA: [
+      { secao: 'dashboard', rotulo: 'Instituições' }
     ]
   }
   const itensPerfil = usuario ? menusPorPerfil[usuario.perfil] || [] : []
@@ -1303,7 +1313,7 @@ function Cabecalho({
             </button>
           )}
 
-          {usuario && mostrarSair && (
+          {usuario && mostrarSair && usuario.perfil !== 'ADMIN_GAEA' && (
             <CentralNotificacoes
               apiBase={API}
               token={token}
@@ -1342,23 +1352,43 @@ function App() {
   const parametrosIniciais = new URLSearchParams(window.location.hash.slice(1))
   const tokenAtivacaoInicial = parametrosIniciais.get('conviteAluno') || ''
   const tokenVerificacaoInicial = parametrosIniciais.get('verificarEmail') || ''
+  const tokenVerificacaoInstituicao = parametrosIniciais.get('verificarInstituicao') || ''
+  const tokenAtivacaoInstituicao = parametrosIniciais.get('ativarInstituicao') || ''
+  const [tokenRecuperacaoInicial] = useState(
+    () => parametrosIniciais.get('redefinirSenha') || ''
+  )
   const [usuario, setUsuario] = useState(null)
   const [token, setToken] = useState('')
 
+  useEffect(() => {
+    if (tokenRecuperacaoInicial || tokenVerificacaoInstituicao || tokenAtivacaoInstituicao) {
+      window.history.replaceState({}, document.title, window.location.pathname)
+    }
+  }, [tokenRecuperacaoInicial, tokenVerificacaoInstituicao, tokenAtivacaoInstituicao])
+
   const [tela, setTela] = useState(
-    tokenAtivacaoInicial ? 'ativacaoAluno' : tokenVerificacaoInicial ? 'verificacaoEmail' : 'login'
+    tokenAtivacaoInicial
+      ? 'ativacaoAluno'
+      : tokenVerificacaoInicial
+        ? 'verificacaoEmail'
+        : tokenRecuperacaoInicial ? 'redefinicaoSenha'
+          : tokenVerificacaoInstituicao ? 'verificacaoInstituicao'
+            : tokenAtivacaoInstituicao ? 'ativacaoInstituicao' : 'login'
   )
 
   const [emailLogin, setEmailLogin] = useState('')
   const [senhaLogin, setSenhaLogin] = useState('')
   const [erroLogin, setErroLogin] = useState('')
+  const [carregandoLogin, setCarregandoLogin] = useState(false)
 
   const [nomeCadastro, setNomeCadastro] = useState('')
   const [emailCadastro, setEmailCadastro] = useState('')
   const [senhaCadastro, setSenhaCadastro] = useState('')
+  const [confirmacaoSenhaCadastro, setConfirmacaoSenhaCadastro] = useState('')
   const [termosAceitos, setTermosAceitos] = useState(false)
   const [erroCadastro, setErroCadastro] = useState('')
   const [sucessoCadastro, setSucessoCadastro] = useState('')
+  const [carregandoCadastro, setCarregandoCadastro] = useState(false)
 
   const [nomeEmpresa, setNomeEmpresa] = useState('')
   const [cnpjEmpresa, setCnpjEmpresa] = useState('')
@@ -1418,6 +1448,7 @@ function App() {
   async function fazerLogin(event) {
     event.preventDefault()
     setErroLogin('')
+    setCarregandoLogin(true)
 
     try {
       const resposta = await fetch(`${API}/api/auth/login`, {
@@ -1451,7 +1482,7 @@ function App() {
       setSenhaLogin('')
       setSecaoInstituicao('dashboard')
       setTela('sistema')
-      buscarResumoDashboard(dados.token)
+      if (dados.perfil !== 'ADMIN_GAEA') buscarResumoDashboard(dados.token)
 
       if (dados.perfil === 'INSTITUICAO') {
         buscarProcessos(dados.token)
@@ -1463,6 +1494,8 @@ function App() {
       }
     } catch {
       setErroLogin('Não foi possível conectar com o servidor.')
+    } finally {
+      setCarregandoLogin(false)
     }
   }
 
@@ -1484,8 +1517,8 @@ function App() {
       return
     }
 
-    if (senhaCadastro.length < 8) {
-      setErroCadastro('A senha deve ter pelo menos 8 caracteres.')
+    if (!senhaAtendePolitica(senhaCadastro, confirmacaoSenhaCadastro)) {
+      setErroCadastro('Revise os requisitos da senha antes de continuar.')
       return
     }
 
@@ -1496,6 +1529,7 @@ function App() {
       return
     }
 
+    setCarregandoCadastro(true)
     try {
       const resposta = await fetch(`${API}/api/auth/cadastro`, {
         method: 'POST',
@@ -1523,9 +1557,12 @@ function App() {
       setNomeCadastro('')
       setEmailCadastro('')
       setSenhaCadastro('')
+      setConfirmacaoSenhaCadastro('')
       setTermosAceitos(false)
     } catch {
       setErroCadastro('Não foi possível conectar com o servidor.')
+    } finally {
+      setCarregandoCadastro(false)
     }
   }
 
@@ -2348,12 +2385,47 @@ function App() {
     )
   }
 
+  if (tela === 'recuperacaoSenha') {
+    return (
+      <div className="app">
+        <Cabecalho {...propriedadesCabecalho} />
+        <SolicitacaoRecuperacaoSenha apiBase={API} aoVoltar={() => setTela('login')} />
+      </div>
+    )
+  }
+
+  if (tela === 'redefinicaoSenha') {
+    return (
+      <div className="app">
+        <Cabecalho {...propriedadesCabecalho} />
+        <RedefinicaoSenha
+          apiBase={API}
+          tokenRecuperacao={tokenRecuperacaoInicial}
+          aoConcluir={() => setTela('login')}
+        />
+      </div>
+    )
+  }
+
+  if (tela === 'solicitacaoInstituicao') {
+    return <div className="app"><Cabecalho {...propriedadesCabecalho} />
+      <SolicitacaoInstituicaoPublica apiBase={API} aoVoltar={() => setTela('login')} /></div>
+  }
+
+  if (tela === 'verificacaoInstituicao' || tela === 'ativacaoInstituicao') {
+    return <div className="app"><Cabecalho {...propriedadesCabecalho} />
+      <ConfirmacaoInstituicao apiBase={API}
+        token={tela === 'ativacaoInstituicao' ? tokenAtivacaoInstituicao : tokenVerificacaoInstituicao}
+        tipo={tela === 'ativacaoInstituicao' ? 'ativacao' : 'verificacao'}
+        aoConcluir={() => setTela('login')} /></div>
+  }
+
   if (tela === 'privacidade') {
     return (
       <div className="app">
         <Cabecalho {...propriedadesCabecalho} mostrarSair={Boolean(usuario)} />
 
-        <main className="conteudo">
+        <main className="conteudo pagina-publica-cadastro">
           <header className="cabecalho">
             <p className="cabecalho-contexto">LGPD</p>
             <h2>Política de Privacidade</h2>
@@ -2614,9 +2686,9 @@ function App() {
         <main className="conteudo">
           <header className="cabecalho">
             <p className="cabecalho-contexto">NOVO USUÁRIO</p>
-            <h2>Criar conta</h2>
+            <h2>Cadastrar supervisor de empresa</h2>
             <p className="cabecalho-descricao">
-              Cadastre-se para acessar o GAEA.
+              Crie o acesso do profissional que acompanhará os estágios pela empresa.
             </p>
           </header>
 
@@ -2644,17 +2716,19 @@ function App() {
                 />
               </div>
 
-              <div className="campo">
-                <label htmlFor="senhaCadastro">Senha</label>
-                <input
-                  id="senhaCadastro"
-                  type="password"
-                  value={senhaCadastro}
-                  onChange={(e) => setSenhaCadastro(e.target.value)}
-                  minLength="8"
-                  required
-                />
-              </div>
+              <CampoSenha id="senhaCadastro" label="Senha" value={senhaCadastro}
+                onChange={(event) => setSenhaCadastro(event.target.value)}
+                autoComplete="new-password" minLength={8} maxLength={64}
+                describedBy="requisitosCadastro" />
+
+              <CampoSenha id="confirmacaoSenhaCadastro" label="Confirmar senha"
+                value={confirmacaoSenhaCadastro}
+                onChange={(event) => setConfirmacaoSenhaCadastro(event.target.value)}
+                autoComplete="new-password" minLength={8} maxLength={64}
+                describedBy="requisitosCadastro" />
+
+              <RequisitosSenha senha={senhaCadastro} confirmacao={confirmacaoSenhaCadastro}
+                id="requisitosCadastro" />
 
               <div className="campo">
                 <label htmlFor="perfilCadastro">Perfil</label>
@@ -2701,8 +2775,15 @@ function App() {
                 <p className="mensagem-sucesso" role="status">{sucessoCadastro}</p>
               )}
 
-              <button type="submit">
-                Criar conta
+              <button
+                type="submit"
+                disabled={
+                  carregandoCadastro ||
+                  !termosAceitos ||
+                  !senhaAtendePolitica(senhaCadastro, confirmacaoSenhaCadastro)
+                }
+              >
+                {carregandoCadastro ? 'Cadastrando...' : 'Cadastrar supervisor'}
               </button>
             </form>
 
@@ -2726,8 +2807,8 @@ function App() {
       <div className="app">
         <Cabecalho {...propriedadesCabecalho} />
 
-        <main className="conteudo">
-          <header className="cabecalho">
+        <main className="conteudo pagina-autenticacao">
+          <header className="cabecalho cabecalho-autenticacao">
             <p className="cabecalho-contexto">ACESSO AO SISTEMA</p>
             <h2>Entrar no GAEA</h2>
             <p className="cabecalho-descricao">
@@ -2735,7 +2816,7 @@ function App() {
             </p>
           </header>
 
-          <section className="formulario">
+          <section className="formulario card-autenticacao">
             <form onSubmit={fazerLogin}>
               <div className="campo">
                 <label htmlFor="emailLogin">E-mail</label>
@@ -2744,43 +2825,55 @@ function App() {
                   type="email"
                   value={emailLogin}
                   onChange={(e) => setEmailLogin(e.target.value)}
+                  autoComplete="email"
                   required
+                  autoFocus
                 />
               </div>
 
-              <div className="campo">
-                <label htmlFor="senhaLogin">Senha</label>
-                <input
-                  id="senhaLogin"
-                  type="password"
-                  value={senhaLogin}
-                  onChange={(e) => setSenhaLogin(e.target.value)}
-                  required
-                />
+              <CampoSenha id="senhaLogin" label="Senha" value={senhaLogin}
+                onChange={(event) => setSenhaLogin(event.target.value)}
+                autoComplete="current-password" />
+
+              <div className="acoes-login">
+                <button className="link-recuperacao" type="button"
+                  onClick={() => setTela('recuperacaoSenha')}>
+                  Esqueceu sua senha?
+                </button>
               </div>
 
               {erroLogin && (
-                <p className="mensagem-erro">{erroLogin}</p>
+                <p className="mensagem-erro alerta-autenticacao" role="alert">{erroLogin}</p>
               )}
 
-              <button type="submit">
-                Entrar
+              <button type="submit" disabled={carregandoLogin}>
+                {carregandoLogin ? 'Entrando...' : 'Entrar'}
               </button>
             </form>
 
             <div className="acao-secundaria">
               <p>Ainda não possui uma conta?</p>
-              <button
-                type="button"
-                onClick={() => setTela('cadastro')}
-              >
-                Criar conta
-              </button>
+              <div className="acoes-criacao-conta">
+                <button
+                  type="button"
+                  onClick={() => setTela('cadastro')}
+                >
+                  Cadastrar supervisor de empresa
+                </button>
+                <button type="button" onClick={() => setTela('solicitacaoInstituicao')}>
+                  Solicitar cadastro de instituição
+                </button>
+              </div>
             </div>
           </section>
         </main>
       </div>
     )
+  }
+
+  if (usuario.perfil === 'ADMIN_GAEA') {
+    return <div className="app"><Cabecalho {...propriedadesCabecalho} mostrarSair />
+      <InstituicoesAdmin apiBase={API} token={token} /></div>
   }
 
   if (usuario.perfil !== 'INSTITUICAO') {
@@ -2857,7 +2950,17 @@ function App() {
                   </div>
                   <div className="campo">
                     <label htmlFor="alunoInstituicao">Instituição</label>
-                    <input id="alunoInstituicao" value={usuario.instituicao?.nome || ''} readOnly />
+                    <input
+                      id="alunoInstituicao"
+                      value={
+                        usuario.instituicao
+                          ? `${apresentacaoInstituicao(usuario.instituicao).sigla
+                              ? `${apresentacaoInstituicao(usuario.instituicao).sigla} — `
+                              : ''}${apresentacaoInstituicao(usuario.instituicao).nomeCompleto}`
+                          : ''
+                      }
+                      readOnly
+                    />
                   </div>
                 </div>
 
@@ -2958,7 +3061,7 @@ function App() {
                         <p>
                           <strong>Período</strong>
                           <span>
-                            {processo.dataInicio} — {processo.dataFim}
+                            {formatarData(processo.dataInicio)} — {formatarData(processo.dataFim)}
                           </span>
                         </p>
 
@@ -3134,9 +3237,12 @@ function App() {
                       <h4>{solicitacao.empresa}</h4>
                       <dl>
                         <div><dt>Aluno</dt><dd>{solicitacao.aluno}</dd></div>
-                        <div><dt>Instituição</dt><dd>{solicitacao.instituicao}</dd></div>
+                        <div><dt>Instituição</dt><dd>{(() => {
+                          const instituicao = apresentacaoInstituicao(solicitacao.instituicao)
+                          return `${instituicao.sigla ? `${instituicao.sigla} — ` : ''}${instituicao.nomeCompleto}${instituicao.ficticia ? ' (instituição fictícia)' : ''}`
+                        })()}</dd></div>
                         <div><dt>CNPJ</dt><dd>{solicitacao.cnpjEmpresa}</dd></div>
-                        <div><dt>Período</dt><dd>{solicitacao.dataInicio} — {solicitacao.dataFim}</dd></div>
+                        <div><dt>Período</dt><dd>{formatarData(solicitacao.dataInicio)} — {formatarData(solicitacao.dataFim)}</dd></div>
                       </dl>
                       {recusaSupervisaoAberta === solicitacao.vinculoId ? (
                         <div className="recusa-supervisao">
@@ -3488,7 +3594,7 @@ function App() {
                       <span>{log.recurso}</span>
                       <span>
                         {log.dataHora
-                          ? new Date(log.dataHora).toLocaleString('pt-BR')
+                          ? formatarDataHora(log.dataHora)
                           : '-'}
                       </span>
                     </div>
@@ -3567,7 +3673,7 @@ function App() {
                     <p>
                       <strong>Período</strong>
                       <span>
-                        {processo.dataInicio} — {processo.dataFim}
+                        {formatarData(processo.dataInicio)} — {formatarData(processo.dataFim)}
                       </span>
                     </p>
 

@@ -1,0 +1,85 @@
+.pagina-admin { max-width: 1180px; }
+.card-admin { width: min(100%, 560px); margin-inline: auto; }
+.admin-resumo { display: grid; grid-template-columns: repeat(auto-fit,minmax(150px,1fr)); gap: var(--espaco-4); margin-bottom: var(--espaco-6); }
+.admin-resumo .card { display: grid; gap: .35rem; text-align: center; }
+.admin-resumo strong { color: var(--cor-esmeralda-principal); font-size: 2rem; }
+.admin-lista { display: grid; gap: var(--espaco-4); }
+.admin-lista .card { border: 1px solid var(--cor-borda); padding: var(--espaco-4); }
+.instituicao-card { display: grid; gap: var(--espaco-3); }
+.instituicao-identificacao {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--espaco-4);
+}
+.instituicao-sigla {
+  display: grid;
+  width: 72px;
+  height: 72px;
+  place-items: center;
+  border: 1px solid var(--cor-borda-forte);
+  border-radius: var(--raio-md);
+  background: var(--cor-esmeralda-suave);
+  color: var(--cor-esmeralda-escuro);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.25rem;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+}
+.instituicao-dados h4 { margin: 0; }
+.instituicao-ficticia {
+  display: inline-block;
+  margin-top: var(--espaco-2);
+  color: var(--cor-texto-suave);
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-semibold);
+}
+.instituicao-meta {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--espaco-3);
+}
+.instituicao-meta p {
+  min-width: 0;
+  margin: 0;
+  color: var(--cor-texto-suave);
+  font-size: var(--texto-sm);
+  word-break: break-word;
+}
+.instituicao-status {
+  flex: 0 0 auto;
+  display: inline-flex;
+  min-height: 26px;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--raio-pill);
+  font-size: 0.72rem;
+  font-weight: var(--peso-bold);
+  letter-spacing: 0.04em;
+}
+.instituicao-status-ativa {
+  background: var(--cor-esmeralda-suave);
+  color: var(--cor-esmeralda-escuro);
+}
+.instituicao-status-inativa {
+  background: var(--cor-perigo-suave);
+  color: var(--cor-perigo);
+}
+.badge-aviso { background: #fef3c7; color: #854d0e; margin-left: .5rem; }
+
+@media (max-width: 480px) {
+  .instituicao-identificacao {
+    grid-template-columns: 56px minmax(0, 1fr);
+    align-items: start;
+  }
+  .instituicao-sigla {
+    width: 56px;
+    height: 56px;
+    font-size: 1rem;
+  }
+  .instituicao-meta {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+}

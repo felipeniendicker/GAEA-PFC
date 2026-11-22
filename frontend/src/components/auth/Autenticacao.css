@@ -1,0 +1,86 @@
+.pagina-autenticacao {
+  width: min(100% - 32px, 480px);
+  padding-top: clamp(2rem, 6vh, 4.5rem);
+}
+
+.cabecalho-autenticacao { text-align: center; }
+.cabecalho-autenticacao .cabecalho-descricao { margin-inline: auto; }
+
+.card-autenticacao {
+  padding: clamp(1.25rem, 5vw, 2rem);
+}
+
+.card-autenticacao form { grid-template-columns: 1fr; }
+
+.campo-senha-controle { position: relative; }
+
+.campo-senha-controle input { padding-right: 5.5rem; }
+
+.alternar-senha {
+  position: absolute;
+  top: 50%;
+  right: 0.45rem;
+  min-height: 34px;
+  padding: 0.25rem 0.6rem;
+  border: 0;
+  border-radius: var(--raio-sm);
+  background: transparent;
+  color: var(--cor-esmeralda-principal);
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-bold);
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+
+.alternar-senha:hover { background: var(--cor-esmeralda-suave); }
+
+.requisitos-senha {
+  grid-column: 1 / -1;
+  padding: var(--espaco-3);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-sm);
+  background: var(--cor-bege);
+  color: var(--cor-texto-suave);
+  font-size: var(--texto-sm);
+}
+
+.requisitos-senha p { margin: 0 0 var(--espaco-2); font-weight: var(--peso-semibold); }
+.requisitos-senha ul { display: grid; gap: var(--espaco-1); margin: 0; padding: 0; list-style: none; }
+.requisitos-senha li { display: flex; gap: var(--espaco-2); }
+.requisitos-senha li span { width: 1rem; color: var(--cor-texto-suave); font-weight: var(--peso-bold); }
+.requisitos-senha .requisito-atendido,
+.requisitos-senha .requisito-atendido span { color: var(--cor-sucesso); }
+.requisitos-senha small { display: block; margin-top: var(--espaco-2); }
+
+.alerta-autenticacao {
+  padding: var(--espaco-3);
+  border-radius: var(--raio-sm);
+}
+
+.mensagem-erro.alerta-autenticacao { background: var(--cor-perigo-suave); }
+.mensagem-sucesso.alerta-autenticacao { background: var(--cor-sucesso-suave); }
+
+.link-voltar,
+.link-recuperacao {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--cor-esmeralda-principal);
+  font-weight: var(--peso-semibold);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+
+.link-voltar { margin-top: var(--espaco-5); }
+
+.acoes-login {
+  display: flex;
+  justify-content: flex-end;
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 520px) {
+  .pagina-autenticacao { width: calc(100% - 24px); }
+  .card-autenticacao { padding: var(--espaco-5); }
+}
