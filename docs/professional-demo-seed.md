@@ -105,7 +105,7 @@ nova ou alteração das migrations V1–V12.
 2. Anexe um volume persistente ao backend e mantenha
    `DOCUMENTOS_STORAGE_DIRETORIO` apontando para o ponto de montagem.
 3. Faça um backup recuperável do banco, confirme que não existem dados reais e
-   aplique normalmente as migrations V1–V12 com `FLYWAY_ENABLED=true`.
+   aplique normalmente as migrations V1–V17 com `FLYWAY_ENABLED=true`.
 4. Defina temporariamente as variáveis abaixo no backend. As quatro senhas devem ser
    fortes, diferentes de credenciais reais e armazenadas apenas nos secrets do Railway.
 
@@ -133,6 +133,11 @@ PROFESSIONAL_DEMO_PASSWORD_SUPERVISOR=<secret forte>
    `PROFESSIONAL_DEMO_SEED_ENABLED=false`, remova as quatro variáveis de senha e a
    frase de confirmação, e faça novo deploy do backend. Mantenha
    `EMAIL_ENABLED=false` nesse ambiente.
+
+8. Somente depois que o seeder estiver desabilitado, execute o bootstrap do primeiro
+   `ADMIN_GAEA` em uma segunda inicialização. Não habilite seeder e bootstrap juntos: a carga
+   profissional recusa bases que contenham qualquer usuário fora do domínio reservado. Após a
+   criação, desabilite o bootstrap e remova sua senha e confirmação dos secrets.
 
 Executar novamente com as mesmas referências não duplica registros. Ainda assim, a
 idempotência não substitui as travas: a carga não deve permanecer habilitada nem ser

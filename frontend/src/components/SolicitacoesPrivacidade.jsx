@@ -4,7 +4,12 @@ import { formatarDataHora, rotuloSituacao } from '../utils/apresentacao'
 
 const rotulosTipo = {
   ACESSO: 'Acesso aos dados',
-  CORRECAO: 'Correção de dados'
+  CORRECAO: 'Correção de dados',
+  EXPORTACAO: 'Exportação dos dados',
+  EXCLUSAO: 'Exclusão de dados elegíveis',
+  ANONIMIZACAO: 'Anonimização de dados elegíveis',
+  REVOGACAO_CONSENTIMENTO: 'Revogação de consentimento',
+  ENCERRAMENTO_CONTA: 'Encerramento da conta'
 }
 
 function dataFormatada(data) {
@@ -128,6 +133,11 @@ export default function SolicitacoesPrivacidade({ apiBase, token }) {
           >
             <option value="ACESSO">Acesso aos dados</option>
             <option value="CORRECAO">Correção de dados</option>
+            <option value="EXPORTACAO">Exportação dos dados</option>
+            <option value="EXCLUSAO">Exclusão de dados elegíveis</option>
+            <option value="ANONIMIZACAO">Anonimização de dados elegíveis</option>
+            <option value="REVOGACAO_CONSENTIMENTO">Revogação de consentimento</option>
+            <option value="ENCERRAMENTO_CONTA">Encerramento da conta</option>
           </select>
         </div>
         <div className="campo privacidade-descricao">
@@ -168,6 +178,9 @@ export default function SolicitacoesPrivacidade({ apiBase, token }) {
                   {rotuloSituacao(solicitacao.situacao)}
                 </span>
                 <p>{solicitacao.descricao}</p>
+                {solicitacao.decisao && (
+                  <p><strong>Decisão:</strong> {solicitacao.decisao}</p>
+                )}
               </article>
             ))}
           </div>

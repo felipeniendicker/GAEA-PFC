@@ -70,6 +70,12 @@ class AdministracaoInstituicoesIntegrationTests {
         mockMvc.perform(post("/api/instituicoes/ativacoes").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"token\":\""+tokenAtivacao+"\",\"senha\":\"Senha-Forte1!\",\"confirmacaoSenha\":\"Senha-Forte1!\",\"termosAceitos\":true}"))
                 .andExpect(status().isNoContent());
+        responsavel=usuarios.findByEmailNormalizado("ana@horizonte.example").orElseThrow();
+        assertEquals(Gaea.Api.model.DocumentosLegais.VERSAO_TERMOS_USO,
+                responsavel.getTermosUsoVersao());
+        assertEquals(Gaea.Api.model.DocumentosLegais.VERSAO_POLITICA_PRIVACIDADE,
+                responsavel.getPoliticaPrivacidadeVersao());
+        assertNotNull(responsavel.getTermosAceitosEm());
         mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"email\":\"ana@horizonte.example\",\"senha\":\"Senha-Forte1!\"}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.perfil").value("INSTITUICAO"))
@@ -85,7 +91,8 @@ class AdministracaoInstituicoesIntegrationTests {
         mockMvc.perform(get("/api/admin/instituicoes/dashboard").header("Authorization",bearer(empresa)))
                 .andExpect(status().isForbidden());
         mockMvc.perform(post("/api/auth/cadastro").contentType(MediaType.APPLICATION_JSON).content("""
-                {"nome":"Intruso","email":"intruso@example.com","senha":"Senha-Forte1!","perfil":"ADMIN_GAEA","termosAceitos":true}
+                {"nome":"Intruso","email":"intruso@example.com","senha":"Senha-Forte1!",
+                 "confirmacaoSenha":"Senha-Forte1!","perfil":"ADMIN_GAEA","termosAceitos":true}
                 """)).andExpect(status().isBadRequest());
 
         solicitar("Instituto Vale", "04.252.011/0001-10", "Bruno Gestor", "bruno@vale.example").andExpect(status().isCreated());

@@ -111,6 +111,25 @@ class ProfessionalDemoSeederIntegrationTests {
     }
 
     @Test
+    void devePrepararAcessosInstitucionalAlunoESupervisorComBcrypt() {
+        assertAcesso(
+                "mariana.albuquerque@professional-demo.gaea.example",
+                "INSTITUICAO",
+                "Instituicao-Demo-Segura-2026!",
+                true);
+        assertAcesso(
+                "felipe.rafael.niendicker@professional-demo.gaea.example",
+                "ALUNO",
+                "Felipe-Demo-Segura-2026!",
+                true);
+        assertAcesso(
+                "alice.queiroz@professional-demo.gaea.example",
+                "EMPRESA",
+                "Supervisor-Demo-Segura-2026!",
+                false);
+    }
+
+    @Test
     void deveUsarSomenteIdentidadesNaturaisEEmaisReservados() {
         assertThat(contar("select count(*) from usuario where email not like ?", DOMINIO_RESERVADO))
                 .isZero();
@@ -158,6 +177,24 @@ class ProfessionalDemoSeederIntegrationTests {
     private int contar(String sql, Object... parametros) {
         Integer total = jdbc.queryForObject(sql, Integer.class, parametros);
         return total == null ? 0 : total;
+    }
+
+    private void assertAcesso(
+            String email,
+            String perfil,
+            String senhaFixture,
+            boolean deveTerInstituicao) {
+        Map<String, Object> acesso = jdbc.queryForMap("""
+                select perfil, senha, ativo, ativado, instituicao_id
+                from usuario
+                where email = ?
+                """, email);
+
+        assertThat(acesso.get("perfil")).isEqualTo(perfil);
+        assertThat(acesso.get("ativo")).isEqualTo(true);
+        assertThat(acesso.get("ativado")).isEqualTo(true);
+        assertThat(passwordEncoder.matches(senhaFixture, acesso.get("senha").toString())).isTrue();
+        assertThat(acesso.get("instituicao_id") != null).isEqualTo(deveTerInstituicao);
     }
 
     private record Contagens(

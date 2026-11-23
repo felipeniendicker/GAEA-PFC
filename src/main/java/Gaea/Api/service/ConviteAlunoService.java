@@ -4,6 +4,7 @@ import Gaea.Api.dto.AtivacaoAlunoRequest;
 import Gaea.Api.exception.ConflitoDadosException;
 import Gaea.Api.exception.DadosInvalidosException;
 import Gaea.Api.model.ConviteAtivacaoAluno;
+import Gaea.Api.model.DocumentosLegais;
 import Gaea.Api.model.Usuario;
 import Gaea.Api.repository.ConviteAtivacaoAlunoRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -94,8 +95,7 @@ public class ConviteAlunoService {
         politicaSenha.validar(request.senha());
         aluno.setSenha(passwordEncoder.encode(request.senha()));
         aluno.setAtivado(true);
-        aluno.setTermosAceitos(true);
-        aluno.setTermosAceitosEm(agora);
+        DocumentosLegais.registrarAceiteAtual(aluno, agora);
         convite.setUtilizadoEm(agora);
 
         logAuditoriaService.registrar(

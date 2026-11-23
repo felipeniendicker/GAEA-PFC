@@ -63,6 +63,17 @@ function sendFile(request, response, file) {
     contentTypes.get(extname(file).toLowerCase()) || 'application/octet-stream'
   )
   response.setHeader('X-Content-Type-Options', 'nosniff')
+  response.setHeader('X-Frame-Options', 'DENY')
+  response.setHeader('Referrer-Policy', 'no-referrer')
+  response.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+  response.setHeader('Cross-Origin-Opener-Policy', 'same-origin')
+  response.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; base-uri 'self'; connect-src 'self' https:; " +
+      "font-src 'self'; form-action 'self'; frame-ancestors 'none'; " +
+      "img-src 'self' data:; object-src 'none'; script-src 'self'; style-src 'self'"
+  )
+  response.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
   response.setHeader(
     'Cache-Control',
     isVersionedAsset ? 'public, max-age=31536000, immutable' : 'no-cache'

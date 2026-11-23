@@ -771,7 +771,12 @@ function AtivacaoAluno({ tokenAtivacao, aoConcluir }) {
       const resposta = await fetch(`${API}/api/ativacoes/aluno`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: tokenAtivacao, senha, termosAceitos: termos })
+        body: JSON.stringify({
+          token: tokenAtivacao,
+          senha,
+          confirmacaoSenha: confirmacao,
+          termosAceitos: termos
+        })
       })
 
       if (!resposta.ok) {
@@ -920,7 +925,7 @@ function Cabecalho({
   }
   const itensPerfil = usuario ? menusPorPerfil[usuario.perfil] || [] : []
   const nomeInstituicao = usuario?.perfil === 'INSTITUICAO'
-    ? apresentacaoInstituicao(usuario.instituicao).sigla
+    ? apresentacaoInstituicao(usuario.instituicao).nomeComSigla
     : ''
 
   return (
@@ -1015,6 +1020,25 @@ function App() {
   )
   const [usuario, setUsuario] = useState(null)
   const [token, setToken] = useState('')
+  const [documentosLegais, setDocumentosLegais] = useState(null)
+
+  useEffect(() => {
+    const controlador = new AbortController()
+
+    async function carregarDocumentosLegais() {
+      try {
+        const resposta = await fetch(`${API}/api/auth/documentos-legais`, {
+          signal: controlador.signal
+        })
+        if (resposta.ok) setDocumentosLegais(await resposta.json())
+      } catch (erro) {
+        if (erro.name !== 'AbortError') setDocumentosLegais(null)
+      }
+    }
+
+    carregarDocumentosLegais()
+    return () => controlador.abort()
+  }, [])
 
   useEffect(() => {
     if (tokenRecuperacaoInicial || tokenVerificacaoInstituicao || tokenAtivacaoInstituicao) {
@@ -1196,6 +1220,7 @@ function App() {
           nome,
           email,
           senha: senhaCadastro,
+          confirmacaoSenha: confirmacaoSenhaCadastro,
           perfil: 'EMPRESA',
           termosAceitos
         })
@@ -1222,7 +1247,8 @@ function App() {
     }
   }
 
-  function sair() {
+  async function sair() {
+    const tokenAtual = token
     setUsuario(null)
     setToken('')
     setProcessos([])
@@ -1245,6 +1271,17 @@ function App() {
     setEmailLogin('')
     setSenhaLogin('')
     setTela('login')
+    if (tokenAtual) {
+      try {
+        await fetch(`${API}/api/auth/logout`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${tokenAtual}` },
+          keepalive: true
+        })
+      } catch {
+        // A sessão local já foi encerrada; o JWT continuará limitado pela expiração.
+      }
+    }
   }
 
   async function buscarProcessos(tokenAcesso = token) {
@@ -2086,7 +2123,9 @@ function App() {
             <p className="cabecalho-contexto">LGPD</p>
             <h2>Política de Privacidade</h2>
             <p className="cabecalho-descricao">
-              Versão 1.0 — 27/09/2026
+              {documentosLegais
+                ? `Versão ${documentosLegais.versaoPoliticaPrivacidade} — ${formatarData(documentosLegais.politicaPrivacidadePublicadaEm)}`
+                : 'Versão vigente'}
             </p>
           </header>
 
@@ -2218,7 +2257,9 @@ function App() {
             <p className="cabecalho-contexto">GAEA</p>
             <h2>Termos de Uso e Termo de Aceite</h2>
             <p className="cabecalho-descricao">
-              Versão 1.0 — 27/09/2026
+              {documentosLegais
+                ? `Versão ${documentosLegais.versaoTermosUso} — ${formatarData(documentosLegais.termosUsoPublicadoEm)}`
+                : 'Versão vigente'}
             </p>
           </header>
 
@@ -2610,9 +2651,7 @@ function App() {
                       id="alunoInstituicao"
                       value={
                         usuario.instituicao
-                          ? `${apresentacaoInstituicao(usuario.instituicao).sigla
-                              ? `${apresentacaoInstituicao(usuario.instituicao).sigla} — `
-                              : ''}${apresentacaoInstituicao(usuario.instituicao).nomeCompleto}`
+                          ? apresentacaoInstituicao(usuario.instituicao).nomeComSigla
                           : ''
                       }
                       readOnly
@@ -2895,7 +2934,7 @@ function App() {
                         <div><dt>Aluno</dt><dd>{solicitacao.aluno}</dd></div>
                         <div><dt>Instituição</dt><dd>{(() => {
                           const instituicao = apresentacaoInstituicao(solicitacao.instituicao)
-                          return `${instituicao.sigla ? `${instituicao.sigla} — ` : ''}${instituicao.nomeCompleto}${instituicao.ficticia ? ' (instituição fictícia)' : ''}`
+                          return instituicao.nomeComSigla
                         })()}</dd></div>
                         <div><dt>CNPJ</dt><dd>{solicitacao.cnpjEmpresa}</dd></div>
                         <div><dt>Período</dt><dd>{formatarData(solicitacao.dataInicio)} — {formatarData(solicitacao.dataFim)}</dd></div>

@@ -152,7 +152,7 @@ public class SolicitacaoInstituicaoService {
         Usuario u=usuarios.findByIdParaAtualizacao(token.getUsuario().getId()).orElseThrow(() -> new DadosInvalidosException("Convite inválido"));
         if (!"INSTITUICAO".equals(u.getPerfil()) || Boolean.TRUE.equals(u.getAtivado())) throw new ConflitoDadosException("Conta já ativada ou inválida");
         LocalDateTime agora=LocalDateTime.now(); u.setSenha(encoder.encode(request.senha())); u.setAtivado(true);
-        u.setTermosAceitos(true); u.setTermosAceitosEm(agora); token.setUtilizadoEm(agora);
+        DocumentosLegais.registrarAceiteAtual(u, agora); token.setUtilizadoEm(agora);
         auditoria.registrar(u.getEmail(), "ATIVACAO_INSTITUICAO", "Ativação do responsável institucional", u.getInstituicao());
     }
 

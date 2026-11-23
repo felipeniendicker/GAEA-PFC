@@ -11,7 +11,9 @@ public record SolicitacaoPrivacidadeResponse(
         TipoSolicitacaoPrivacidade tipo,
         String descricao,
         SituacaoSolicitacaoPrivacidade situacao,
-        LocalDateTime criadoEm) {
+        LocalDateTime criadoEm,
+        LocalDateTime atualizadoEm,
+        String decisao) {
 
     public static SolicitacaoPrivacidadeResponse from(SolicitacaoPrivacidade solicitacao) {
         return new SolicitacaoPrivacidadeResponse(
@@ -19,6 +21,8 @@ public record SolicitacaoPrivacidadeResponse(
                 solicitacao.getTipo(),
                 solicitacao.getDescricao(),
                 solicitacao.getSituacao(),
-                solicitacao.getCriadoEm());
+                solicitacao.getCriadoEm(),
+                solicitacao.getAtualizadoEm(),
+                solicitacao.getDecisao());
     }
 }

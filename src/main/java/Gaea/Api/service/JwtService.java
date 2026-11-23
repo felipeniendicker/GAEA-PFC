@@ -9,15 +9,26 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Date;
 
 @Service
 public class JwtService {
 
     private final String chave;
+    private final String emissor;
+    private final Duration duracao;
 
-    public JwtService(@Value("${jwt.secret}") String chave) {
+    public JwtService(
+            @Value("${jwt.secret}") String chave,
+            @Value("${jwt.issuer:gaea-api}") String emissor,
+            @Value("${jwt.expiration-minutes:60}") long expiracaoMinutos) {
+        if (emissor == null || emissor.isBlank() || expiracaoMinutos < 1) {
+            throw new IllegalArgumentException("Configuração JWT inválida");
+        }
         this.chave = chave;
+        this.emissor = emissor;
+        this.duracao = Duration.ofMinutes(expiracaoMinutos);
     }
 
     private SecretKey getChave() {
@@ -29,10 +40,11 @@ public class JwtService {
 
         return Jwts.builder()
                 .subject(usuario.getEmail())
+                .issuer(emissor)
                 .claim("perfil", usuario.getPerfil())
                 .claim("credenciaisVersao", versaoCredenciais(usuario))
                 .issuedAt(new Date(agora))
-                .expiration(new Date(agora + 3600000))
+                .expiration(new Date(agora + duracao.toMillis()))
                 .signWith(getChave())
                 .compact();
     }
@@ -44,6 +56,7 @@ public class JwtService {
     public DadosToken extrairDados(String token) {
         Claims claims = Jwts.parser()
                 .verifyWith(getChave())
+                .requireIssuer(emissor)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();

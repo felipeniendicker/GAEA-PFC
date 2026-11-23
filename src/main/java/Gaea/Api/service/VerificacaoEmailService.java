@@ -3,6 +3,7 @@ package Gaea.Api.service;
 import Gaea.Api.dto.ConfirmacaoEmailRequest;
 import Gaea.Api.exception.ConflitoDadosException;
 import Gaea.Api.exception.DadosInvalidosException;
+import Gaea.Api.exception.ServicoIndisponivelException;
 import Gaea.Api.model.TokenVerificacaoEmail;
 import Gaea.Api.model.Usuario;
 import Gaea.Api.repository.TokenVerificacaoEmailRepository;
@@ -49,6 +50,7 @@ public class VerificacaoEmailService {
 
     @Transactional
     public void gerar(Usuario usuario) {
+        exigirDisponibilidade();
         validarSupervisor(usuario);
         Usuario usuarioBloqueado = usuarioRepository.findByIdParaAtualizacao(usuario.getId())
                 .orElseThrow(() -> new DadosInvalidosException("Conta de supervisor inválida"));
@@ -73,6 +75,13 @@ public class VerificacaoEmailService {
         String link = frontendBaseUrl + "/#verificarEmail="
                 + URLEncoder.encode(tokenAberto, StandardCharsets.UTF_8);
         envioEmail.enviarVerificacao(usuarioBloqueado.getEmail(), usuarioBloqueado.getNome(), link);
+    }
+
+    public void exigirDisponibilidade() {
+        if (!envioEmail.disponivel()) {
+            throw new ServicoIndisponivelException(
+                    "O envio de e-mail não está disponível. Tente novamente mais tarde");
+        }
     }
 
     @Transactional

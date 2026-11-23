@@ -21,6 +21,9 @@ public record CadastroUsuarioRequest(
         @Size(min = 8, max = 64, message = "A senha deve ter entre 8 e 64 caracteres")
         String senha,
 
+        @NotBlank(message = "Confirme a senha")
+        String confirmacaoSenha,
+
         @NotBlank(message = "O perfil é obrigatório")
         @Pattern(regexp = "EMPRESA", message = "O cadastro público é permitido somente para Supervisor da Empresa")
         String perfil,
@@ -28,6 +31,11 @@ public record CadastroUsuarioRequest(
         @NotNull(message = "Informe o aceite dos Termos de Uso e da Política de Privacidade")
         @AssertTrue(message = "É necessário aceitar os Termos de Uso e a Política de Privacidade")
         Boolean termosAceitos) {
+
+    @AssertTrue(message = "A confirmação da senha não corresponde")
+    public boolean isConfirmacaoValida() {
+        return senha != null && senha.equals(confirmacaoSenha);
+    }
 
     public CadastroUsuarioRequest {
         if (email != null) {
@@ -38,7 +46,7 @@ public record CadastroUsuarioRequest(
     @Override
     public String toString() {
         return "CadastroUsuarioRequest[nome=" + nome + ", email=" + email
-                + ", senha=[PROTEGIDA], perfil=" + perfil
+                + ", senha=[PROTEGIDA], confirmacaoSenha=[PROTEGIDA], perfil=" + perfil
                 + ", termosAceitos=" + termosAceitos + "]";
     }
 }

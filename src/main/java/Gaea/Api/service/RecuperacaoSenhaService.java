@@ -82,6 +82,10 @@ public class RecuperacaoSenhaService {
 
     @Transactional
     public void solicitar(SolicitacaoRecuperacaoSenhaRequest request, String origem) {
+        if (!envioEmail.disponivel()) {
+            throw new ServicoIndisponivelException(
+                    "A recuperação por e-mail está temporariamente indisponível");
+        }
         LocalDateTime agora = LocalDateTime.now();
         String identificadorHash = hmac(request.email());
         String origemHash = hmac(origem == null || origem.isBlank() ? "origem-desconhecida" : origem);
@@ -113,10 +117,6 @@ public class RecuperacaoSenhaService {
 
         String link = frontendBaseUrl + "/#redefinirSenha="
                 + URLEncoder.encode(tokenAberto, StandardCharsets.UTF_8);
-        if (!envioEmail.disponivel()) {
-            LOGGER.warn("Solicitação de recuperação registrada sem envio de e-mail disponível");
-            return;
-        }
         try {
             envioEmail.enviarRecuperacaoSenha(usuario.getEmail(), usuario.getNome(), link);
         } catch (RuntimeException exception) {

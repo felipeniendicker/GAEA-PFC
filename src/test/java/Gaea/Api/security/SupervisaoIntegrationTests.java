@@ -2,6 +2,7 @@ package Gaea.Api.security;
 
 import Gaea.Api.model.HistoricoVinculoSupervisor;
 import Gaea.Api.model.Instituicao;
+import Gaea.Api.model.DocumentosLegais;
 import Gaea.Api.model.ProcessoEstagio;
 import Gaea.Api.model.SituacaoVinculoSupervisor;
 import Gaea.Api.model.Usuario;
@@ -16,6 +17,7 @@ import Gaea.Api.repository.VinculoSupervisorProcessoRepository;
 import Gaea.Api.service.EnvioEmailAplicacao;
 import Gaea.Api.service.JwtService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -37,6 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -60,13 +63,35 @@ class SupervisaoIntegrationTests {
     @MockitoBean
     EnvioEmailAplicacao envioEmail;
 
+    @BeforeEach
+    void habilitarEmail() {
+        when(envioEmail.disponivel()).thenReturn(true);
+    }
+
+    @Test
+    void naoDevePersistirCadastroQuandoEmailEstaIndisponivel() throws Exception {
+        when(envioEmail.disponivel()).thenReturn(false);
+
+        mockMvc.perform(post("/api/auth/cadastro")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"nome":"Supervisor sem SMTP","email":"sem-smtp@example.com",
+                                 "senha":"Senha-segura1!","confirmacaoSenha":"Senha-segura1!",
+                                 "perfil":"EMPRESA","termosAceitos":true}
+                                """))
+                .andExpect(status().isServiceUnavailable());
+
+        assertTrue(usuarioRepository.findByEmailNormalizado("sem-smtp@example.com").isEmpty());
+    }
+
     @Test
     void deveVerificarEmailComTokenProtegidoDeUsoUnico() throws Exception {
         mockMvc.perform(post("/api/auth/cadastro")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"nome":"Supervisor","email":"supervisor@example.com",
-                                 "senha":"Senha-segura1!","perfil":"EMPRESA","termosAceitos":true}
+                                 "senha":"Senha-segura1!","confirmacaoSenha":"Senha-segura1!",
+                                 "perfil":"EMPRESA","termosAceitos":true}
                                 """))
                 .andExpect(status().isOk());
 
@@ -78,6 +103,10 @@ class SupervisaoIntegrationTests {
         Usuario supervisor = usuarioRepository.findByEmail("supervisor@example.com").orElseThrow();
 
         assertNull(supervisor.getEmailVerificadoEm());
+        assertEquals(DocumentosLegais.VERSAO_TERMOS_USO, supervisor.getTermosUsoVersao());
+        assertEquals(DocumentosLegais.VERSAO_POLITICA_PRIVACIDADE,
+                supervisor.getPoliticaPrivacidadeVersao());
+        assertTrue(supervisor.getTermosAceitosEm() != null);
         assertEquals(64, tokenRepository.findAll().get(0).getTokenHash().length());
         assertTrue(!tokenRepository.findAll().get(0).getTokenHash().equals(token));
 
@@ -104,7 +133,8 @@ class SupervisaoIntegrationTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"nome":"Supervisor Expirado","email":"expirado@example.com",
-                                 "senha":"Senha-segura1!","perfil":"EMPRESA","termosAceitos":true}
+                                 "senha":"Senha-segura1!","confirmacaoSenha":"Senha-segura1!",
+                                 "perfil":"EMPRESA","termosAceitos":true}
                                 """))
                 .andExpect(status().isOk());
 

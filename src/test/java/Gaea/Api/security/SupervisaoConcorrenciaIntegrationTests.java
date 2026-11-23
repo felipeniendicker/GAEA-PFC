@@ -15,11 +15,14 @@ import Gaea.Api.repository.TokenVerificacaoEmailRepository;
 import Gaea.Api.repository.UsuarioRepository;
 import Gaea.Api.repository.VinculoSupervisorProcessoRepository;
 import Gaea.Api.service.SupervisaoService;
+import Gaea.Api.service.EnvioEmailAplicacao;
 import Gaea.Api.service.VerificacaoEmailService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -34,6 +37,7 @@ import java.util.concurrent.Future;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
@@ -45,6 +49,12 @@ class SupervisaoConcorrenciaIntegrationTests {
     @Autowired TokenVerificacaoEmailRepository tokenRepository;
     @Autowired SupervisaoService supervisaoService;
     @Autowired VerificacaoEmailService verificacaoEmailService;
+    @MockitoBean EnvioEmailAplicacao envioEmail;
+
+    @BeforeEach
+    void configurarEmailDisponivel() {
+        when(envioEmail.disponivel()).thenReturn(true);
+    }
 
     @Test
     void duasConfirmacoesSimultaneasDevemProduzirUmSucessoEUmConflito() throws Exception {

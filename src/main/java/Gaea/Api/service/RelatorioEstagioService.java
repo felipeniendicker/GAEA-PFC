@@ -41,18 +41,21 @@ public class RelatorioEstagioService {
             String situacao,
             LocalDate dataInicio,
             LocalDate dataFim,
-            String aluno) {
+            String aluno,
+            String empresa) {
         validarUsuarioInstitucional(usuario);
         validarPeriodo(dataInicio, dataFim);
 
         String situacaoNormalizada = normalizarSituacao(situacao);
         String alunoNormalizado = normalizarTexto(aluno);
+        String empresaNormalizada = normalizarTexto(empresa);
         List<RelatorioProcessoResponse> processos = processoRepository
                 .findAllByInstituicaoId(usuario.getInstituicao().getId())
                 .stream()
                 .filter(processo -> correspondeSituacao(processo, situacaoNormalizada))
                 .filter(processo -> correspondePeriodo(processo, dataInicio, dataFim))
                 .filter(processo -> correspondeAluno(processo, alunoNormalizado))
+                .filter(processo -> correspondeEmpresa(processo, empresaNormalizada))
                 .map(this::mapear)
                 .sorted(Comparator
                         .comparing(RelatorioProcessoResponse::dataInicio,
@@ -125,6 +128,12 @@ public class RelatorioEstagioService {
         return aluno == null
                 || (processo.getNomeAluno() != null
                 && processo.getNomeAluno().toLowerCase().contains(aluno));
+    }
+
+    private boolean correspondeEmpresa(ProcessoEstagio processo, String empresa) {
+        return empresa == null
+                || (processo.getNomeEmpresa() != null
+                && processo.getNomeEmpresa().toLowerCase().contains(empresa));
     }
 
     private String normalizarSituacao(String situacao) {

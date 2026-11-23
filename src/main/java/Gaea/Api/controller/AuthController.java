@@ -5,12 +5,18 @@ import Gaea.Api.dto.LoginRequest;
 import Gaea.Api.model.Usuario;
 import Gaea.Api.repository.UsuarioRepository;
 import Gaea.Api.service.JwtService;
+import Gaea.Api.service.LoginRateLimitService;
 import Gaea.Api.service.LogAuditoriaService;
 import Gaea.Api.service.UsuarioService;
 import Gaea.Api.service.VerificacaoEmailService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -27,6 +33,8 @@ public class AuthController {
     private final LogAuditoriaService logAuditoriaService;
     private final UsuarioService usuarioService;
     private final VerificacaoEmailService verificacaoEmailService;
+    private final LoginRateLimitService loginRateLimitService;
+    private final String senhaInexistenteHash;
 
     public AuthController(
             UsuarioRepository usuarioRepository,
@@ -34,7 +42,8 @@ public class AuthController {
             JwtService jwtService,
             LogAuditoriaService logAuditoriaService,
             UsuarioService usuarioService,
-            VerificacaoEmailService verificacaoEmailService) {
+            VerificacaoEmailService verificacaoEmailService,
+            LoginRateLimitService loginRateLimitService) {
 
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
@@ -42,10 +51,15 @@ public class AuthController {
         this.logAuditoriaService = logAuditoriaService;
         this.usuarioService = usuarioService;
         this.verificacaoEmailService = verificacaoEmailService;
+        this.loginRateLimitService = loginRateLimitService;
+        this.senhaInexistenteHash = passwordEncoder.encode(
+                "credencial-inexistente-" + java.util.UUID.randomUUID());
     }
 
     @PostMapping("/cadastro")
+    @Transactional
     public Map<String, String> cadastrar(@Valid @RequestBody CadastroUsuarioRequest dados) {
+        verificacaoEmailService.exigirDisponibilidade();
         Usuario usuarioSalvo = usuarioService.cadastrar(dados);
         verificacaoEmailService.gerar(usuarioSalvo);
 
@@ -63,35 +77,45 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public Map<String, Object> login(@Valid @RequestBody LoginRequest dados) {
+    public ResponseEntity<Map<String, Object>> login(
+            @Valid @RequestBody LoginRequest dados,
+            HttpServletRequest request) {
 
         String email = usuarioService.normalizarEmail(dados.email());
         String senha = dados.senha();
+        String origem = request.getRemoteAddr();
+        loginRateLimitService.verificar(email, origem);
 
-        Usuario usuario = usuarioRepository.findByEmailNormalizado(email)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.UNAUTHORIZED,
-                        "Credenciais inválidas"
-                ));
+        Usuario usuario = usuarioRepository.findByEmailNormalizado(email).orElse(null);
+        boolean senhaValida = passwordEncoder.matches(
+                senha, usuario == null || usuario.getSenha() == null
+                        ? senhaInexistenteHash : usuario.getSenha());
 
-        if (!Boolean.TRUE.equals(usuario.getAtivo())
+        if (usuario == null
+                || !Boolean.TRUE.equals(usuario.getAtivo())
                 || !Boolean.TRUE.equals(usuario.getAtivado())
                 || !instituicaoAtiva(usuario)
                 || usuario.getSenha() == null
-                || !passwordEncoder.matches(senha, usuario.getSenha())) {
+                || !senhaValida) {
 
-            logAuditoriaService.registrar(
-                    usuario.getEmail(),
-                    "LOGIN_FALHA",
-                    "Tentativa de autenticação",
-                    usuario.getInstituicao()
-            );
+            loginRateLimitService.registrarFalha(email, origem);
+
+            if (usuario != null) {
+                logAuditoriaService.registrar(
+                        usuario.getEmail(),
+                        "LOGIN_FALHA",
+                        "Tentativa de autenticação",
+                        usuario.getInstituicao()
+                );
+            }
 
             throw new ResponseStatusException(
                     HttpStatus.UNAUTHORIZED,
                     "Credenciais inválidas"
             );
         }
+
+        loginRateLimitService.registrarSucesso(email);
 
         String token = jwtService.gerarToken(usuario);
 
@@ -114,7 +138,16 @@ public class AuthController {
                         "nome", usuario.getInstituicao().getNome(),
                         "sigla", usuario.getInstituicao().getSigla() == null ? "" : usuario.getInstituicao().getSigla()));
         resposta.put("token", token);
-        return resposta;
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .header("Pragma", "no-cache")
+                .body(resposta);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(Authentication authentication) {
+        usuarioService.revogarCredenciais((Usuario) authentication.getPrincipal());
+        return ResponseEntity.noContent().cacheControl(CacheControl.noStore()).build();
     }
 
     private boolean instituicaoAtiva(Usuario usuario) {

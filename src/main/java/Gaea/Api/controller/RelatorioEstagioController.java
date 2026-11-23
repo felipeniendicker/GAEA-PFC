@@ -35,10 +35,11 @@ public class RelatorioEstagioController {
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim,
             @RequestParam(required = false) String aluno,
+            @RequestParam(required = false) String empresa,
             Authentication authentication) {
         return service.gerar(
                 (Usuario) authentication.getPrincipal(),
-                situacao, dataInicio, dataFim, aluno);
+                situacao, dataInicio, dataFim, aluno, empresa);
     }
 
     @GetMapping("/csv")
@@ -49,10 +50,11 @@ public class RelatorioEstagioController {
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim,
             @RequestParam(required = false) String aluno,
+            @RequestParam(required = false) String empresa,
             Authentication authentication) {
         RelatorioEstagioResponse relatorio = service.gerar(
                 (Usuario) authentication.getPrincipal(),
-                situacao, dataInicio, dataFim, aluno);
+                situacao, dataInicio, dataFim, aluno, empresa);
         byte[] conteudo = service.gerarCsv(relatorio);
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(new MediaType("text", "csv", StandardCharsets.UTF_8));

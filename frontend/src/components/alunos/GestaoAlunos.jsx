@@ -77,7 +77,7 @@ export default function GestaoAlunos({ apiBase, token, instituicao }) {
   const conviteRef = useRef(null)
   const apresentacaoInstitucional = apresentacaoInstituicao(instituicao)
   const nomeInstituicao = apresentacaoInstitucional.nomeCompleto
-  const siglaInstituicao = apresentacaoInstitucional.sigla
+  const identificacaoInstituicao = apresentacaoInstitucional.nomeComSigla
 
   useEffect(() => {
     const controle = new AbortController()
@@ -328,7 +328,7 @@ export default function GestaoAlunos({ apiBase, token, instituicao }) {
           </p>
           <p className="gestao-alunos__instituicao" title={nomeInstituicao}>
             <span>Instituição</span>
-            <strong>{siglaInstituicao ? `${siglaInstituicao} — ${nomeInstituicao}` : nomeInstituicao}</strong>
+            <strong>{identificacaoInstituicao}</strong>
           </p>
         </div>
         <button

@@ -12,6 +12,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 
 import java.time.LocalDateTime;
 
@@ -41,6 +42,23 @@ public class SolicitacaoPrivacidade {
     @Column(nullable = false)
     private LocalDateTime criadoEm;
 
+    @Column(nullable = false)
+    private LocalDateTime atualizadoEm;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "responsavel_usuario_id")
+    private Usuario responsavel;
+
+    @Column(length = 2000)
+    private String decisao;
+
+    @Column(length = 2000)
+    private String evidenciaExecucao;
+
+    @Version
+    @Column(nullable = false)
+    private Long versao;
+
     @PrePersist
     void prepararInclusao() {
         if (situacao == null) {
@@ -48,6 +66,9 @@ public class SolicitacaoPrivacidade {
         }
         if (criadoEm == null) {
             criadoEm = LocalDateTime.now();
+        }
+        if (atualizadoEm == null) {
+            atualizadoEm = criadoEm;
         }
     }
 
@@ -83,7 +104,43 @@ public class SolicitacaoPrivacidade {
         return situacao;
     }
 
+    public void setSituacao(SituacaoSolicitacaoPrivacidade situacao) {
+        this.situacao = situacao;
+    }
+
     public LocalDateTime getCriadoEm() {
         return criadoEm;
+    }
+
+    public LocalDateTime getAtualizadoEm() {
+        return atualizadoEm;
+    }
+
+    public void setAtualizadoEm(LocalDateTime atualizadoEm) {
+        this.atualizadoEm = atualizadoEm;
+    }
+
+    public Usuario getResponsavel() {
+        return responsavel;
+    }
+
+    public void setResponsavel(Usuario responsavel) {
+        this.responsavel = responsavel;
+    }
+
+    public String getDecisao() {
+        return decisao;
+    }
+
+    public void setDecisao(String decisao) {
+        this.decisao = decisao;
+    }
+
+    public String getEvidenciaExecucao() {
+        return evidenciaExecucao;
+    }
+
+    public void setEvidenciaExecucao(String evidenciaExecucao) {
+        this.evidenciaExecucao = evidenciaExecucao;
     }
 }

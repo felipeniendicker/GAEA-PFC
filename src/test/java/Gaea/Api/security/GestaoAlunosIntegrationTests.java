@@ -25,7 +25,9 @@ import org.springframework.test.web.servlet.MvcResult;
 import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -205,6 +207,11 @@ class GestaoAlunosIntegrationTests {
         Usuario aluno = usuarioRepository.findByEmailNormalizado("aluno@example.com").orElseThrow();
         assertTrue(aluno.getAtivado());
         assertTrue(aluno.getTermosAceitos());
+        assertEquals(Gaea.Api.model.DocumentosLegais.VERSAO_TERMOS_USO,
+                aluno.getTermosUsoVersao());
+        assertEquals(Gaea.Api.model.DocumentosLegais.VERSAO_POLITICA_PRIVACIDADE,
+                aluno.getPoliticaPrivacidadeVersao());
+        assertNotNull(aluno.getTermosAceitosEm());
         assertTrue(passwordEncoder.matches("Senha-segura-123!", aluno.getSenha()));
         assertTrue(conviteRepository.findAll().get(0).getUtilizadoEm() != null);
 
@@ -402,8 +409,8 @@ class GestaoAlunosIntegrationTests {
         return mockMvc.perform(post("/api/ativacoes/aluno")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                        {"token":"%s","senha":"%s","termosAceitos":true}
-                        """.formatted(token, senha)));
+                        {"token":"%s","senha":"%s","confirmacaoSenha":"%s","termosAceitos":true}
+                        """.formatted(token, senha, senha)));
     }
 
     private org.springframework.test.web.servlet.ResultActions alterarSituacao(

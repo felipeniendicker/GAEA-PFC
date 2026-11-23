@@ -13,7 +13,8 @@ export default function RelatoriosProcessos({ apiBase, token }) {
     situacao: '',
     dataInicio: '',
     dataFim: '',
-    aluno: ''
+    aluno: '',
+    empresa: ''
   })
   const [relatorio, setRelatorio] = useState(null)
   const [carregando, setCarregando] = useState(false)
@@ -104,6 +105,10 @@ export default function RelatoriosProcessos({ apiBase, token }) {
         <div className="campo">
           <label htmlFor="relatorioAluno">Aluno</label>
           <input id="relatorioAluno" name="aluno" value={filtros.aluno} onChange={alterarFiltro} placeholder="Nome do aluno" />
+        </div>
+        <div className="campo">
+          <label htmlFor="relatorioEmpresa">Empresa</label>
+          <input id="relatorioEmpresa" name="empresa" value={filtros.empresa} onChange={alterarFiltro} placeholder="Nome da empresa" />
         </div>
         <div className="campo">
           <label htmlFor="relatorioDataInicio">Período inicial</label>

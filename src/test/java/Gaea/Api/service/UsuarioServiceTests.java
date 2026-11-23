@@ -2,6 +2,7 @@ package Gaea.Api.service;
 
 import Gaea.Api.dto.CadastroUsuarioRequest;
 import Gaea.Api.exception.ConflitoDadosException;
+import Gaea.Api.model.DocumentosLegais;
 import Gaea.Api.model.Usuario;
 import Gaea.Api.repository.UsuarioRepository;
 import org.junit.jupiter.api.Test;
@@ -40,6 +41,7 @@ class UsuarioServiceTests {
                 "  Ana Souza  ",
                 "  ANA@EXAMPLE.COM ",
                 "senha-segura",
+                "senha-segura",
                 "EMPRESA",
                 true);
 
@@ -55,6 +57,9 @@ class UsuarioServiceTests {
         assertEquals("EMPRESA", usuario.getPerfil());
         assertEquals(true, usuario.getTermosAceitos());
         assertNotNull(usuario.getTermosAceitosEm());
+        assertEquals(DocumentosLegais.VERSAO_TERMOS_USO, usuario.getTermosUsoVersao());
+        assertEquals(DocumentosLegais.VERSAO_POLITICA_PRIVACIDADE,
+                usuario.getPoliticaPrivacidadeVersao());
         verify(passwordEncoder).encode("senha-segura");
         verify(politicaSenha).validar("senha-segura");
     }
@@ -64,6 +69,7 @@ class UsuarioServiceTests {
         CadastroUsuarioRequest request = new CadastroUsuarioRequest(
                 "Ana Souza",
                 "ANA@example.com",
+                "senha-segura",
                 "senha-segura",
                 "EMPRESA",
                 true);

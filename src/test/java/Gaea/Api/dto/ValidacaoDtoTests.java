@@ -60,6 +60,7 @@ class ValidacaoDtoTests {
                 "Ana Souza",
                 "  ANA@EXAMPLE.COM  ",
                 "Senha-segura1!",
+                "Senha-segura1!",
                 "EMPRESA",
                 true);
 
@@ -72,6 +73,7 @@ class ValidacaoDtoTests {
         CadastroUsuarioRequest request = new CadastroUsuarioRequest(
                 " ",
                 "email-invalido",
+                "1234567",
                 "1234567",
                 "INSTITUICAO",
                 false);
@@ -87,6 +89,7 @@ class ValidacaoDtoTests {
                 "Ana Souza",
                 "ana@example.com",
                 "1234567",
+                "1234567",
                 "EMPRESA",
                 true);
 
@@ -99,6 +102,7 @@ class ValidacaoDtoTests {
         CadastroUsuarioRequest request = new CadastroUsuarioRequest(
                 "Ana Souza",
                 "ana@example.com",
+                "Senha-segura1!",
                 "Senha-segura1!",
                 "ALUNO",
                 true);

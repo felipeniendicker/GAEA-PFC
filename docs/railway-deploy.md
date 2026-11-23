@@ -69,6 +69,12 @@ JPA_DDL_AUTO=validate
 JPA_SHOW_SQL=false
 
 JWT_SECRET=<segredo aleatório com pelo menos 32 bytes>
+JWT_ISSUER=gaea-api
+JWT_EXPIRATION_MINUTES=60
+LOGIN_EMAIL_LIMIT=5
+LOGIN_ORIGIN_LIMIT=20
+LOGIN_WINDOW_MINUTES=15
+LOGIN_MAX_KEYS=10000
 CORS_ALLOWED_ORIGINS=https://${{Frontend.RAILWAY_PUBLIC_DOMAIN}}
 FRONTEND_BASE_URL=https://${{Frontend.RAILWAY_PUBLIC_DOMAIN}}
 
@@ -78,6 +84,9 @@ DOCUMENTOS_STORAGE_DIRETORIO=/data/documentos
 
 Não defina `PORT` manualmente, salvo se houver uma necessidade operacional específica.
 `JWT_SECRET` deve ser estável entre deploys; trocá-lo encerra todas as sessões existentes.
+Mantenha também `JWT_ISSUER` estável. Os limites de login são aplicados por instância;
+se o backend ganhar múltiplas réplicas, substitua o limitador em memória por um mecanismo
+compartilhado antes de considerar a proteção distribuída completa.
 Use um valor diferente por ambiente e nunca reutilize a senha do banco.
 
 `CORS_ALLOWED_ORIGINS` aceita uma lista separada por vírgulas. Use origens completas,
@@ -112,8 +121,8 @@ volume não devem ser configurados com múltiplas réplicas escrevendo no mesmo 
 
 ## 6. SMTP
 
-Sem SMTP, supervisores conseguem criar conta e entrar, mas não recebem o link necessário
-para confirmar o e-mail e liberar os fluxos de supervisão. Para habilitar o envio, adicione:
+O cadastro público de supervisores e os fluxos institucionais exigem SMTP disponível e
+falham de forma fechada quando o envio está desabilitado. Para habilitar o envio, adicione:
 
 ```text
 EMAIL_ENABLED=true
@@ -133,7 +142,7 @@ usa STARTTLS. Não use `SMTP_STARTTLS=false` em produção quando o provedor ofe
 
 1. Inicie o MySQL e confirme que as variáveis privadas estão disponíveis.
 2. Publique o backend com Flyway habilitado.
-3. Verifique nos logs a aplicação das migrations V1 a V12 e o status `UP` em
+3. Verifique nos logs a aplicação das migrations V1 a V17 e o status `UP` em
    `/actuator/health`.
 4. Publique o frontend com `VITE_API_URL` definida.
 5. Teste CORS, cadastro, confirmação de e-mail, login dos três perfis e os fluxos

@@ -48,17 +48,19 @@ class RelatorioEstagioServiceTests {
     }
 
     @Test
-    void deveFiltrarPorInstituicaoStatusPeriodoEAlunoECalcularIndicadores() {
+    void deveFiltrarPorInstituicaoStatusPeriodoAlunoEEmpresaECalcularIndicadores() {
         ProcessoEstagio aprovado = processo(10L, "Ana Silva", "APROVADO",
                 LocalDate.of(2026, 2, 1), LocalDate.of(2026, 6, 30));
+        aprovado.setNomeEmpresa("Nexa Verde Tecnologia");
         ProcessoEstagio reprovado = processo(11L, "Bruno", "REPROVADO",
                 LocalDate.of(2026, 2, 1), LocalDate.of(2026, 6, 30));
+        reprovado.setNomeEmpresa("Ponte Clara Sistemas");
         when(processoRepository.findAllByInstituicaoId(7L))
                 .thenReturn(List.of(aprovado, reprovado));
 
         RelatorioEstagioResponse resposta = service.gerar(
                 usuario, "APROVADO", LocalDate.of(2026, 3, 1),
-                LocalDate.of(2026, 3, 31), "ana");
+                LocalDate.of(2026, 3, 31), "ana", "  NEXA VERDE  ");
 
         assertEquals(1, resposta.total());
         assertEquals(1L, resposta.porSituacao().get("APROVADO"));
@@ -71,13 +73,14 @@ class RelatorioEstagioServiceTests {
         Usuario semInstituicao = mock(Usuario.class);
         when(semInstituicao.getPerfil()).thenReturn("INSTITUICAO");
         assertThrows(org.springframework.security.access.AccessDeniedException.class,
-                () -> service.gerar(semInstituicao, null, null, null, null));
+                () -> service.gerar(semInstituicao, null, null, null, null, null));
     }
 
     @Test
     void deveRetornarVazioSemExporProcessosDeOutraInstituicao() {
         when(processoRepository.findAllByInstituicaoId(7L)).thenReturn(List.of());
-        assertEquals(0, service.gerar(usuario, null, null, null, null).total());
+        assertEquals(0, service.gerar(
+                usuario, null, null, null, null, "Empresa externa").total());
     }
 
     @Test
@@ -85,7 +88,7 @@ class RelatorioEstagioServiceTests {
         ProcessoEstagio semDatas = processo(12L, "Aluno legado", "PENDENTE", null, null);
         when(processoRepository.findAllByInstituicaoId(7L)).thenReturn(List.of(semDatas));
 
-        assertEquals(1, service.gerar(usuario, null, null, null, null).total());
+        assertEquals(1, service.gerar(usuario, null, null, null, null, null).total());
     }
 
     @Test
@@ -101,9 +104,9 @@ class RelatorioEstagioServiceTests {
                 .thenReturn(List.of(semInicio, semFim, completo));
 
         RelatorioEstagioResponse aPartirDeMarco = service.gerar(
-                usuario, null, LocalDate.of(2026, 3, 1), null, null);
+                usuario, null, LocalDate.of(2026, 3, 1), null, null, null);
         RelatorioEstagioResponse ateMarco = service.gerar(
-                usuario, null, null, LocalDate.of(2026, 3, 31), null);
+                usuario, null, null, LocalDate.of(2026, 3, 31), null, null);
 
         assertEquals(List.of(14L, 12L), aPartirDeMarco.processos().stream()
                 .map(Gaea.Api.dto.RelatorioProcessoResponse::processoId).toList());
@@ -123,7 +126,7 @@ class RelatorioEstagioServiceTests {
 
         RelatorioEstagioResponse resposta = service.gerar(
                 usuario, "APROVADO", LocalDate.of(2026, 3, 1),
-                LocalDate.of(2026, 3, 31), "ana");
+                LocalDate.of(2026, 3, 31), "ana", null);
 
         assertEquals(1, resposta.total());
         assertEquals(13L, resposta.processos().get(0).processoId());
@@ -164,6 +167,7 @@ class RelatorioEstagioServiceTests {
         ProcessoEstagio processo = new ProcessoEstagio();
         processo.setId(id);
         processo.setNomeAluno(aluno);
+        processo.setNomeEmpresa("Empresa de Teste");
         processo.setStatus(status);
         processo.setDataInicio(inicio);
         processo.setDataFim(fim);

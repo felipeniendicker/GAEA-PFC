@@ -54,7 +54,7 @@ class RelatorioEstagioIntegrationTests {
     void consultaECsvDevemAplicarOsMesmosFiltros() throws Exception {
         Contexto contexto = prepararContexto();
         String consulta = "?situacao=APROVADO&dataInicio=2026-03-01"
-                + "&dataFim=2026-03-31&aluno=ana";
+                + "&dataFim=2026-03-31&aluno=ana&empresa=nexa";
 
         mockMvc.perform(get("/api/relatorios/estagios" + consulta)
                         .header("Authorization", bearer(contexto.responsavelPrimeira())))
@@ -99,11 +99,11 @@ class RelatorioEstagioIntegrationTests {
         Usuario aluno = salvarUsuario("aluno@teste.example", "ALUNO", primeira);
         Usuario empresa = salvarUsuario("empresa@teste.example", "EMPRESA", null);
 
-        salvarProcesso(primeira, "Ana InstituiÃ§Ã£o Um", "APROVADO",
+        salvarProcesso(primeira, "Ana InstituiÃ§Ã£o Um", "Nexa Verde Tecnologia", "APROVADO",
                 LocalDate.of(2026, 2, 1), LocalDate.of(2026, 6, 30));
-        salvarProcesso(primeira, "Carla InstituiÃ§Ã£o Um", "PENDENTE",
+        salvarProcesso(primeira, "Carla InstituiÃ§Ã£o Um", "Ponte Clara Sistemas", "PENDENTE",
                 LocalDate.of(2026, 8, 1), LocalDate.of(2026, 12, 15));
-        salvarProcesso(segunda, "Bruno InstituiÃ§Ã£o Dois", "APROVADO",
+        salvarProcesso(segunda, "Bruno InstituiÃ§Ã£o Dois", "Nexa Externa", "APROVADO",
                 LocalDate.of(2026, 2, 1), LocalDate.of(2026, 6, 30));
         return new Contexto(responsavelPrimeira, aluno, empresa);
     }
@@ -129,13 +129,14 @@ class RelatorioEstagioIntegrationTests {
     private void salvarProcesso(
             Instituicao instituicao,
             String aluno,
+            String empresa,
             String situacao,
             LocalDate dataInicio,
             LocalDate dataFim) {
         ProcessoEstagio processo = new ProcessoEstagio();
         processo.setNomeAluno(aluno);
         processo.setEmailAluno(aluno.toLowerCase().replace(' ', '.') + "@teste.example");
-        processo.setNomeEmpresa("Empresa de Teste");
+        processo.setNomeEmpresa(empresa);
         processo.setCnpjEmpresa("11222333000181");
         processo.setStatus(situacao);
         processo.setInstituicao(instituicao);

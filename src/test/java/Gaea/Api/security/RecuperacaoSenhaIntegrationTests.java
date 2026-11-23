@@ -60,6 +60,20 @@ class RecuperacaoSenhaIntegrationTests {
     }
 
     @Test
+    void logoutDeveRevogarJwtAtual() throws Exception {
+        Usuario usuario = salvarUsuario("logout@example.com", "Senha-antiga1!");
+        String jwt = jwtService.gerarToken(usuario);
+
+        mockMvc.perform(post("/api/auth/logout")
+                        .header("Authorization", "Bearer " + jwt))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/dashboard/resumo")
+                        .header("Authorization", "Bearer " + jwt))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     void deveRedefinirSenhaComTokenProtegidoDeUsoUnicoERevogarJwtAnterior() throws Exception {
         Usuario usuario = salvarUsuario("aluno@example.com", "senha-antiga");
         String jwtAnterior = jwtService.gerarToken(usuario);
@@ -148,12 +162,13 @@ class RecuperacaoSenhaIntegrationTests {
     }
 
     @Test
-    void deveResponderIgualQuandoEmailEstiverDesabilitado() throws Exception {
+    void deveFalharSemEnumerarContaQuandoEmailEstiverDesabilitado() throws Exception {
         when(envioEmail.disponivel()).thenReturn(false);
         solicitar("qualquer@example.com")
-                .andExpect(status().isAccepted())
-                .andExpect(jsonPath("$.mensagem").exists());
-        assertEquals(1, solicitacaoRepository.count());
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.mensagem").value(
+                        "A recuperação por e-mail está temporariamente indisponível"));
+        assertEquals(0, solicitacaoRepository.count());
     }
 
     @Test

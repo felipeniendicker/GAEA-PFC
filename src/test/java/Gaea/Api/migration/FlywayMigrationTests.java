@@ -19,7 +19,7 @@ class FlywayMigrationTests {
 
         var resultado = flyway(url).migrate();
 
-        assertEquals(15, resultado.migrationsExecuted);
+        assertEquals(17, resultado.migrationsExecuted);
 
         try (var connection = DriverManager.getConnection(url, "sa", "");
              var statement = connection.createStatement()) {
@@ -276,10 +276,10 @@ class FlywayMigrationTests {
              var statement = connection.createStatement()) {
             statement.executeUpdate("""
                     INSERT INTO usuario
-                        (nome, email, senha, perfil, termos_aceitos)
+                        (nome, email, senha, perfil, termos_aceitos, termos_aceitos_em)
                     VALUES
                         ('Usuário Legado', 'usuario.legado@example.com',
-                         'hash-existente', 'ALUNO', TRUE)
+                         'hash-existente', 'ALUNO', TRUE, '2026-08-15 14:30:00')
                     """);
             statement.executeUpdate("""
                     INSERT INTO processo_estagio
@@ -291,7 +291,7 @@ class FlywayMigrationTests {
         }
 
         var resultado = flyway(url).migrate();
-        assertEquals(14, resultado.migrationsExecuted);
+        assertEquals(16, resultado.migrationsExecuted);
 
         try (var connection = DriverManager.getConnection(url, "sa", "");
              var statement = connection.createStatement();
@@ -314,7 +314,9 @@ class FlywayMigrationTests {
         try (var connection = DriverManager.getConnection(url, "sa", "");
              var statement = connection.createStatement();
              var resultSet = statement.executeQuery("""
-                     SELECT ativo, ativado, matricula, senha, instituicao_id, email_verificado_em
+                     SELECT ativo, ativado, matricula, senha, instituicao_id, email_verificado_em,
+                            termos_aceitos, termos_aceitos_em, termos_uso_versao,
+                            politica_privacidade_versao
                      FROM usuario
                      WHERE email = 'usuario.legado@example.com'
                      """)) {
@@ -325,6 +327,11 @@ class FlywayMigrationTests {
             assertEquals("hash-existente", resultSet.getString("senha"));
             assertNull(resultSet.getObject("instituicao_id"));
             assertNull(resultSet.getObject("email_verificado_em"));
+            assertEquals(true, resultSet.getBoolean("termos_aceitos"));
+            assertEquals("2026-08-15T14:30", resultSet.getTimestamp("termos_aceitos_em")
+                    .toLocalDateTime().toString());
+            assertNull(resultSet.getObject("termos_uso_versao"));
+            assertNull(resultSet.getObject("politica_privacidade_versao"));
         }
     }
 

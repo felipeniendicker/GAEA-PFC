@@ -46,7 +46,12 @@ export function rotuloSituacao(valor) {
 
 export function apresentacaoInstituicao(instituicao) {
   if (!instituicao) {
-    return { sigla: '', nomeCompleto: 'Não informada', ficticia: false }
+    return {
+      sigla: '',
+      nomeCompleto: 'Não informada',
+      nomeComSigla: 'Não informada',
+      ficticia: false
+    }
   }
 
   const nome = typeof instituicao === 'object'
@@ -58,10 +63,21 @@ export function apresentacaoInstituicao(instituicao) {
   const ficticia = typeof instituicao === 'object'
     ? Boolean(instituicao.ficticia)
     : false
+  const nomeSemClassificacao = nome
+    .replace(/\s*\(\s*fict[ií]cia\s*\)\s*$/iu, '')
+    .trim()
+  const siglaEscapada = sigla.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const nomeCompleto = (sigla
+    ? nomeSemClassificacao.replace(
+        new RegExp(`\\s*\\(\\s*${siglaEscapada}\\s*\\)\\s*$`, 'iu'),
+        ''
+      )
+    : nomeSemClassificacao).trim() || 'Não informada'
 
   return {
     sigla,
-    nomeCompleto: nome.trim() || 'Não informada',
+    nomeCompleto,
+    nomeComSigla: sigla ? `${nomeCompleto} (${sigla})` : nomeCompleto,
     ficticia
   }
 }

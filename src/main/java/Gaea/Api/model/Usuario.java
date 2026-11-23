@@ -41,6 +41,12 @@ public class Usuario {
 
     private LocalDateTime termosAceitosEm;
 
+    @Column(length = 30)
+    private String termosUsoVersao;
+
+    @Column(length = 30)
+    private String politicaPrivacidadeVersao;
+
     private LocalDateTime emailVerificadoEm;
 
     @Column(nullable = false)
@@ -131,6 +137,22 @@ public class Usuario {
 
     public void setTermosAceitosEm(LocalDateTime termosAceitosEm) {
         this.termosAceitosEm = termosAceitosEm;
+    }
+
+    public String getTermosUsoVersao() {
+        return termosUsoVersao;
+    }
+
+    public void setTermosUsoVersao(String termosUsoVersao) {
+        this.termosUsoVersao = termosUsoVersao;
+    }
+
+    public String getPoliticaPrivacidadeVersao() {
+        return politicaPrivacidadeVersao;
+    }
+
+    public void setPoliticaPrivacidadeVersao(String politicaPrivacidadeVersao) {
+        this.politicaPrivacidadeVersao = politicaPrivacidadeVersao;
     }
 
     public LocalDateTime getEmailVerificadoEm() {

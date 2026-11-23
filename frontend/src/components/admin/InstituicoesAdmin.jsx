@@ -3,6 +3,7 @@ import CampoSenha from '../auth/CampoSenha'
 import RequisitosSenha from '../auth/RequisitosSenha'
 import { senhaAtendePolitica } from '../../utils/senha'
 import { apresentacaoInstituicao } from '../../utils/apresentacao'
+import PrivacidadeAdmin from './PrivacidadeAdmin'
 import './InstituicoesAdmin.css'
 
 function cnpjValido(cnpj) {
@@ -200,5 +201,6 @@ export default function InstituicoesAdmin({ apiBase, token }) {
         </div>
       </article>
     })}</div></section>
+    <PrivacidadeAdmin apiBase={apiBase} token={token} />
   </main>
 }

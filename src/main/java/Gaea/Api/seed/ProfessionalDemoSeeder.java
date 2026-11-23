@@ -761,10 +761,11 @@ public class ProfessionalDemoSeeder implements ApplicationRunner {
                     """, aluno.id(), tipo, descricao) == 0) {
                 jdbc.update("""
                         insert into solicitacao_privacidade
-                        (usuario_id, tipo, descricao, situacao, criado_em)
-                        values (?, ?, ?, 'PENDENTE', ?)
+                        (usuario_id, tipo, descricao, situacao, criado_em, atualizado_em, versao)
+                        values (?, ?, ?, 'PENDENTE', ?, ?, 0)
                         """,
                         aluno.id(), tipo, descricao,
+                        dataReferencia.atTime(14, 0).plusDays(indice),
                         dataReferencia.atTime(14, 0).plusDays(indice));
             }
         }

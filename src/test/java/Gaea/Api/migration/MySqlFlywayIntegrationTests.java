@@ -43,7 +43,7 @@ class MySqlFlywayIntegrationTests {
     JdbcTemplate jdbcTemplate;
 
     @Test
-    void deveAplicarV1AV15EValidarMapeamentoJpaNoMySqlReal() {
+    void deveAplicarV1AV17EValidarMapeamentoJpaNoMySqlReal() {
         Integer migracoesAplicadas = jdbcTemplate.queryForObject("""
                 SELECT COUNT(*)
                 FROM flyway_schema_history
@@ -57,7 +57,7 @@ class MySqlFlywayIntegrationTests {
                   AND table_name <> 'flyway_schema_history'
                 """, Integer.class);
 
-        assertEquals(15, migracoesAplicadas);
+        assertEquals(17, migracoesAplicadas);
         assertEquals(20, tabelasDeNegocio);
 
         Integer colunaSigla = jdbcTemplate.queryForObject("""
@@ -81,5 +81,55 @@ class MySqlFlywayIntegrationTests {
 
         assertEquals(1, colunaSigla);
         assertEquals(1, colunaFicticia);
+
+        Integer colunasAceiteLegalV17 = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*)
+                FROM information_schema.columns
+                WHERE table_schema = DATABASE()
+                  AND table_name = 'usuario'
+                  AND column_name IN (
+                      'termos_uso_versao', 'politica_privacidade_versao'
+                  )
+                  AND is_nullable = 'YES'
+                  AND character_maximum_length = 30
+                """, Integer.class);
+
+        assertEquals(2, colunasAceiteLegalV17);
+
+        Integer colunasPrivacidadeV16 = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*)
+                FROM information_schema.columns
+                WHERE table_schema = DATABASE()
+                  AND table_name = 'solicitacao_privacidade'
+                  AND column_name IN (
+                      'atualizado_em', 'responsavel_usuario_id', 'decisao',
+                      'evidencia_execucao', 'versao'
+                  )
+                """, Integer.class);
+        Integer constraintsPrivacidadeV16 = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*)
+                FROM information_schema.table_constraints
+                WHERE table_schema = DATABASE()
+                  AND table_name = 'solicitacao_privacidade'
+                  AND constraint_name IN (
+                      'ck_solicitacao_privacidade_tipo',
+                      'ck_solicitacao_privacidade_situacao',
+                      'fk_solicitacao_privacidade_responsavel'
+                  )
+                """, Integer.class);
+        Integer indicesPrivacidadeV16 = jdbcTemplate.queryForObject("""
+                SELECT COUNT(DISTINCT index_name)
+                FROM information_schema.statistics
+                WHERE table_schema = DATABASE()
+                  AND table_name = 'solicitacao_privacidade'
+                  AND index_name IN (
+                      'idx_solicitacao_privacidade_situacao_data',
+                      'idx_solicitacao_privacidade_responsavel'
+                  )
+                """, Integer.class);
+
+        assertEquals(5, colunasPrivacidadeV16);
+        assertEquals(3, constraintsPrivacidadeV16);
+        assertEquals(2, indicesPrivacidadeV16);
     }
 }
