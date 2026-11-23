@@ -11,7 +11,7 @@ public record AtivacaoAlunoRequest(
         String token,
 
         @NotBlank(message = "A senha é obrigatória")
-        @Size(min = 8, max = 72, message = "A senha deve ter entre 8 e 72 caracteres")
+        @Size(min = 8, max = 64, message = "A senha deve ter entre 8 e 64 caracteres")
         String senha,
 
         @NotNull(message = "Informe o aceite dos Termos de Uso e da Política de Privacidade")

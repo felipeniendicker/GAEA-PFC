@@ -28,6 +28,9 @@ class UsuarioServiceTests {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private PoliticaSenhaService politicaSenha;
+
     @InjectMocks
     private UsuarioService usuarioService;
 
@@ -53,6 +56,7 @@ class UsuarioServiceTests {
         assertEquals(true, usuario.getTermosAceitos());
         assertNotNull(usuario.getTermosAceitosEm());
         verify(passwordEncoder).encode("senha-segura");
+        verify(politicaSenha).validar("senha-segura");
     }
 
     @Test

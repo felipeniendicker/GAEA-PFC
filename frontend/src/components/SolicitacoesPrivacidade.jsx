@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import './SolicitacoesPrivacidade.css'
+import { formatarDataHora, rotuloSituacao } from '../utils/apresentacao'
 
 const rotulosTipo = {
   ACESSO: 'Acesso aos dados',
@@ -7,7 +8,7 @@ const rotulosTipo = {
 }
 
 function dataFormatada(data) {
-  return data ? new Date(data).toLocaleString('pt-BR') : '—'
+  return formatarDataHora(data)
 }
 
 export default function SolicitacoesPrivacidade({ apiBase, token }) {
@@ -163,7 +164,9 @@ export default function SolicitacoesPrivacidade({ apiBase, token }) {
                   <strong>{rotulosTipo[solicitacao.tipo] || solicitacao.tipo}</strong>
                   <span>{dataFormatada(solicitacao.criadoEm)}</span>
                 </div>
-                <span className="solicitacao-situacao">{solicitacao.situacao}</span>
+                <span className={`solicitacao-situacao solicitacao-${solicitacao.situacao}`}>
+                  {rotuloSituacao(solicitacao.situacao)}
+                </span>
                 <p>{solicitacao.descricao}</p>
               </article>
             ))}

@@ -54,6 +54,39 @@ button { font-size: 0.9rem; }
   gap: 12px;
 }
 
+.cabecalho-identidade {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--espaco-5);
+}
+
+.cabecalho-instituicao {
+  display: grid;
+  min-width: 0;
+  max-width: 24rem;
+  gap: 2px;
+  padding-left: var(--espaco-5);
+  border-left: 1px solid rgba(209, 250, 229, 0.3);
+}
+
+.cabecalho-instituicao span {
+  color: rgba(255, 255, 255, 0.66);
+  font-size: 0.68rem;
+  font-weight: var(--peso-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cabecalho-instituicao strong {
+  overflow: hidden;
+  color: #fff;
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-semibold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .logo-marca {
   display: grid;
   flex: 0 0 36px;
@@ -641,6 +674,19 @@ button { font-size: 0.9rem; }
 }
 
 @media (max-width: 640px) {
+  .pagina-publica-cadastro {
+    width: calc(100% - 24px);
+    padding-top: var(--espaco-8);
+  }
+
+  .pagina-publica-cadastro .formulario form {
+    grid-template-columns: 1fr;
+  }
+
+  .acoes-criacao-conta {
+    grid-template-columns: 1fr;
+  }
+
   .navbar-conteudo {
     width: min(100% - 32px, 1320px);
     min-height: auto;
@@ -1805,5 +1851,505 @@ button { font-size: 0.9rem; }
   .prazos-cabecalho button,
   .acao-editar-prazo {
     width: 100%;
+  }
+}
+
+/* Fundação visual GAEA — os seletores abaixo modernizam a camada visual sem
+   alterar a estrutura ou o comportamento dos fluxos existentes. */
+.app {
+  min-height: 100vh;
+  overflow-x: clip;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(209, 250, 229, 0.55), transparent 28rem),
+    var(--cor-bege);
+  color: var(--cor-texto);
+}
+
+.navbar {
+  position: sticky;
+  z-index: 30;
+  top: 0;
+  border-bottom: 1px solid rgba(209, 250, 229, 0.18);
+  background: linear-gradient(112deg, var(--cor-esmeralda-escuro), #075f49 72%, var(--cor-esmeralda-principal));
+  box-shadow: var(--sombra-cabecalho);
+}
+
+.navbar-conteudo {
+  width: min(100% - 48px, 1380px);
+  min-height: 76px;
+  gap: var(--espaco-8);
+}
+
+.logo { gap: var(--espaco-3); }
+
+.logo-marca {
+  flex-basis: 42px;
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(209, 250, 229, 0.62);
+  border-radius: var(--raio-md);
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--cor-esmeralda-suave);
+  font-family: var(--fonte-destaque);
+  font-size: 1.25rem;
+  letter-spacing: -0.04em;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+
+.logo h1 {
+  font-family: var(--fonte-destaque);
+  font-size: 1.3rem;
+  font-weight: var(--peso-bold);
+  letter-spacing: 0.12em;
+}
+
+.logo p {
+  margin-top: 2px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: var(--texto-xs);
+  letter-spacing: 0.02em;
+}
+
+.navbar nav {
+  gap: var(--espaco-1);
+  padding: var(--espaco-3) 0;
+}
+
+.navbar nav button {
+  min-height: 42px;
+  height: auto;
+  padding: var(--espaco-2) var(--espaco-3);
+  border-radius: var(--raio-sm);
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 0.84rem;
+  font-weight: var(--peso-medio);
+  transition: color var(--transicao), background var(--transicao), transform var(--transicao);
+}
+
+.navbar nav button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.navbar nav button:active { transform: translateY(1px); }
+
+.navbar nav .ativo {
+  background: var(--cor-esmeralda-suave);
+  color: var(--cor-esmeralda-escuro);
+  font-weight: var(--peso-bold);
+}
+
+.navbar nav .ativo:hover {
+  background: #ecfdf5;
+  color: var(--cor-esmeralda-escuro);
+}
+
+.navbar nav .ativo::after { display: none; }
+
+.conteudo {
+  width: min(100% - 48px, 1320px);
+  padding: var(--espaco-12) 0 var(--espaco-16);
+}
+
+.cabecalho { margin-bottom: var(--espaco-8); }
+
+.cabecalho h2,
+.formulario h3,
+.acompanhamento h3,
+.historico-processo h4,
+.pendencias-cabecalho h4,
+.prazos-cabecalho h4 {
+  color: var(--cor-esmeralda-escuro);
+  font-family: var(--fonte-destaque);
+}
+
+.cabecalho h2 {
+  font-size: var(--texto-2xl);
+  font-weight: var(--peso-bold);
+  letter-spacing: -0.035em;
+}
+
+.cabecalho .cabecalho-contexto {
+  color: var(--cor-esmeralda-principal);
+  font-size: var(--texto-xs);
+  letter-spacing: 0.13em;
+}
+
+.cabecalho .cabecalho-descricao,
+.secao-cabecalho p { color: var(--cor-texto-suave); }
+
+.formulario,
+.acompanhamento,
+.dashboard-estado,
+.dashboard-vazio,
+.dashboard-card,
+.dashboard-grafico,
+.dashboard-aprovacao,
+.aluno-card,
+.solicitacao-supervisao,
+.troca-supervisor {
+  border-color: var(--cor-borda);
+  border-radius: var(--raio-lg);
+  background: var(--cor-superficie);
+  box-shadow: var(--sombra-sm);
+}
+
+.formulario,
+.acompanhamento,
+.formulario form,
+.campo {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.formulario form { width: 100%; }
+
+.formulario {
+  border-top: 1px solid var(--cor-borda);
+  box-shadow: inset 0 4px 0 var(--cor-esmeralda-principal), var(--sombra-sm);
+}
+
+.secao-cabecalho { border-bottom-color: var(--cor-borda); }
+
+.campo label,
+.solicitacao-supervisao dt,
+.solicitacao-supervisao label,
+.troca-supervisor label {
+  color: var(--cor-texto);
+  font-weight: var(--peso-semibold);
+}
+
+.campo input,
+.campo select,
+.campo textarea,
+.solicitacao-supervisao textarea,
+.troca-supervisor input,
+.modal textarea,
+.modal input {
+  border-color: var(--cor-borda-forte);
+  border-radius: var(--raio-sm);
+  background: var(--cor-superficie-elevada);
+  color: var(--cor-texto);
+  transition: border-color var(--transicao), box-shadow var(--transicao), background var(--transicao);
+}
+
+.campo input:hover,
+.campo select:hover,
+.campo textarea:hover { border-color: var(--cor-esmeralda-principal); }
+
+.campo input:focus,
+.campo select:focus,
+.campo textarea:focus,
+.solicitacao-supervisao textarea:focus,
+.troca-supervisor input:focus {
+  border-color: var(--cor-esmeralda-interacao);
+  outline: none;
+  box-shadow: var(--foco-anel);
+}
+
+.formulario form > button,
+.campo-cep button,
+.acoes-cabecalho button,
+.dashboard-erro button,
+.ativacao-concluida button,
+.botao-primario {
+  border-color: var(--cor-esmeralda-principal);
+  border-radius: var(--raio-sm);
+  background: var(--cor-esmeralda-principal);
+  color: #fff;
+  font-weight: var(--peso-semibold);
+  box-shadow: 0 1px 2px rgba(6, 78, 59, 0.14);
+  transition: background var(--transicao), border-color var(--transicao), box-shadow var(--transicao), transform var(--transicao);
+}
+
+.formulario form > button:hover,
+.campo-cep button:hover,
+.acoes-cabecalho button:hover,
+.dashboard-erro button:hover,
+.ativacao-concluida button:hover,
+.botao-primario:hover {
+  border-color: var(--cor-esmeralda-interacao);
+  background: var(--cor-esmeralda-interacao);
+  box-shadow: 0 5px 14px rgba(4, 120, 87, 0.2);
+}
+
+.formulario form > button:active,
+.campo-cep button:active,
+.acoes-cabecalho button:active { transform: translateY(1px); }
+
+.acao-secundaria button,
+.botao-secundario {
+  border-color: var(--cor-esmeralda-principal);
+  border-radius: var(--raio-sm);
+  background: transparent;
+  color: var(--cor-esmeralda-principal);
+}
+
+.acao-secundaria button:hover,
+.botao-secundario:hover {
+  background: var(--cor-esmeralda-suave);
+  color: var(--cor-esmeralda-escuro);
+}
+
+.estado-vazio {
+  border-color: var(--cor-borda-forte);
+  border-radius: var(--raio-md);
+  background: rgba(255, 252, 246, 0.64);
+  color: var(--cor-texto-suave);
+}
+
+.lista-processos,
+.tabela-auditoria {
+  border-color: var(--cor-borda);
+  border-radius: var(--raio-md);
+  background: var(--cor-superficie);
+  box-shadow: var(--sombra-sm);
+}
+
+.lista-cabecalho,
+.auditoria-cabecalho {
+  border-bottom-color: var(--cor-borda);
+  background: #eee9df;
+  color: var(--cor-esmeralda-escuro);
+}
+
+.processo,
+.auditoria-linha {
+  background: var(--cor-superficie);
+  color: var(--cor-texto);
+}
+
+.processo-container + .processo-container,
+.auditoria-linha { border-color: var(--cor-borda); }
+
+.processo-container:focus {
+  outline-color: var(--cor-esmeralda-interacao);
+  box-shadow: var(--foco-anel);
+}
+
+.processo .status,
+.pendencia-situacao,
+.prazo-situacao {
+  border-radius: var(--raio-pill);
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+
+.processo .status-PENDENTE,
+.processo .status-EM_ANALISE {
+  border-color: #e5c46a;
+  background: var(--cor-alerta-suave);
+  color: #714f0b;
+}
+
+.processo .status-APROVADO,
+.pendencia-RESOLVIDA,
+.prazo-em-dia {
+  border-color: #82d5b3;
+  background: var(--cor-sucesso-suave);
+  color: var(--cor-esmeralda-escuro);
+}
+
+.processo .status-REPROVADO,
+.prazo-vencido {
+  border-color: #e6aaa5;
+  background: var(--cor-perigo-suave);
+  color: #842f2f;
+}
+
+.processo button {
+  min-height: 36px;
+  border-radius: var(--raio-sm);
+  transition: filter var(--transicao), transform var(--transicao), box-shadow var(--transicao);
+}
+
+.processo button:hover { filter: brightness(1.08); }
+.processo button:active { transform: translateY(1px); }
+.processo button.acao-aprovar { background: var(--cor-esmeralda-principal); }
+.processo button.acao-prazos { background: var(--cor-esmeralda-escuro); }
+.processo button.acao-historico { background: #53645e; }
+.processo button.acao-analise,
+.processo button.acao-reabrir,
+.processo button.acao-pendencias { background: var(--cor-alerta); }
+.processo button.acao-reprovar { background: var(--cor-perigo); }
+
+.historico-processo,
+.pendencias-processo,
+.prazos-processo {
+  border-color: var(--cor-borda);
+  background: rgba(247, 242, 232, 0.62);
+}
+
+.pendencia-item,
+.prazo-item {
+  border-radius: var(--raio-md);
+  background: var(--cor-superficie-elevada);
+  box-shadow: var(--sombra-sm);
+}
+
+.pendencias-cabecalho button,
+.acao-resolver-pendencia { background: var(--cor-alerta); }
+
+.prazos-cabecalho button,
+.acao-editar-prazo { background: var(--cor-esmeralda-principal); }
+
+.mensagem-sucesso {
+  color: var(--cor-sucesso);
+  font-weight: var(--peso-semibold);
+}
+
+.mensagem-erro { color: var(--cor-perigo); }
+
+.dashboard-card { border-top-color: var(--cor-borda-forte); }
+.dashboard-card.total { border-top-color: var(--cor-esmeralda-escuro); }
+.dashboard-card.aprovado { border-top-color: var(--cor-esmeralda-principal); }
+.dashboard-carregando { border-top-color: var(--cor-esmeralda-principal); }
+
+.documento-destaque,
+.dashboard-vazio { border-left-color: var(--cor-esmeralda-principal); }
+
+.aceite-lgpd,
+.dados-somente-leitura,
+.endereco-cep {
+  border-color: var(--cor-borda);
+  background: rgba(247, 242, 232, 0.7);
+}
+
+.aceite-lgpd input { accent-color: var(--cor-esmeralda-principal); }
+
+.pagina-publica-cadastro {
+  width: min(100% - 32px, 760px);
+  padding-top: clamp(2rem, 6vh, 4.5rem);
+  margin-inline: auto;
+  scroll-margin-top: 100px;
+}
+
+.pagina-publica-cadastro > .cabecalho {
+  text-align: left;
+}
+
+.pagina-publica-cadastro .formulario {
+  width: 100%;
+  max-width: 760px;
+  margin-inline: auto;
+}
+
+.pagina-publica-cadastro .formulario form {
+  align-items: start;
+}
+
+.acoes-criacao-conta {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--espaco-3);
+}
+
+.acoes-criacao-conta button {
+  width: 100%;
+  min-height: 48px;
+  padding: 0.65rem 0.85rem;
+  line-height: 1.25;
+  white-space: normal;
+  text-align: center;
+}
+
+.acao-secundaria:has(.acoes-criacao-conta) {
+  display: grid;
+  gap: var(--espaco-3);
+}
+
+@media (max-width: 1180px) {
+  .navbar-conteudo {
+    width: min(100% - 32px, 1380px);
+    padding-top: var(--espaco-3);
+  }
+
+  .navbar nav {
+    gap: var(--espaco-1);
+    padding: 0 0 var(--espaco-2);
+    scrollbar-color: rgba(209, 250, 229, 0.55) transparent;
+  }
+
+  .navbar nav button { min-height: 44px; }
+
+  .cabecalho-identidade { width: 100%; }
+}
+
+@media (max-width: 640px) {
+  .navbar-conteudo {
+    width: calc(100% - 24px);
+    flex-wrap: nowrap;
+  }
+
+  .navbar nav {
+    flex-wrap: nowrap;
+    column-gap: var(--espaco-1);
+  }
+
+  .navbar nav button {
+    height: auto;
+    padding-inline: 0.7rem;
+    font-size: 0.8rem;
+  }
+
+  .cabecalho-identidade { gap: var(--espaco-3); }
+
+  .cabecalho-instituicao {
+    max-width: none;
+    flex: 1;
+    padding-left: var(--espaco-3);
+  }
+
+  .cabecalho-instituicao strong {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-height: 1.25;
+    white-space: normal;
+  }
+
+  .conteudo {
+    width: calc(100% - 24px);
+    padding: var(--espaco-8) 0 var(--espaco-12);
+  }
+
+  .cabecalho { margin-bottom: var(--espaco-6); }
+
+  .formulario,
+  .acompanhamento {
+    width: 100%;
+    padding: var(--espaco-5);
+  }
+}
+
+@media (max-width: 480px) {
+  .logo-marca {
+    flex-basis: 38px;
+    width: 38px;
+    height: 38px;
+  }
+
+  .logo h1 { font-size: 1.15rem; }
+  .logo p { font-size: 0.68rem; }
+
+  .cabecalho-identidade {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .cabecalho-instituicao {
+    padding: var(--espaco-2) 0 0;
+    border-top: 1px solid rgba(209, 250, 229, 0.24);
+    border-left: 0;
+  }
+
+  .processo {
+    border-color: var(--cor-borda);
+    border-left-color: var(--cor-esmeralda-principal);
+    border-radius: var(--raio-md);
+    background: var(--cor-superficie);
+    box-shadow: var(--sombra-sm);
   }
 }

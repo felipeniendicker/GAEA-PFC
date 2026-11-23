@@ -64,6 +64,16 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.CONFLICT, exception.getMessage(), Map.of());
     }
 
+    @ExceptionHandler(LimiteTentativasException.class)
+    public ResponseEntity<ApiError> handleLimiteTentativas(LimiteTentativasException exception) {
+        return build(HttpStatus.TOO_MANY_REQUESTS, exception.getMessage(), Map.of());
+    }
+
+    @ExceptionHandler(ServicoIndisponivelException.class)
+    public ResponseEntity<ApiError> handleServicoIndisponivel(ServicoIndisponivelException exception) {
+        return build(HttpStatus.SERVICE_UNAVAILABLE, exception.getMessage(), Map.of());
+    }
+
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiError> handleAcessoNegado() {
         return build(HttpStatus.FORBIDDEN, "Você não tem permissão para acessar este recurso", Map.of());

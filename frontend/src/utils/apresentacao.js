@@ -49,43 +49,19 @@ export function apresentacaoInstituicao(instituicao) {
     return { sigla: '', nomeCompleto: 'Não informada', ficticia: false }
   }
 
-  const institucionPorId = {
-    1: {
-      sigla: 'UMC',
-      nomeCompleto: 'Universidade de Mogi das Cruzes',
-      ficticia: false
-    },
-    2: {
-      sigla: 'FHL',
-      nomeCompleto: 'Faculdade Horizonte do Litoral',
-      ficticia: true
-    },
-    3: {
-      sigla: 'ISVV',
-      nomeCompleto: 'Instituto Superior Vale Verde',
-      ficticia: true
-    }
-  }
-
-  const configuracao = typeof instituicao === 'object'
-    ? institucionPorId[Number(instituicao.id)]
-    : null
-
-  if (configuracao) return configuracao
-
   const nome = typeof instituicao === 'object'
     ? (instituicao.nome || instituicao.nomeInstitucional || '')
     : String(instituicao)
+  const sigla = typeof instituicao === 'object'
+    ? String(instituicao.sigla || '').trim().toUpperCase()
+    : ''
+  const ficticia = typeof instituicao === 'object'
+    ? Boolean(instituicao.ficticia)
+    : false
 
-  if (/Mogi das Cruzes|UMC/i.test(nome)) {
-    return institucionPorId[1]
+  return {
+    sigla,
+    nomeCompleto: nome.trim() || 'Não informada',
+    ficticia
   }
-  if (/Horizonte do Litoral|FHL/i.test(nome)) {
-    return institucionPorId[2]
-  }
-  if (/Vale Verde|ISVV/i.test(nome)) {
-    return institucionPorId[3]
-  }
-
-  return { sigla: '', nomeCompleto: nome || 'Não informada', ficticia: false }
 }

@@ -8,4 +8,5 @@ import java.util.Optional;
 public interface InstituicaoRepository extends JpaRepository<Instituicao, Long> {
 
     Optional<Instituicao> findByCnpj(String cnpj);
+    java.util.List<Instituicao> findAllByOrderByNomeAsc();
 }

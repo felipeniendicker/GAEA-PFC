@@ -13,8 +13,9 @@
 
 .botao-secundario {
   background: transparent;
-  color: var(--cor-primaria, #14532d);
+  color: var(--cor-esmeralda-principal);
   border: 1px solid currentColor;
+  border-radius: var(--raio-sm);
 }
 
 .indicadores-relatorio {
@@ -25,10 +26,11 @@
 }
 
 .indicador-card {
-  background: var(--cor-superficie, #fff);
-  border: 1px solid #dfe7df;
-  border-radius: 0.75rem;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-md);
   padding: 1rem;
+  box-shadow: var(--sombra-sm);
 }
 
 .indicador-card span,
@@ -39,13 +41,15 @@
 .indicador-card strong {
   font-size: 1.7rem;
   margin-top: 0.35rem;
+  color: var(--cor-esmeralda-escuro);
 }
 
 .tabela-relatorio {
   overflow-x: auto;
-  background: var(--cor-superficie, #fff);
-  border: 1px solid #dfe7df;
-  border-radius: 0.75rem;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-md);
+  box-shadow: var(--sombra-sm);
 }
 
 .relatorio-linha {
@@ -53,7 +57,7 @@
   grid-template-columns: 1.2fr 1.2fr 1.2fr 0.9fr 1.2fr;
   gap: 1rem;
   padding: 0.9rem 1rem;
-  border-bottom: 1px solid #edf1ed;
+  border-bottom: 1px solid var(--cor-borda);
   min-width: 760px;
 }
 
@@ -63,7 +67,8 @@
 
 .relatorio-cabecalho {
   font-weight: 700;
-  background: #f5f8f5;
+  background: var(--cor-esmeralda-suave);
+  color: var(--cor-esmeralda-escuro);
 }
 
 @media (max-width: 760px) {

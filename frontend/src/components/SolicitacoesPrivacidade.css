@@ -24,10 +24,11 @@
 }
 
 .solicitacao-item {
-  border: 1px solid #dfe7df;
-  border-radius: 0.75rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-md);
   padding: 1rem;
-  background: var(--cor-superficie, #fff);
+  background: var(--cor-superficie);
+  box-shadow: var(--sombra-sm);
 }
 
 .solicitacao-item > div {
@@ -44,9 +45,24 @@
 .solicitacao-situacao {
   display: inline-block;
   margin-top: 0.6rem;
-  color: #355b3b;
+  padding: 0.25rem 0.55rem;
+  border-radius: var(--raio-pill);
+  color: var(--cor-esmeralda-escuro);
+  background: var(--cor-esmeralda-suave);
   font-size: 0.9rem;
   font-weight: 700;
+}
+
+.solicitacao-REPROVADA,
+.solicitacao-CANCELADA {
+  color: #842f2f;
+  background: var(--cor-perigo-suave);
+}
+
+.solicitacao-PENDENTE,
+.solicitacao-EM_ANALISE {
+  color: #714f0b;
+  background: var(--cor-alerta-suave);
 }
 
 @media (max-width: 760px) {

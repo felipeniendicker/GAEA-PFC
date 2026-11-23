@@ -22,7 +22,8 @@ public class ProcessoEstagioMapper {
         Instituicao instituicao = processo.getInstituicao();
         InstituicaoResumoResponse instituicaoResponse = instituicao == null
                 ? null
-                : new InstituicaoResumoResponse(instituicao.getId(), instituicao.getNome());
+                : new InstituicaoResumoResponse(instituicao.getId(), instituicao.getNome(),
+                        instituicao.getSigla());
         VinculoSupervisorProcesso vinculo = vinculoRepository
                 .findFirstByProcessoIdOrderByCriadoEmDescIdDesc(processo.getId())
                 .orElse(null);

@@ -31,11 +31,35 @@ class ValidacaoDtoTests {
     }
 
     @Test
+    void deveNormalizarEAceitarAprovacaoInstitucionalValida() {
+        AprovacaoInstituicaoRequest request =
+                new AprovacaoInstituicaoRequest(" fhl-1 ", false);
+
+        assertTrue(validator.validate(request).isEmpty());
+        assertEquals("FHL-1", request.sigla());
+        assertEquals(false, request.ficticia());
+    }
+
+    @Test
+    void deveRejeitarAprovacaoInstitucionalSemMetadados() {
+        AprovacaoInstituicaoRequest request =
+                new AprovacaoInstituicaoRequest("A", null);
+
+        Set<ConstraintViolation<AprovacaoInstituicaoRequest>> violacoes =
+                validator.validate(request);
+
+        assertTrue(violacoes.stream()
+                .anyMatch(violacao -> violacao.getPropertyPath().toString().equals("sigla")));
+        assertTrue(violacoes.stream()
+                .anyMatch(violacao -> violacao.getPropertyPath().toString().equals("ficticia")));
+    }
+
+    @Test
     void deveAceitarCadastroValidoDeUsuario() {
         CadastroUsuarioRequest request = new CadastroUsuarioRequest(
                 "Ana Souza",
                 "  ANA@EXAMPLE.COM  ",
-                "senha-segura",
+                "Senha-segura1!",
                 "EMPRESA",
                 true);
 
@@ -48,13 +72,13 @@ class ValidacaoDtoTests {
         CadastroUsuarioRequest request = new CadastroUsuarioRequest(
                 " ",
                 "email-invalido",
-                "12345678",
+                "1234567",
                 "INSTITUICAO",
                 false);
 
         Set<ConstraintViolation<CadastroUsuarioRequest>> violacoes = validator.validate(request);
 
-        assertEquals(4, violacoes.size());
+        assertEquals(5, violacoes.size());
     }
 
     @Test
@@ -75,7 +99,7 @@ class ValidacaoDtoTests {
         CadastroUsuarioRequest request = new CadastroUsuarioRequest(
                 "Ana Souza",
                 "ana@example.com",
-                "senha-segura",
+                "Senha-segura1!",
                 "ALUNO",
                 true);
 

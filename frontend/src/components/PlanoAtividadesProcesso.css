@@ -1,9 +1,10 @@
 .plano-atividades {
   margin-top: 1rem;
   padding: 1rem;
-  border: 1px solid rgba(164, 124, 45, 0.35);
-  border-radius: 14px;
-  background: #fffdf7;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-lg);
+  background: var(--cor-superficie);
+  box-shadow: var(--sombra-sm);
 }
 
 .plano-cabecalho,
@@ -23,7 +24,7 @@
 .plano-cabecalho p,
 .plano-resumo,
 .plano-vazio {
-  color: #59645d;
+  color: var(--cor-texto-suave);
 }
 
 .plano-cabecalho p {
@@ -38,8 +39,8 @@
 }
 
 .plano-PENDENTE { color: #6d5011; background: #f6e8b9; }
-.plano-APROVADO { color: #174e32; background: #dcecdf; }
-.plano-REJEITADO { color: #7b2424; background: #f4dddd; }
+.plano-APROVADO { color: var(--cor-esmeralda-escuro); background: var(--cor-sucesso-suave); }
+.plano-REJEITADO { color: #7b2424; background: var(--cor-perigo-suave); }
 
 .plano-conteudo,
 .plano-formulario {
@@ -74,7 +75,7 @@
 .plano-formulario label {
   margin: 0.75rem 0 0.35rem;
   font-weight: 700;
-  color: #173f2c;
+  color: var(--cor-esmeralda-escuro);
 }
 
 .plano-formulario input {
@@ -109,7 +110,7 @@
 }
 
 .plano-rejeitar {
-  background: #8a342f;
+  background: var(--cor-perigo);
 }
 
 @media (max-width: 600px) {

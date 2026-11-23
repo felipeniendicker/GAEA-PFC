@@ -27,7 +27,7 @@ public class VerificacaoEmailService {
 
     private final TokenVerificacaoEmailRepository tokenRepository;
     private final UsuarioRepository usuarioRepository;
-    private final EnvioEmailVerificacao envioEmail;
+    private final EnvioEmailAplicacao envioEmail;
     private final LogAuditoriaService auditoriaService;
     private final long expiracaoHoras;
     private final String frontendBaseUrl;
@@ -35,7 +35,7 @@ public class VerificacaoEmailService {
     public VerificacaoEmailService(
             TokenVerificacaoEmailRepository tokenRepository,
             UsuarioRepository usuarioRepository,
-            EnvioEmailVerificacao envioEmail,
+            EnvioEmailAplicacao envioEmail,
             LogAuditoriaService auditoriaService,
             @Value("${app.verificacao-email.expiracao-horas:24}") long expiracaoHoras,
             @Value("${app.frontend.base-url:http://localhost:5174}") String frontendBaseUrl) {
@@ -72,7 +72,7 @@ public class VerificacaoEmailService {
 
         String link = frontendBaseUrl + "/#verificarEmail="
                 + URLEncoder.encode(tokenAberto, StandardCharsets.UTF_8);
-        envioEmail.enviar(usuarioBloqueado.getEmail(), usuarioBloqueado.getNome(), link);
+        envioEmail.enviarVerificacao(usuarioBloqueado.getEmail(), usuarioBloqueado.getNome(), link);
     }
 
     @Transactional

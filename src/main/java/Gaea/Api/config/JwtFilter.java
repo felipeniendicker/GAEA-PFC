@@ -37,12 +37,13 @@ public class JwtFilter extends OncePerRequestFilter {
         if (authorization != null && authorization.startsWith("Bearer ")) {
             try {
                 String token = authorization.substring(7);
-                String email = jwtService.extrairEmail(token);
+                JwtService.DadosToken dadosToken = jwtService.extrairDados(token);
 
-                usuarioRepository.findByEmailNormalizado(email)
+                usuarioRepository.findByEmailNormalizado(dadosToken.email())
                         .filter(usuario -> Boolean.TRUE.equals(usuario.getAtivo()))
                         .filter(usuario -> Boolean.TRUE.equals(usuario.getAtivado()))
                         .filter(this::instituicaoAtiva)
+                        .filter(usuario -> versaoCredenciais(usuario) == dadosToken.credenciaisVersao())
                         .ifPresent(usuario -> {
                     UsernamePasswordAuthenticationToken authentication =
                             new UsernamePasswordAuthenticationToken(
@@ -65,5 +66,9 @@ public class JwtFilter extends OncePerRequestFilter {
     private boolean instituicaoAtiva(Usuario usuario) {
         return usuario.getInstituicao() == null
                 || Boolean.TRUE.equals(usuario.getInstituicao().getAtiva());
+    }
+
+    private long versaoCredenciais(Usuario usuario) {
+        return usuario.getCredenciaisVersao() == null ? 0L : usuario.getCredenciaisVersao();
     }
 }

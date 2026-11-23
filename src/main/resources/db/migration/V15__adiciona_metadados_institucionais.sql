@@ -1,0 +1,5 @@
+ALTER TABLE instituicao
+    ADD COLUMN sigla VARCHAR(20) NULL;
+
+ALTER TABLE instituicao
+    ADD COLUMN ficticia BOOLEAN NOT NULL DEFAULT FALSE;

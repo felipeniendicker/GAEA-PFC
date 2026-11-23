@@ -25,6 +25,12 @@ public class Instituicao {
     @Column(nullable = false)
     private Boolean ativa;
 
+    @Column(length = 20)
+    private String sigla;
+
+    @Column(nullable = false)
+    private Boolean ficticia = false;
+
     @Column(nullable = false)
     private LocalDateTime criadaEm;
 
@@ -35,6 +41,9 @@ public class Instituicao {
         }
         if (criadaEm == null) {
             criadaEm = LocalDateTime.now();
+        }
+        if (ficticia == null) {
+            ficticia = false;
         }
     }
 
@@ -64,6 +73,22 @@ public class Instituicao {
 
     public void setAtiva(Boolean ativa) {
         this.ativa = ativa;
+    }
+
+    public String getSigla() {
+        return sigla;
+    }
+
+    public void setSigla(String sigla) {
+        this.sigla = sigla == null ? null : sigla.trim().toUpperCase(java.util.Locale.ROOT);
+    }
+
+    public Boolean getFicticia() {
+        return ficticia;
+    }
+
+    public void setFicticia(Boolean ficticia) {
+        this.ficticia = Boolean.TRUE.equals(ficticia);
     }
 
     public LocalDateTime getCriadaEm() {

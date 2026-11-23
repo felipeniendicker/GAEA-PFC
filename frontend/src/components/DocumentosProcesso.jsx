@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import './DocumentosProcesso.css'
+import { formatarDataHora } from '../utils/apresentacao'
 
 const LIMITE_BYTES = 10 * 1024 * 1024
 
@@ -285,11 +286,11 @@ export default function DocumentosProcesso({
                 </span>
               </div>
               <div className="documento-metadados">
-                <span>Enviado em {new Date(documento.enviadoEm).toLocaleString('pt-BR')}</span>
+                <span>Enviado em {formatarDataHora(documento.enviadoEm)}</span>
                 <span>Por {documento.enviadoPor}</span>
                 {documento.analisadoEm && (
                   <span>
-                    Analisado em {new Date(documento.analisadoEm).toLocaleString('pt-BR')}
+                    Analisado em {formatarDataHora(documento.analisadoEm)}
                     {documento.analisadoPor ? ` por ${documento.analisadoPor}` : ''}
                   </span>
                 )}

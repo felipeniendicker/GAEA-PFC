@@ -75,16 +75,113 @@ export function ConfirmacaoInstituicao({ apiBase, token, tipo, aoConcluir }) {
 
 export default function InstituicoesAdmin({ apiBase, token }) {
   const [solicitacoes, setSolicitacoes] = useState([]); const [instituicoes, setInstituicoes] = useState([]); const [resumo, setResumo] = useState({}); const [filtro, setFiltro] = useState('PENDENTE'); const [erro, setErro] = useState('')
+  const [aprovacaoAbertaId, setAprovacaoAbertaId] = useState(null)
+  const [siglaAprovacao, setSiglaAprovacao] = useState('')
+  const [ficticiaAprovacao, setFicticiaAprovacao] = useState(false)
+  const [erroAprovacao, setErroAprovacao] = useState('')
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
   async function carregar() { try { const [s, i, r] = await Promise.all([fetch(`${apiBase}/api/admin/instituicoes/solicitacoes?status=${filtro}`, { headers }), fetch(`${apiBase}/api/admin/instituicoes`, { headers }), fetch(`${apiBase}/api/admin/instituicoes/dashboard`, { headers })]); if (![s, i, r].every((x) => x.ok)) throw new Error(); setSolicitacoes(await s.json()); setInstituicoes(await i.json()); setResumo(await r.json()); setErro('') } catch { setErro('Não foi possível carregar o painel administrativo.') } }
   useEffect(() => {
     const agendamento = window.setTimeout(() => carregar(), 0)
     return () => window.clearTimeout(agendamento)
   }, [filtro]) // eslint-disable-line react-hooks/exhaustive-deps
-  async function acao(id, nome) { let body; if (nome === 'rejeitar') { const justificativa = window.prompt('Justificativa da rejeição (mínimo 10 caracteres):'); if (!justificativa) return; body = JSON.stringify({ justificativa }) } const metodo = nome === 'analise' ? 'PUT' : 'POST'; const resposta = await fetch(`${apiBase}/api/admin/instituicoes/solicitacoes/${id}/${nome}`, { method: metodo, headers, body }); if (!resposta.ok) setErro(await mensagem(resposta, 'Não foi possível concluir a ação.')); else carregar() }
+  async function acao(id, nome) {
+    if (nome === 'aprovar') {
+      setAprovacaoAbertaId(id)
+      setSiglaAprovacao('')
+      setFicticiaAprovacao(false)
+      setErroAprovacao('')
+      return
+    }
+    let body
+    if (nome === 'rejeitar') {
+      const justificativa = window.prompt('Justificativa da rejeição (mínimo 10 caracteres):')
+      if (!justificativa) return
+      body = JSON.stringify({ justificativa })
+    }
+    const metodo = nome === 'analise' ? 'PUT' : 'POST'
+    const resposta = await fetch(`${apiBase}/api/admin/instituicoes/solicitacoes/${id}/${nome}`, { method: metodo, headers, body })
+    if (!resposta.ok) setErro(await mensagem(resposta, 'Não foi possível concluir a ação.'));
+    else carregar()
+  }
+  async function confirmarAprovacao(id) {
+    const sigla = siglaAprovacao.trim().toUpperCase()
+    if (!/^[A-Z0-9.-]{2,20}$/.test(sigla)) {
+      setErroAprovacao('Informe uma sigla válida com 2 a 20 caracteres.')
+      return
+    }
+    setErroAprovacao('')
+    const resposta = await fetch(`${apiBase}/api/admin/instituicoes/solicitacoes/${id}/aprovar`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ sigla, ficticia: ficticiaAprovacao })
+    })
+    if (!resposta.ok) setErroAprovacao(await mensagem(resposta, 'Não foi possível aprovar a instituição.'))
+    else {
+      setAprovacaoAbertaId(null)
+      carregar()
+    }
+  }
   return <main className="conteudo pagina-admin"><header className="cabecalho"><p className="cabecalho-contexto">ADMINISTRAÇÃO GAEA</p><h2>Aprovação de instituições</h2><p className="cabecalho-descricao">Este perfil administra cadastros institucionais e não acessa processos ou dados de alunos.</p></header>
     <section className="admin-resumo">{['PENDENTE','EM_ANALISE','APROVADA','REJEITADA','INSTITUICOES'].map((x) => <article className="card" key={x}><strong>{resumo[x] || 0}</strong><span>{x.replace('_',' ')}</span></article>)}</section>
-    {erro && <p className="mensagem-erro" role="alert">{erro}</p>}<section className="formulario"><div className="secao-cabecalho"><h3>Solicitações</h3><select value={filtro} onChange={(e) => setFiltro(e.target.value)}>{['AGUARDANDO_EMAIL','PENDENTE','EM_ANALISE','CORRECAO_SOLICITADA','APROVADA','REJEITADA'].map((x) => <option key={x}>{x}</option>)}</select></div><div className="admin-lista">{solicitacoes.map((s) => <article className="card" key={s.id}><h4>{s.nomeInstitucional}</h4><p>{s.cnpj} · {s.responsavelNome} · {s.emailInstitucional}</p><span className="badge">{s.status}</span>{!s.emailVerificado && <span className="badge badge-aviso">E-mail pendente</span>}<div className="processo-acoes">{s.status === 'PENDENTE' && s.emailVerificado && <button onClick={() => acao(s.id,'analise')}>Iniciar análise</button>}{s.status === 'EM_ANALISE' && <><button onClick={() => acao(s.id,'aprovar')}>Aprovar</button><button className="botao-perigo" onClick={() => acao(s.id,'rejeitar')}>Rejeitar</button></>}</div>{s.justificativa && <p>Justificativa: {s.justificativa}</p>}</article>)}</div></section>
+    {erro && <p className="mensagem-erro" role="alert">{erro}</p>}
+    <section className="formulario">
+      <div className="secao-cabecalho">
+        <h3>Solicitações</h3>
+        <select value={filtro} onChange={(e) => setFiltro(e.target.value)}>
+          {['AGUARDANDO_EMAIL','PENDENTE','EM_ANALISE','CORRECAO_SOLICITADA','APROVADA','REJEITADA'].map((x) => <option key={x}>{x}</option>)}
+        </select>
+      </div>
+      <div className="admin-lista">
+        {solicitacoes.map((s) => {
+          return (
+          <article className="card" key={s.id}>
+            <h4>{s.nomeInstitucional}</h4>
+            <p>{s.cnpj} · {s.responsavelNome} · {s.emailInstitucional}</p>
+            <span className="badge">{s.status}</span>
+            {!s.emailVerificado && <span className="badge badge-aviso">E-mail pendente</span>}
+            <div className="processo-acoes">
+              {s.status === 'PENDENTE' && s.emailVerificado && <button onClick={() => acao(s.id,'analise')}>Iniciar análise</button>}
+              {s.status === 'EM_ANALISE' && <>
+                <button onClick={() => acao(s.id,'aprovar')}>Aprovar</button>
+                <button className="botao-perigo" onClick={() => acao(s.id,'rejeitar')}>Rejeitar</button>
+              </>}
+            </div>
+            {aprovacaoAbertaId === s.id && (
+              <div className="instituicao-aprovacao">
+                <div className="campo">
+                  <label htmlFor={`sigla-${s.id}`}>Sigla da instituição</label>
+                  <input
+                    id={`sigla-${s.id}`}
+                    value={siglaAprovacao}
+                    onChange={(event) => setSiglaAprovacao(event.target.value.toUpperCase())}
+                    minLength="2"
+                    maxLength="20"
+                    pattern="[A-Z0-9.-]{2,20}"
+                    required
+                  />
+                </div>
+                <label className="aceite">
+                  <input
+                    type="checkbox"
+                    checked={ficticiaAprovacao}
+                    onChange={(event) => setFicticiaAprovacao(event.target.checked)}
+                  />
+                  Instituição fictícia de demonstração
+                </label>
+                {erroAprovacao && <p className="mensagem-erro" role="alert">{erroAprovacao}</p>}
+                <div className="processo-acoes">
+                  <button type="button" onClick={() => confirmarAprovacao(s.id)}>Confirmar aprovação</button>
+                  <button type="button" className="botao-secundario" onClick={() => setAprovacaoAbertaId(null)}>Cancelar</button>
+                </div>
+              </div>
+            )}
+            {s.justificativa && <p>Justificativa: {s.justificativa}</p>}
+          </article>
+          )
+        })}
+      </div>
+    </section>
     <section className="formulario"><h3>Instituições existentes</h3><div className="admin-lista">{instituicoes.map((i) => {
       const instituicao = apresentacaoInstituicao(i)
       return <article className="instituicao-card card" key={i.id}>

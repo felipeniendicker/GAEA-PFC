@@ -1,0 +1,29 @@
+package Gaea.Api.dto;
+
+import jakarta.validation.constraints.AssertTrue;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
+public record RedefinicaoSenhaRequest(
+        @NotBlank(message = "O token de recuperação é obrigatório")
+        @Size(min = 40, max = 200, message = "O token de recuperação é inválido")
+        String token,
+
+        @NotBlank(message = "A nova senha é obrigatória")
+        @Size(min = 8, max = 64, message = "A senha deve ter entre 8 e 64 caracteres")
+        String senha,
+
+        @NotBlank(message = "Confirme a nova senha")
+        String confirmacaoSenha) {
+
+    @AssertTrue(message = "A confirmação da senha não corresponde")
+    public boolean isConfirmacaoValida() {
+        return senha != null && senha.equals(confirmacaoSenha);
+    }
+
+    @Override
+    public String toString() {
+        return "RedefinicaoSenhaRequest[token=[PROTEGIDO], senha=[PROTEGIDA], "
+                + "confirmacaoSenha=[PROTEGIDA]]";
+    }
+}

@@ -19,7 +19,7 @@ class FlywayMigrationTests {
 
         var resultado = flyway(url).migrate();
 
-        assertEquals(12, resultado.migrationsExecuted);
+        assertEquals(15, resultado.migrationsExecuted);
 
         try (var connection = DriverManager.getConnection(url, "sa", "");
              var statement = connection.createStatement()) {
@@ -39,11 +39,14 @@ class FlywayMigrationTests {
                             'plano_atividades',
                             'atividade_plano',
                             'registro_carga_horaria',
-                            'solicitacao_privacidade'
+                            'solicitacao_privacidade',
+                            'solicitacao_recuperacao_senha',
+                            'solicitacao_instituicao',
+                            'token_fluxo_instituicao'
                       )
                     """)) {
                 resultSet.next();
-                assertEquals(11, resultSet.getInt(1));
+                assertEquals(14, resultSet.getInt(1));
             }
 
             assertThrows(SQLException.class, () -> statement.executeUpdate("""
@@ -157,6 +160,15 @@ class FlywayMigrationTests {
                         ('Faculdade A', '11222333000181', TRUE, CURRENT_TIMESTAMP),
                         ('Faculdade B', '22333444000160', TRUE, CURRENT_TIMESTAMP)
                     """);
+            try (var resultSet = statement.executeQuery("""
+                    SELECT sigla, ficticia
+                    FROM instituicao
+                    ORDER BY id
+                    """)) {
+                resultSet.next();
+                assertNull(resultSet.getObject("sigla"));
+                assertEquals(false, resultSet.getBoolean("ficticia"));
+            }
             statement.executeUpdate("""
                     INSERT INTO usuario
                         (nome, email, senha, perfil, instituicao_id, matricula,
@@ -279,7 +291,7 @@ class FlywayMigrationTests {
         }
 
         var resultado = flyway(url).migrate();
-        assertEquals(11, resultado.migrationsExecuted);
+        assertEquals(14, resultado.migrationsExecuted);
 
         try (var connection = DriverManager.getConnection(url, "sa", "");
              var statement = connection.createStatement();

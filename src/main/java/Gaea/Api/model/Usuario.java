@@ -43,6 +43,9 @@ public class Usuario {
 
     private LocalDateTime emailVerificadoEm;
 
+    @Column(nullable = false)
+    private Long credenciaisVersao = 0L;
+
     public Usuario() {
     }
 
@@ -136,5 +139,13 @@ public class Usuario {
 
     public void setEmailVerificadoEm(LocalDateTime emailVerificadoEm) {
         this.emailVerificadoEm = emailVerificadoEm;
+    }
+
+    public Long getCredenciaisVersao() {
+        return credenciaisVersao;
+    }
+
+    public void setCredenciaisVersao(Long credenciaisVersao) {
+        this.credenciaisVersao = credenciaisVersao;
     }
 }

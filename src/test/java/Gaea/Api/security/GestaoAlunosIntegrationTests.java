@@ -199,23 +199,23 @@ class GestaoAlunosIntegrationTests {
                 .andReturn();
         String token = json(cadastro).get("tokenAtivacao").asText();
 
-        ativar(token, "senha-segura-123")
+        ativar(token, "Senha-segura-123!")
                 .andExpect(status().isNoContent());
 
         Usuario aluno = usuarioRepository.findByEmailNormalizado("aluno@example.com").orElseThrow();
         assertTrue(aluno.getAtivado());
         assertTrue(aluno.getTermosAceitos());
-        assertTrue(passwordEncoder.matches("senha-segura-123", aluno.getSenha()));
+        assertTrue(passwordEncoder.matches("Senha-segura-123!", aluno.getSenha()));
         assertTrue(conviteRepository.findAll().get(0).getUtilizadoEm() != null);
 
-        ativar(token, "outra-senha-123")
+        ativar(token, "Outra-senha-123!")
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.mensagem").value("Este convite de ativação já foi utilizado"));
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"email":"aluno@example.com","senha":"senha-segura-123"}
+                                {"email":"aluno@example.com","senha":"Senha-segura-123!"}
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.perfil").value("ALUNO"));
@@ -223,7 +223,7 @@ class GestaoAlunosIntegrationTests {
 
     @Test
     void deveRejeitarConviteInvalidoEExpirado() throws Exception {
-        ativar("token-invalido-com-tamanho-minimo-000000000000", "senha-segura-123")
+        ativar("token-invalido-com-tamanho-minimo-000000000000", "Senha-segura-123!")
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.mensagem").value("Convite de ativação inválido"));
 
@@ -236,7 +236,7 @@ class GestaoAlunosIntegrationTests {
         convite.setExpiraEm(LocalDateTime.now().minusMinutes(1));
         conviteRepository.saveAndFlush(convite);
 
-        ativar(token, "senha-segura-123")
+        ativar(token, "Senha-segura-123!")
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.mensagem").value("Este convite de ativação expirou"));
     }
@@ -258,10 +258,10 @@ class GestaoAlunosIntegrationTests {
         String tokenNovo = json(novoConvite).get("tokenAtivacao").asText();
         assertNotEquals(tokenAnterior, tokenNovo);
 
-        ativar(tokenAnterior, "senha-segura-123")
+        ativar(tokenAnterior, "Senha-segura-123!")
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.mensagem").value("Este convite de ativação não é mais válido"));
-        ativar(tokenNovo, "senha-segura-123")
+        ativar(tokenNovo, "Senha-segura-123!")
                 .andExpect(status().isNoContent());
     }
 
@@ -273,7 +273,7 @@ class GestaoAlunosIntegrationTests {
                 .andReturn();
         long alunoId = json(cadastro).at("/aluno/id").asLong();
         String tokenConvite = json(cadastro).get("tokenAtivacao").asText();
-        ativar(tokenConvite, "senha-segura-123").andExpect(status().isNoContent());
+        ativar(tokenConvite, "Senha-segura-123!").andExpect(status().isNoContent());
         Usuario aluno = usuarioRepository.findById(alunoId).orElseThrow();
         String jwtAnterior = jwtService.gerarToken(aluno);
 
@@ -285,7 +285,7 @@ class GestaoAlunosIntegrationTests {
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"email":"aluno@example.com","senha":"senha-segura-123"}
+                                {"email":"aluno@example.com","senha":"Senha-segura-123!"}
                                 """))
                 .andExpect(status().isUnauthorized());
         mockMvc.perform(get("/api/processos/meus")
@@ -298,7 +298,7 @@ class GestaoAlunosIntegrationTests {
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"email":"aluno@example.com","senha":"senha-segura-123"}
+                                {"email":"aluno@example.com","senha":"Senha-segura-123!"}
                                 """))
                 .andExpect(status().isOk());
     }
@@ -326,7 +326,7 @@ class GestaoAlunosIntegrationTests {
                                 {
                                   "nome":"Aluno fora da instituição",
                                   "email":"aluno.publico@example.com",
-                                  "senha":"senha-segura-123",
+                                  "senha":"Senha-segura-123!",
                                   "perfil":"ALUNO",
                                   "termosAceitos":true
                                 }
@@ -436,7 +436,7 @@ class GestaoAlunosIntegrationTests {
         Usuario usuario = new Usuario();
         usuario.setNome("Usuário de Teste");
         usuario.setEmail(email);
-        usuario.setSenha(passwordEncoder.encode("senha-segura-123"));
+        usuario.setSenha(passwordEncoder.encode("Senha-segura-123!"));
         usuario.setPerfil(perfil);
         usuario.setInstituicao(instituicao);
         usuario.setAtivo(true);

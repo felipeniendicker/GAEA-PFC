@@ -15,11 +15,14 @@ public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
+    private final PoliticaSenhaService politicaSenha;
 
     public UsuarioService(UsuarioRepository usuarioRepository,
-                          PasswordEncoder passwordEncoder) {
+                          PasswordEncoder passwordEncoder,
+                          PoliticaSenhaService politicaSenha) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
+        this.politicaSenha = politicaSenha;
     }
 
     public Usuario cadastrar(CadastroUsuarioRequest dados) {
@@ -28,6 +31,8 @@ public class UsuarioService {
         if (usuarioRepository.existsByEmailNormalizado(email)) {
             throw new ConflitoDadosException("E-mail já cadastrado");
         }
+
+        politicaSenha.validar(dados.senha());
 
         Usuario usuario = new Usuario();
         usuario.setNome(dados.nome().trim());

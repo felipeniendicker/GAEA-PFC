@@ -110,7 +110,9 @@ public class AuthController {
         resposta.put("matricula", usuario.getMatricula());
         resposta.put("instituicao", usuario.getInstituicao() == null
                 ? null
-                : Map.of("nome", usuario.getInstituicao().getNome()));
+                : Map.of(
+                        "nome", usuario.getInstituicao().getNome(),
+                        "sigla", usuario.getInstituicao().getSigla() == null ? "" : usuario.getInstituicao().getSigla()));
         resposta.put("token", token);
         return resposta;
     }

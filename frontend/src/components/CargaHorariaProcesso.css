@@ -1,9 +1,10 @@
 .carga-horaria {
   margin-top: 1rem;
   padding: 1rem;
-  border: 1px solid rgba(164, 124, 45, 0.35);
-  border-radius: 14px;
-  background: #fffdf7;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-lg);
+  background: var(--cor-superficie);
+  box-shadow: var(--sombra-sm);
 }
 
 .carga-cabecalho h4,
@@ -15,7 +16,7 @@
 .carga-cabecalho p,
 .carga-metadados,
 .carga-vazia {
-  color: #59645d;
+  color: var(--cor-texto-suave);
 }
 
 .carga-cabecalho p { margin-top: 0.25rem; }
@@ -33,8 +34,8 @@
   gap: 0.15rem;
   padding: 0.75rem;
   border-radius: 10px;
-  background: #eef2e8;
-  color: #173f2c;
+  background: var(--cor-esmeralda-suave);
+  color: var(--cor-esmeralda-escuro);
 }
 
 .carga-totais strong { font-size: 1.15rem; }
@@ -46,8 +47,8 @@
   gap: 0.75rem;
   margin-top: 1rem;
   padding: 0.85rem;
-  border-radius: 10px;
-  background: #f4f0e5;
+  border-radius: var(--raio-md);
+  background: var(--cor-bege);
 }
 
 .carga-formulario label,
@@ -62,7 +63,7 @@
 .carga-rejeicao label {
   margin-bottom: 0.35rem;
   font-weight: 700;
-  color: #173f2c;
+  color: var(--cor-esmeralda-escuro);
 }
 
 .carga-atividade-campo,
@@ -77,9 +78,9 @@
 
 .carga-item {
   padding: 0.85rem;
-  border: 1px solid #ded8c9;
-  border-radius: 10px;
-  background: #fff;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-md);
+  background: var(--cor-superficie-elevada);
 }
 
 .carga-item-cabecalho,
@@ -101,8 +102,8 @@
 }
 
 .carga-PENDENTE { color: #6d5011; background: #f6e8b9; }
-.carga-APROVADO { color: #174e32; background: #dcecdf; }
-.carga-REJEITADO { color: #7b2424; background: #f4dddd; }
+.carga-APROVADO { color: var(--cor-esmeralda-escuro); background: var(--cor-sucesso-suave); }
+.carga-REJEITADO { color: #7b2424; background: var(--cor-perigo-suave); }
 
 .carga-metadados {
   display: flex;
@@ -122,7 +123,7 @@
 .carga-avaliacao,
 .carga-rejeicao { margin-top: 0.8rem; }
 .carga-rejeicao textarea { width: 100%; box-sizing: border-box; margin-bottom: 0.65rem; }
-.carga-rejeitar { background: #8a342f; }
+.carga-rejeitar { background: var(--cor-perigo); }
 
 @media (max-width: 700px) {
   .carga-horaria { padding: 0.8rem; }

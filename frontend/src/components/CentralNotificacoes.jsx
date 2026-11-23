@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import './CentralNotificacoes.css'
+import { formatarDataHora } from '../utils/apresentacao'
 
 function dataNotificacao(valor) {
-  return new Date(valor).toLocaleString('pt-BR')
+  return formatarDataHora(valor)
 }
 
 export default function CentralNotificacoes({ apiBase, token, aoAbrirProcesso }) {

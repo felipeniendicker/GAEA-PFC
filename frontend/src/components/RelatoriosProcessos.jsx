@@ -1,15 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import './RelatoriosProcessos.css'
+import { formatarData, ROTULOS_STATUS_PROCESSO } from '../utils/apresentacao'
 
-const rotulosStatus = {
-  PENDENTE: 'Pendente',
-  EM_ANALISE: 'Em análise',
-  APROVADO: 'Aprovado',
-  REPROVADO: 'Reprovado'
-}
+const rotulosStatus = ROTULOS_STATUS_PROCESSO
 
 function dataFormatada(data) {
-  return data ? new Date(`${data}T00:00:00`).toLocaleDateString('pt-BR') : '—'
+  return formatarData(data)
 }
 
 export default function RelatoriosProcessos({ apiBase, token }) {

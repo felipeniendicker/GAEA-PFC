@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import './CargaHorariaProcesso.css'
+import { formatarData, formatarDataHora } from '../utils/apresentacao'
 
 const rotulosSituacao = {
   PENDENTE: 'Aguardando avaliação',
@@ -252,7 +253,7 @@ export default function CargaHorariaProcesso({ apiBase, token, processoId, perfi
               {registros.map((registro) => (
                 <article className="carga-item" key={registro.id}>
                   <div className="carga-item-cabecalho">
-                    <strong>{new Date(`${registro.dataAtividade}T12:00:00`).toLocaleDateString('pt-BR')}</strong>
+                    <strong>{formatarData(registro.dataAtividade)}</strong>
                     <span className={`carga-situacao carga-${registro.situacao}`}>
                       {rotulosSituacao[registro.situacao] || registro.situacao}
                     </span>
@@ -263,7 +264,7 @@ export default function CargaHorariaProcesso({ apiBase, token, processoId, perfi
                     <span>Registrado por {registro.registradoPor}</span>
                     {registro.avaliadoEm && (
                       <span>
-                        Avaliado em {new Date(registro.avaliadoEm).toLocaleString('pt-BR')}
+                        Avaliado em {formatarDataHora(registro.avaliadoEm)}
                         {registro.avaliadoPor ? ` por ${registro.avaliadoPor}` : ''}
                       </span>
                     )}

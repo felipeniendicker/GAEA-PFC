@@ -1,9 +1,10 @@
 .documentos-processo {
   margin-top: 1rem;
   padding: 1rem;
-  border: 1px solid rgba(164, 124, 45, 0.35);
-  border-radius: 14px;
-  background: #fffdf7;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-lg);
+  background: var(--cor-superficie);
+  box-shadow: var(--sombra-sm);
 }
 
 .documentos-cabecalho h4,
@@ -13,21 +14,21 @@
 
 .documentos-cabecalho p {
   margin-top: 0.25rem;
-  color: #526158;
+  color: var(--cor-texto-suave);
 }
 
 .documento-envio {
   margin: 1rem 0;
   padding: 0.9rem;
-  border-radius: 10px;
-  background: #f4eddd;
+  border-radius: var(--raio-md);
+  background: var(--cor-bege);
 }
 
 .documento-envio label {
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 700;
-  color: #173f2c;
+  color: var(--cor-esmeralda-escuro);
 }
 
 .documento-envio-controles,
@@ -57,9 +58,9 @@
 
 .documento-item {
   padding: 0.9rem;
-  border: 1px solid #ded4bd;
-  border-radius: 10px;
-  background: #fff;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-md);
+  background: var(--cor-superficie-elevada);
 }
 
 .documento-item-cabecalho {
@@ -101,12 +102,12 @@
 
 .documento-APROVADO {
   color: #174e32;
-  background: #dcecdf;
+  background: var(--cor-sucesso-suave);
 }
 
 .documento-REPROVADO {
   color: #7b2424;
-  background: #f4dddd;
+  background: var(--cor-perigo-suave);
 }
 
 .documento-metadados,
@@ -139,13 +140,13 @@
 }
 
 .botao-secundario {
-  color: #173f2c;
-  background: #fff;
-  border: 1px solid #376249;
+  color: var(--cor-esmeralda-principal);
+  background: var(--cor-superficie-elevada);
+  border: 1px solid var(--cor-esmeralda-principal);
 }
 
 .botao-reprovar-documento {
-  background: #8a342f;
+  background: var(--cor-perigo);
 }
 
 .documentos-vazio {

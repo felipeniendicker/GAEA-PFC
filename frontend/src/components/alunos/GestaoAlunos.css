@@ -1,0 +1,419 @@
+.gestao-alunos { display: grid; gap: var(--espaco-6); }
+
+.gestao-alunos__cabecalho {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--espaco-6);
+  margin-bottom: 0;
+}
+
+.gestao-alunos__cabecalho > div { min-width: 0; }
+.gestao-alunos__cabecalho .cabecalho-descricao { margin-bottom: 0; }
+
+.gestao-alunos__instituicao {
+  display: flex;
+  width: fit-content;
+  max-width: 100%;
+  align-items: baseline;
+  gap: var(--espaco-2);
+  padding: var(--espaco-2) var(--espaco-3);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-pill);
+  margin: var(--espaco-3) 0 0;
+  background: var(--cor-superficie);
+  color: var(--cor-texto-suave);
+  font-size: var(--texto-sm);
+}
+
+.gestao-alunos__instituicao span {
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-bold);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.gestao-alunos__instituicao strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--cor-esmeralda-escuro);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gestao-alunos__botao-cadastro {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding-inline: var(--espaco-5);
+}
+
+.gestao-alunos__indicadores {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--espaco-4);
+}
+
+.gestao-alunos__indicador {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  gap: var(--espaco-2);
+  padding: var(--espaco-5);
+  overflow: hidden;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-lg);
+  background: var(--cor-superficie);
+  box-shadow: var(--sombra-sm);
+}
+
+.gestao-alunos__indicador::before {
+  position: absolute;
+  width: 4px;
+  inset: 0 auto 0 0;
+  background: var(--cor-esmeralda-principal);
+  content: '';
+}
+
+.gestao-alunos__indicador--sucesso::before { background: var(--cor-sucesso); }
+.gestao-alunos__indicador--informacao::before { background: var(--cor-info); }
+.gestao-alunos__indicador--alerta::before { background: var(--cor-alerta); }
+
+.gestao-alunos__indicador span {
+  color: var(--cor-texto-suave);
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-semibold);
+}
+
+.gestao-alunos__indicador strong {
+  color: var(--cor-esmeralda-escuro);
+  font-size: clamp(1.6rem, 3vw, 2.1rem);
+  line-height: 1;
+}
+
+.gestao-alunos__mensagem {
+  padding: var(--espaco-3) var(--espaco-4);
+  border-radius: var(--raio-sm);
+  margin: 0;
+}
+
+.gestao-alunos__convite,
+.gestao-alunos__painel-cadastro,
+.gestao-alunos__lista {
+  min-width: 0;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-lg);
+  background: var(--cor-superficie);
+  box-shadow: var(--sombra-sm);
+}
+
+.gestao-alunos__convite {
+  display: grid;
+  gap: var(--espaco-3);
+  padding: var(--espaco-5);
+  border-left: 5px solid var(--cor-alerta);
+  background: linear-gradient(100deg, var(--cor-alerta-suave), var(--cor-superficie) 46%);
+}
+
+.gestao-alunos__convite:focus { outline: 2px solid var(--cor-esmeralda-interacao); outline-offset: 2px; }
+
+.gestao-alunos__convite-cabecalho,
+.gestao-alunos__convite-link {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-3);
+}
+
+.gestao-alunos__convite-cabecalho { justify-content: space-between; }
+.gestao-alunos__convite h3 { margin: var(--espaco-1) 0 0; color: var(--cor-esmeralda-escuro); }
+.gestao-alunos__convite p { margin: 0; color: var(--cor-texto-suave); }
+.gestao-alunos__convite small { color: var(--cor-alerta); font-weight: var(--peso-semibold); }
+
+.gestao-alunos__confidencial {
+  color: var(--cor-alerta);
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-bold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.gestao-alunos__convite-link input {
+  min-width: 0;
+  flex: 1;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--cor-borda-forte);
+  border-radius: var(--raio-sm);
+  background: var(--cor-superficie-elevada);
+  color: var(--cor-texto);
+}
+
+.gestao-alunos__convite-link button,
+.gestao-alunos__formulario-acoes button,
+.gestao-alunos__edicao button,
+.gestao-alunos__acoes button,
+.gestao-alunos__estado button {
+  width: auto;
+  min-height: 40px;
+  padding: 0.55rem 0.8rem;
+}
+
+.gestao-alunos__painel-cadastro { padding: var(--espaco-6); }
+.gestao-alunos__painel-cadastro .secao-cabecalho { margin-bottom: var(--espaco-5); }
+
+.gestao-alunos__formulario {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--espaco-4);
+}
+
+.gestao-alunos__formulario-acoes {
+  display: flex;
+  grid-column: 1 / -1;
+  flex-wrap: wrap;
+  gap: var(--espaco-3);
+}
+
+.gestao-alunos__lista { padding: var(--espaco-6); }
+
+.gestao-alunos__lista-cabecalho {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--espaco-4);
+  padding-bottom: var(--espaco-5);
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.gestao-alunos__lista-cabecalho h3 { margin: 0; color: var(--cor-esmeralda-escuro); }
+.gestao-alunos__lista-cabecalho p { margin: var(--espaco-1) 0 0; color: var(--cor-texto-suave); }
+
+.gestao-alunos__lista-cabecalho > span {
+  flex: 0 0 auto;
+  padding: var(--espaco-1) var(--espaco-3);
+  border-radius: var(--raio-pill);
+  background: var(--cor-esmeralda-suave);
+  color: var(--cor-esmeralda-escuro);
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-semibold);
+}
+
+.gestao-alunos__filtros {
+  display: grid;
+  grid-template-columns: minmax(15rem, 1fr) minmax(12rem, 0.45fr) auto;
+  align-items: end;
+  gap: var(--espaco-4);
+  padding: var(--espaco-5) 0;
+}
+
+.gestao-alunos__limpar { min-height: 43px; white-space: nowrap; }
+
+.gestao-alunos__estado {
+  display: grid;
+  place-items: center;
+  gap: var(--espaco-3);
+  min-height: 11rem;
+  padding: var(--espaco-6);
+  border: 1px dashed var(--cor-borda-forte);
+  border-radius: var(--raio-md);
+  margin: 0;
+  color: var(--cor-texto-suave);
+  text-align: center;
+}
+
+.gestao-alunos__estado p { margin: 0; }
+.gestao-alunos__tabela-container { min-width: 0; overflow-x: auto; }
+
+.gestao-alunos__tabela {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  color: var(--cor-texto);
+  font-size: var(--texto-sm);
+}
+
+.gestao-alunos__tabela th {
+  padding: var(--espaco-3) var(--espaco-4);
+  border-bottom: 1px solid var(--cor-borda-forte);
+  background: var(--cor-bege);
+  color: var(--cor-texto-suave);
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-bold);
+  letter-spacing: 0.04em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.gestao-alunos__tabela th:first-child { border-radius: var(--raio-sm) 0 0; }
+.gestao-alunos__tabela th:last-child { border-radius: 0 var(--raio-sm) 0 0; text-align: right; }
+
+.gestao-alunos__tabela td {
+  max-width: 20rem;
+  padding: var(--espaco-4);
+  border-bottom: 1px solid var(--cor-borda);
+  vertical-align: middle;
+}
+
+.gestao-alunos__tabela tbody tr { transition: background var(--transicao); }
+.gestao-alunos__tabela tbody tr:hover { background: rgba(209, 250, 229, 0.24); }
+.gestao-alunos__tabela tbody tr:last-child td { border-bottom: 0; }
+.gestao-alunos__tabela td strong { display: block; color: var(--cor-texto); }
+.gestao-alunos__identificacao { min-width: 0; }
+
+.gestao-alunos__email {
+  display: block;
+  margin-top: 0.15rem;
+  overflow-wrap: anywhere;
+  color: var(--cor-texto-suave);
+}
+
+.gestao-alunos__linha--inativa { background: rgba(247, 242, 232, 0.58); }
+.gestao-alunos__linha--inativa td { color: var(--cor-texto-suave); }
+
+.gestao-alunos__badge {
+  display: inline-flex;
+  min-height: 27px;
+  align-items: center;
+  padding: 0.22rem 0.6rem;
+  border-radius: var(--raio-pill);
+  font-size: 0.72rem;
+  font-weight: var(--peso-bold);
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.gestao-alunos__badge--sucesso { background: var(--cor-sucesso-suave); color: var(--cor-esmeralda-escuro); }
+.gestao-alunos__badge--informacao { background: var(--cor-info-suave); color: var(--cor-info); }
+.gestao-alunos__badge--alerta { background: var(--cor-alerta-suave); color: var(--cor-alerta); }
+.gestao-alunos__badge--perigo { background: var(--cor-perigo-suave); color: var(--cor-perigo); }
+.gestao-alunos__badge--neutro { background: #ece9e2; color: #5e625f; }
+.gestao-alunos__badge--inativo { background: #e7e4df; color: #555d59; }
+
+.gestao-alunos__celula-acoes { min-width: 14rem; }
+
+.gestao-alunos__acoes {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: var(--espaco-2);
+}
+
+.gestao-alunos__confirmacao {
+  display: grid;
+  justify-items: end;
+  gap: var(--espaco-2);
+}
+
+.gestao-alunos__confirmacao p { margin: 0; }
+.gestao-alunos__confirmacao > div { display: flex; gap: var(--espaco-2); }
+
+.gestao-alunos__linha-edicao td { max-width: none; background: var(--cor-esmeralda-suave); }
+
+.gestao-alunos__edicao {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(12rem, 0.55fr) auto;
+  align-items: end;
+  gap: var(--espaco-4);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+  margin: -1px;
+  white-space: nowrap;
+}
+
+@media (max-width: 1050px) {
+  .gestao-alunos__indicadores { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .gestao-alunos__filtros { grid-template-columns: minmax(0, 1fr) minmax(12rem, 0.65fr); }
+  .gestao-alunos__limpar { justify-self: start; }
+  .gestao-alunos__edicao { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .gestao-alunos__edicao .gestao-alunos__acoes { grid-column: 1 / -1; justify-content: flex-start; }
+}
+
+@media (max-width: 760px) {
+  .gestao-alunos { gap: var(--espaco-5); }
+  .gestao-alunos__cabecalho { align-items: stretch; flex-direction: column; }
+  .gestao-alunos__botao-cadastro { align-self: flex-start; }
+  .gestao-alunos__formulario,
+  .gestao-alunos__filtros { grid-template-columns: 1fr; }
+  .gestao-alunos__formulario-acoes { grid-column: auto; }
+  .gestao-alunos__lista,
+  .gestao-alunos__painel-cadastro { padding: var(--espaco-4); }
+  .gestao-alunos__lista-cabecalho { align-items: flex-start; flex-direction: column; }
+  .gestao-alunos__limpar { justify-self: stretch; }
+
+  .gestao-alunos__tabela-container { overflow: visible; }
+  .gestao-alunos__tabela,
+  .gestao-alunos__tabela tbody { display: block; }
+  .gestao-alunos__tabela thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
+  .gestao-alunos__tabela tr {
+    display: block;
+    padding: var(--espaco-4);
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio-md);
+    margin-bottom: var(--espaco-3);
+    background: var(--cor-superficie-elevada);
+    box-shadow: var(--sombra-sm);
+  }
+  .gestao-alunos__tabela tr:last-child { margin-bottom: 0; }
+  .gestao-alunos__tabela td {
+    display: grid;
+    max-width: none;
+    grid-template-columns: minmax(7rem, 0.65fr) minmax(0, 1fr);
+    gap: var(--espaco-3);
+    padding: var(--espaco-3) 0;
+    border-bottom: 1px solid var(--cor-borda);
+  }
+  .gestao-alunos__tabela td::before {
+    color: var(--cor-texto-suave);
+    content: attr(data-label);
+    font-size: var(--texto-xs);
+    font-weight: var(--peso-bold);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+  .gestao-alunos__tabela td:last-child { border-bottom: 0; }
+  .gestao-alunos__celula-acoes { min-width: 0; }
+  .gestao-alunos__celula-acoes,
+  .gestao-alunos__linha-edicao td { display: block; }
+  .gestao-alunos__celula-acoes::before,
+  .gestao-alunos__linha-edicao td::before { display: none; }
+  .gestao-alunos__acoes { justify-content: flex-start; padding-top: var(--espaco-2); }
+  .gestao-alunos__confirmacao { justify-items: start; padding-top: var(--espaco-2); }
+  .gestao-alunos__linha-edicao { padding: 0 !important; }
+  .gestao-alunos__linha-edicao td { padding: var(--espaco-4); border: 0; }
+  .gestao-alunos__edicao { grid-template-columns: 1fr; }
+  .gestao-alunos__edicao .gestao-alunos__acoes { grid-column: auto; }
+}
+
+@media (max-width: 480px) {
+  .gestao-alunos__indicadores { grid-template-columns: 1fr; }
+  .gestao-alunos__botao-cadastro,
+  .gestao-alunos__formulario-acoes button,
+  .gestao-alunos__convite-link button,
+  .gestao-alunos__acoes button,
+  .gestao-alunos__confirmacao button { width: 100%; }
+  .gestao-alunos__convite-cabecalho,
+  .gestao-alunos__convite-link,
+  .gestao-alunos__formulario-acoes,
+  .gestao-alunos__acoes,
+  .gestao-alunos__confirmacao > div { align-items: stretch; flex-direction: column; }
+  .gestao-alunos__tabela td { grid-template-columns: 1fr; gap: var(--espaco-1); }
+
+  .gestao-alunos__instituicao {
+    display: grid;
+    width: 100%;
+    border-radius: var(--raio-md);
+  }
+
+  .gestao-alunos__instituicao strong {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+  }
+}

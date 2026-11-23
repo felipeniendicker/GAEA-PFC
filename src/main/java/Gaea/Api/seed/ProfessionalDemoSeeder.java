@@ -1,6 +1,7 @@
 package Gaea.Api.seed;
 
 import Gaea.Api.storage.ArmazenamentoDocumento;
+import Gaea.Api.service.PoliticaSenhaService;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -60,15 +61,18 @@ public class ProfessionalDemoSeeder implements ApplicationRunner {
             new InstituicaoSeed(
                     "UMC",
                     "Universidade de Mogi das Cruzes (UMC)",
-                    gerarCnpj(95_100_000_001L)),
+                    gerarCnpj(95_100_000_001L),
+                    false),
             new InstituicaoSeed(
                     "IUA",
                     "Instituto Universitário Vale das Araucárias",
-                    gerarCnpj(95_200_000_001L)),
+                    gerarCnpj(95_200_000_001L),
+                    true),
             new InstituicaoSeed(
                     "FHL",
                     "Faculdade Horizonte do Litoral",
-                    gerarCnpj(95_300_000_001L))
+                    gerarCnpj(95_300_000_001L),
+                    true)
     );
 
     private static final List<ResponsavelSeed> RESPONSAVEIS = List.of(
@@ -197,6 +201,7 @@ public class ProfessionalDemoSeeder implements ApplicationRunner {
     private final String senhaAluno;
     private final String senhaInstituicao;
     private final String senhaSupervisor;
+    private final PoliticaSenhaService politicaSenha;
 
     public ProfessionalDemoSeeder(
             JdbcTemplate jdbc,
@@ -212,7 +217,8 @@ public class ProfessionalDemoSeeder implements ApplicationRunner {
             @Value("${app.professional-demo-seed.password.felipe}") String senhaFelipe,
             @Value("${app.professional-demo-seed.password.aluno}") String senhaAluno,
             @Value("${app.professional-demo-seed.password.instituicao}") String senhaInstituicao,
-            @Value("${app.professional-demo-seed.password.supervisor}") String senhaSupervisor) {
+            @Value("${app.professional-demo-seed.password.supervisor}") String senhaSupervisor,
+            PoliticaSenhaService politicaSenha) {
 
         this.jdbc = jdbc;
         this.passwordEncoder = passwordEncoder;
@@ -228,6 +234,11 @@ public class ProfessionalDemoSeeder implements ApplicationRunner {
         this.senhaAluno = exigirSenha(senhaAluno, "dos alunos");
         this.senhaInstituicao = exigirSenha(senhaInstituicao, "institucional");
         this.senhaSupervisor = exigirSenha(senhaSupervisor, "dos supervisores");
+        this.politicaSenha = politicaSenha;
+        this.politicaSenha.validar(senhaFelipe);
+        this.politicaSenha.validar(senhaAluno);
+        this.politicaSenha.validar(senhaInstituicao);
+        this.politicaSenha.validar(senhaSupervisor);
     }
 
     @Override
@@ -292,9 +303,10 @@ public class ProfessionalDemoSeeder implements ApplicationRunner {
                     "select id from instituicao where cnpj = ?",
                     seed.cnpj(),
                     () -> inserirRetornandoId(
-                            "insert into instituicao (nome, cnpj, ativa, criada_em) values (?, ?, ?, ?)",
+                            "insert into instituicao (nome, cnpj, ativa, criada_em, sigla, ficticia) values (?, ?, ?, ?, ?, ?)",
                             seed.nome(), seed.cnpj(), true,
-                            dataReferencia.atTime(8, 0).plusMinutes(ordem)));
+                            dataReferencia.atTime(8, 0).plusMinutes(ordem),
+                            seed.codigo(), seed.ficticia()));
             exigirIgual(
                     seed.nome(),
                     jdbc.queryForObject("select nome from instituicao where id = ?", String.class, id),
@@ -1089,7 +1101,7 @@ public class ProfessionalDemoSeeder implements ApplicationRunner {
         long get();
     }
 
-    private record InstituicaoSeed(String codigo, String nome, String cnpj) {
+    private record InstituicaoSeed(String codigo, String nome, String cnpj, boolean ficticia) {
     }
 
     private record ResponsavelSeed(String nome, String emailLocal, String instituicaoCodigo) {

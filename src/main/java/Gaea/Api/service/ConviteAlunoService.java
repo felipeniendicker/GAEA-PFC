@@ -27,17 +27,20 @@ public class ConviteAlunoService {
     private final ConviteAtivacaoAlunoRepository conviteRepository;
     private final PasswordEncoder passwordEncoder;
     private final LogAuditoriaService logAuditoriaService;
+    private final PoliticaSenhaService politicaSenha;
     private final long expiracaoHoras;
 
     public ConviteAlunoService(
             ConviteAtivacaoAlunoRepository conviteRepository,
             PasswordEncoder passwordEncoder,
             LogAuditoriaService logAuditoriaService,
+            PoliticaSenhaService politicaSenha,
             @Value("${app.convite-aluno.expiracao-horas:48}") long expiracaoHoras) {
 
         this.conviteRepository = conviteRepository;
         this.passwordEncoder = passwordEncoder;
         this.logAuditoriaService = logAuditoriaService;
+        this.politicaSenha = politicaSenha;
         this.expiracaoHoras = expiracaoHoras;
     }
 
@@ -88,6 +91,7 @@ public class ConviteAlunoService {
             throw new DadosInvalidosException("O convite não corresponde ao cadastro do aluno");
         }
 
+        politicaSenha.validar(request.senha());
         aluno.setSenha(passwordEncoder.encode(request.senha()));
         aluno.setAtivado(true);
         aluno.setTermosAceitos(true);

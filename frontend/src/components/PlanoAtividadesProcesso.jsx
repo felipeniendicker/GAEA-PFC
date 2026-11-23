@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import './PlanoAtividadesProcesso.css'
+import { formatarDataHora } from '../utils/apresentacao'
 
 const rotulosSituacao = {
   PENDENTE: 'Aguardando avaliação do supervisor',
@@ -162,11 +163,11 @@ export default function PlanoAtividadesProcesso({ apiBase, token, processoId, pe
         <div className="plano-conteudo">
           <div className="plano-resumo">
             <strong>{plano.cargaHorariaPlanejada} horas planejadas</strong>
-            <span>Cadastrado em {new Date(plano.criadoEm).toLocaleString('pt-BR')}</span>
+            <span>Cadastrado em {formatarDataHora(plano.criadoEm)}</span>
             <span>Por {plano.criadoPor}</span>
             {plano.avaliadoEm && (
               <span>
-                Avaliado em {new Date(plano.avaliadoEm).toLocaleString('pt-BR')}
+                Avaliado em {formatarDataHora(plano.avaliadoEm)}
                 {plano.avaliadoPor ? ` por ${plano.avaliadoPor}` : ''}
               </span>
             )}

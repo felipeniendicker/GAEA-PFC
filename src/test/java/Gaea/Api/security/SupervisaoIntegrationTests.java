@@ -13,7 +13,7 @@ import Gaea.Api.repository.ProcessoEstagioRepository;
 import Gaea.Api.repository.TokenVerificacaoEmailRepository;
 import Gaea.Api.repository.UsuarioRepository;
 import Gaea.Api.repository.VinculoSupervisorProcessoRepository;
-import Gaea.Api.service.EnvioEmailVerificacao;
+import Gaea.Api.service.EnvioEmailAplicacao;
 import Gaea.Api.service.JwtService;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -58,7 +58,7 @@ class SupervisaoIntegrationTests {
     @Autowired JwtService jwtService;
 
     @MockitoBean
-    EnvioEmailVerificacao envioEmail;
+    EnvioEmailAplicacao envioEmail;
 
     @Test
     void deveVerificarEmailComTokenProtegidoDeUsoUnico() throws Exception {
@@ -66,12 +66,12 @@ class SupervisaoIntegrationTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"nome":"Supervisor","email":"supervisor@example.com",
-                                 "senha":"senha-segura","perfil":"EMPRESA","termosAceitos":true}
+                                 "senha":"Senha-segura1!","perfil":"EMPRESA","termosAceitos":true}
                                 """))
                 .andExpect(status().isOk());
 
         ArgumentCaptor<String> linkCaptor = ArgumentCaptor.forClass(String.class);
-        verify(envioEmail).enviar(
+        verify(envioEmail).enviarVerificacao(
                 org.mockito.ArgumentMatchers.eq("supervisor@example.com"),
                 org.mockito.ArgumentMatchers.eq("Supervisor"), linkCaptor.capture());
         String token = parametroFragmento(linkCaptor.getValue(), "verificarEmail");
@@ -104,7 +104,7 @@ class SupervisaoIntegrationTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"nome":"Supervisor Expirado","email":"expirado@example.com",
-                                 "senha":"senha-segura","perfil":"EMPRESA","termosAceitos":true}
+                                 "senha":"Senha-segura1!","perfil":"EMPRESA","termosAceitos":true}
                                 """))
                 .andExpect(status().isOk());
 
@@ -113,7 +113,7 @@ class SupervisaoIntegrationTests {
         tokenRepository.saveAndFlush(tokenPersistido);
 
         ArgumentCaptor<String> linkCaptor = ArgumentCaptor.forClass(String.class);
-        verify(envioEmail).enviar(
+        verify(envioEmail).enviarVerificacao(
                 org.mockito.ArgumentMatchers.eq("expirado@example.com"),
                 org.mockito.ArgumentMatchers.eq("Supervisor Expirado"), linkCaptor.capture());
         String token = parametroFragmento(linkCaptor.getValue(), "verificarEmail");
