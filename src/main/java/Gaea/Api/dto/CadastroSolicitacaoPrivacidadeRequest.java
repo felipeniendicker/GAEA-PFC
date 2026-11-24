@@ -11,5 +11,14 @@ public record CadastroSolicitacaoPrivacidadeRequest(
 
         @NotBlank(message = "Informe a descrição da solicitação")
         @Size(max = 2000, message = "A descrição deve ter no máximo 2000 caracteres")
-        String descricao) {
+        String descricao,
+
+        @Size(max = 128, message = "A senha atual deve ter no máximo 128 caracteres")
+        String senhaAtual) {
+
+    @Override
+    public String toString() {
+        return "CadastroSolicitacaoPrivacidadeRequest[tipo=" + tipo
+                + ", descricao=[PROTEGIDO], senhaAtual=[PROTEGIDO]]";
+    }
 }

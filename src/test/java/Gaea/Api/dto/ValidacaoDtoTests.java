@@ -123,6 +123,40 @@ class ValidacaoDtoTests {
     }
 
     @Test
+    void deveNormalizarEAceitarCnpjInstitucionalFormatado() {
+        SolicitacaoInstituicaoRequest request = solicitacaoInstitucional(
+                "11.222.333/0001-81",
+                true);
+
+        assertTrue(validator.validate(request).isEmpty());
+        assertEquals("11222333000181", request.cnpj());
+    }
+
+    @Test
+    void deveRejeitarCnpjInstitucionalIncompletoInvalidoOuExcedente() {
+        assertCnpjInstitucionalInvalido("11.222.333/0001");
+        assertCnpjInstitucionalInvalido("11.111.111/1111-11");
+        assertCnpjInstitucionalInvalido("11.222.333/0001-819");
+    }
+
+    @Test
+    void deveManterContratoNumericoParaCnpjInstitucional() {
+        // O contrato atual permanece numérico até uma migração coordenada de todos os consumidores.
+        assertCnpjInstitucionalInvalido("00.000.000/E08G-12");
+    }
+
+    @Test
+    void deveExigirAceiteNaSolicitacaoInstitucional() {
+        SolicitacaoInstituicaoRequest request = solicitacaoInstitucional(
+                "11.222.333/0001-81",
+                false);
+
+        assertTrue(validator.validate(request).stream()
+                .anyMatch(violacao -> violacao.getPropertyPath().toString()
+                        .equals("termosAceitos")));
+    }
+
+    @Test
     void deveAceitarProcessoValido() {
         CadastroProcessoRequest request = processoValido(
                 "11.222.333/0001-81",
@@ -172,5 +206,24 @@ class ValidacaoDtoTests {
                 dataInicio,
                 dataFim,
                 "supervisor@example.com");
+    }
+
+    private void assertCnpjInstitucionalInvalido(String cnpj) {
+        SolicitacaoInstituicaoRequest request = solicitacaoInstitucional(cnpj, true);
+
+        assertTrue(validator.validate(request).stream()
+                .anyMatch(violacao -> violacao.getPropertyPath().toString().equals("cnpj")));
+    }
+
+    private SolicitacaoInstituicaoRequest solicitacaoInstitucional(
+            String cnpj,
+            boolean termosAceitos) {
+
+        return new SolicitacaoInstituicaoRequest(
+                "Faculdade Exemplo",
+                cnpj,
+                "Ana Souza",
+                "ana@example.com",
+                termosAceitos);
     }
 }

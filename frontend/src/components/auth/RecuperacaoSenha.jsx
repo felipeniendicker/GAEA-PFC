@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import CampoSenha from './CampoSenha'
 import RequisitosSenha from './RequisitosSenha'
+import MensagemFormulario from '../forms/MensagemFormulario'
 import { senhaAtendePolitica } from '../../utils/senha'
+import { emailValido } from '../../utils/validacao'
 import './Autenticacao.css'
 
 async function mensagemDaResposta(resposta, padrao) {
@@ -23,6 +25,10 @@ export function SolicitacaoRecuperacaoSenha({ apiBase, aoVoltar }) {
     event.preventDefault()
     setErro('')
     setMensagem('')
+    if (!emailValido(email)) {
+      setErro('Informe um e-mail válido.')
+      return
+    }
     setCarregando(true)
     try {
       const resposta = await fetch(`${apiBase}/api/auth/senha/recuperacao`, {
@@ -56,7 +62,7 @@ export function SolicitacaoRecuperacaoSenha({ apiBase, aoVoltar }) {
         </p>
       </header>
       <section className="formulario card-autenticacao">
-        <form onSubmit={solicitar}>
+        <form onSubmit={solicitar} noValidate>
           <div className="campo">
             <label htmlFor="emailRecuperacao">E-mail</label>
             <input
@@ -69,9 +75,9 @@ export function SolicitacaoRecuperacaoSenha({ apiBase, aoVoltar }) {
               autoFocus
             />
           </div>
-          {erro && <p className="mensagem-erro alerta-autenticacao" role="alert">{erro}</p>}
-          {mensagem && <p className="mensagem-sucesso alerta-autenticacao" role="status">{mensagem}</p>}
-          <button type="submit" disabled={carregando || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())}>
+          <MensagemFormulario tipo="erro">{erro}</MensagemFormulario>
+          <MensagemFormulario tipo="sucesso">{mensagem}</MensagemFormulario>
+          <button type="submit" disabled={carregando}>
             {carregando ? 'Solicitando...' : 'Enviar instruções'}
           </button>
         </form>
@@ -132,7 +138,7 @@ export function RedefinicaoSenha({ apiBase, tokenRecuperacao, aoConcluir }) {
             <button type="button" onClick={aoConcluir}>Ir para o login</button>
           </div>
         ) : (
-          <form onSubmit={redefinir}>
+          <form onSubmit={redefinir} noValidate>
             <CampoSenha id="novaSenha" label="Nova senha" value={senha}
               onChange={(event) => setSenha(event.target.value)} autoComplete="new-password"
               minLength={8} maxLength={64} describedBy="requisitosRedefinicao" autoFocus />
@@ -140,8 +146,8 @@ export function RedefinicaoSenha({ apiBase, tokenRecuperacao, aoConcluir }) {
               onChange={(event) => setConfirmacao(event.target.value)} autoComplete="new-password"
               minLength={8} maxLength={64} describedBy="requisitosRedefinicao" />
             <RequisitosSenha senha={senha} confirmacao={confirmacao} id="requisitosRedefinicao" />
-            {erro && <p className="mensagem-erro alerta-autenticacao" role="alert">{erro}</p>}
-            <button type="submit" disabled={carregando || !senhaAtendePolitica(senha, confirmacao)}>
+            <MensagemFormulario tipo="erro">{erro}</MensagemFormulario>
+            <button type="submit" disabled={carregando}>
               {carregando ? 'Redefinindo...' : 'Redefinir senha'}
             </button>
           </form>

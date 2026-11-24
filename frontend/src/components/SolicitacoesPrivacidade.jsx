@@ -12,6 +12,12 @@ const rotulosTipo = {
   ENCERRAMENTO_CONTA: 'Encerramento da conta'
 }
 
+const explicacoesTipo = {
+  EXCLUSAO: 'Solicita a eliminação apenas dos dados juridicamente elegíveis. Registros acadêmicos podem precisar ser preservados.',
+  ANONIMIZACAO: 'Solicita avaliação dos dados que possam ser efetivamente anonimizados. Pseudonimização não será tratada como anonimização.',
+  ENCERRAMENTO_CONTA: 'Desativa seu acesso e invalida credenciais e tokens. Processos, documentos e históricos acadêmicos são preservados.'
+}
+
 function dataFormatada(data) {
   return formatarDataHora(data)
 }
@@ -20,6 +26,8 @@ export default function SolicitacoesPrivacidade({ apiBase, token }) {
   const [solicitacoes, setSolicitacoes] = useState([])
   const [tipo, setTipo] = useState('ACESSO')
   const [descricao, setDescricao] = useState('')
+  const [senhaAtual, setSenhaAtual] = useState('')
+  const [confirmado, setConfirmado] = useState(false)
   const [carregando, setCarregando] = useState(true)
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState('')
@@ -88,6 +96,14 @@ export default function SolicitacoesPrivacidade({ apiBase, token }) {
       setErro('Informe a descrição da solicitação.')
       return
     }
+    if (!confirmado) {
+      setErro('Confirme que compreendeu o tipo e os efeitos da solicitação.')
+      return
+    }
+    if (tipo === 'ENCERRAMENTO_CONTA' && !senhaAtual) {
+      setErro('Informe sua senha atual para confirmar sua identidade.')
+      return
+    }
     setEnviando(true)
     setErro('')
     setMensagem('')
@@ -98,7 +114,11 @@ export default function SolicitacoesPrivacidade({ apiBase, token }) {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ tipo, descricao: descricao.trim() })
+        body: JSON.stringify({
+          tipo,
+          descricao: descricao.trim(),
+          senhaAtual: tipo === 'ENCERRAMENTO_CONTA' ? senhaAtual : undefined
+        })
       })
       if (!resposta.ok) {
         throw new Error(await mensagemDaResposta(
@@ -106,6 +126,8 @@ export default function SolicitacoesPrivacidade({ apiBase, token }) {
         ))
       }
       setDescricao('')
+      setSenhaAtual('')
+      setConfirmado(false)
       setMensagem('Solicitação registrada com sucesso.')
       await carregar()
     } catch (falha) {
@@ -128,7 +150,12 @@ export default function SolicitacoesPrivacidade({ apiBase, token }) {
           <select
             id="tipoSolicitacaoPrivacidade"
             value={tipo}
-            onChange={(event) => setTipo(event.target.value)}
+            onChange={(event) => {
+              setTipo(event.target.value)
+              setSenhaAtual('')
+              setConfirmado(false)
+              setErro('')
+            }}
             disabled={enviando}
           >
             <option value="ACESSO">Acesso aos dados</option>
@@ -140,6 +167,9 @@ export default function SolicitacoesPrivacidade({ apiBase, token }) {
             <option value="ENCERRAMENTO_CONTA">Encerramento da conta</option>
           </select>
         </div>
+        {explicacoesTipo[tipo] && (
+          <p className="privacidade-explicacao" role="note">{explicacoesTipo[tipo]}</p>
+        )}
         <div className="campo privacidade-descricao">
           <label htmlFor="descricaoSolicitacaoPrivacidade">Descrição</label>
           <textarea
@@ -152,7 +182,34 @@ export default function SolicitacoesPrivacidade({ apiBase, token }) {
             required
           />
         </div>
-        <button type="submit" disabled={enviando}>
+        {tipo === 'ENCERRAMENTO_CONTA' && (
+          <div className="campo privacidade-senha">
+            <label htmlFor="senhaAtualPrivacidade">Senha atual</label>
+            <input
+              id="senhaAtualPrivacidade"
+              type="password"
+              value={senhaAtual}
+              onChange={(event) => setSenhaAtual(event.target.value)}
+              maxLength={128}
+              autoComplete="current-password"
+              disabled={enviando}
+              required
+            />
+          </div>
+        )}
+        <label className="privacidade-confirmacao">
+          <input
+            type="checkbox"
+            checked={confirmado}
+            onChange={(event) => {
+              setConfirmado(event.target.checked)
+              setErro('')
+            }}
+            disabled={enviando}
+          />
+          Confirmo que li e compreendi o tipo, o alcance e os efeitos desta solicitação.
+        </label>
+        <button type="submit" disabled={enviando || !confirmado}>
           {enviando ? 'Enviando...' : 'Registrar solicitação'}
         </button>
       </form>

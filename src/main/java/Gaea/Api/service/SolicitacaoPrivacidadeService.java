@@ -2,14 +2,18 @@ package Gaea.Api.service;
 
 import Gaea.Api.dto.CadastroSolicitacaoPrivacidadeRequest;
 import Gaea.Api.dto.DecisaoPrivacidadeRequest;
+import Gaea.Api.dto.EventoPrivacidadeResponse;
 import Gaea.Api.dto.SolicitacaoPrivacidadeAdminResponse;
 import Gaea.Api.dto.SolicitacaoPrivacidadeResponse;
 import Gaea.Api.exception.ConflitoDadosException;
+import Gaea.Api.exception.DadosInvalidosException;
 import Gaea.Api.exception.RecursoNaoEncontradoException;
 import Gaea.Api.model.SituacaoSolicitacaoPrivacidade;
 import Gaea.Api.model.SolicitacaoPrivacidade;
+import Gaea.Api.model.TipoSolicitacaoPrivacidade;
 import Gaea.Api.model.Usuario;
 import Gaea.Api.repository.SolicitacaoPrivacidadeRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,13 +24,22 @@ import java.time.LocalDateTime;
 public class SolicitacaoPrivacidadeService {
 
     private final SolicitacaoPrivacidadeRepository repository;
-    private final LogAuditoriaService auditoriaService;
+    private final PasswordEncoder passwordEncoder;
+    private final AuditoriaPrivacidadeService auditoria;
+    private final ExecucaoSolicitacaoPrivacidadeService executor;
+    private final ComunicacaoPrivacidadeService comunicacao;
 
     public SolicitacaoPrivacidadeService(
             SolicitacaoPrivacidadeRepository repository,
-            LogAuditoriaService auditoriaService) {
+            PasswordEncoder passwordEncoder,
+            AuditoriaPrivacidadeService auditoria,
+            ExecucaoSolicitacaoPrivacidadeService executor,
+            ComunicacaoPrivacidadeService comunicacao) {
         this.repository = repository;
-        this.auditoriaService = auditoriaService;
+        this.passwordEncoder = passwordEncoder;
+        this.auditoria = auditoria;
+        this.executor = executor;
+        this.comunicacao = comunicacao;
     }
 
     @Transactional
@@ -41,17 +54,15 @@ public class SolicitacaoPrivacidadeService {
             throw new ConflitoDadosException(
                     "Já existe uma solicitação desse tipo em atendimento");
         }
+        validarIdentidadeParaEncerramento(request, usuario);
         SolicitacaoPrivacidade solicitacao = new SolicitacaoPrivacidade();
         solicitacao.setUsuario(usuario);
         solicitacao.setTipo(request.tipo());
         solicitacao.setDescricao(request.descricao().trim());
         SolicitacaoPrivacidade salva = repository.saveAndFlush(solicitacao);
 
-        auditoriaService.registrar(
-                usuario.getEmail(),
-                "SOLICITACAO_PRIVACIDADE",
-                "Solicitação " + salva.getId(),
-                usuario.getInstituicao());
+        auditoria.registrar(
+                usuario.getEmail(), "SOLICITACAO_PRIVACIDADE", salva.getId());
         return SolicitacaoPrivacidadeResponse.from(salva);
     }
 
@@ -91,18 +102,22 @@ public class SolicitacaoPrivacidadeService {
         solicitacao.setSituacao(SituacaoSolicitacaoPrivacidade.EM_ANALISE);
         solicitacao.setResponsavel(admin);
         solicitacao.setAtualizadoEm(LocalDateTime.now());
-        auditoriaService.registrar(
-                admin.getEmail(), "INICIO_ANALISE_PRIVACIDADE",
-                "Solicitação de privacidade " + solicitacao.getId());
+        auditoria.registrar(
+                admin.getEmail(), "INICIO_ANALISE_PRIVACIDADE", solicitacao.getId());
         return SolicitacaoPrivacidadeAdminResponse.from(solicitacao);
     }
 
-    @Transactional
     public SolicitacaoPrivacidadeAdminResponse concluir(
             Long id,
             DecisaoPrivacidadeRequest request,
             Usuario admin) {
-        return decidir(id, request, admin, SituacaoSolicitacaoPrivacidade.CONCLUIDA);
+        try {
+            return executor.executarEncerramento(id, request, admin);
+        } catch (RuntimeException exception) {
+            auditoria.registrarFalha(
+                    admin == null ? "DESCONHECIDO" : admin.getEmail(), id);
+            throw exception;
+        }
     }
 
     @Transactional
@@ -110,14 +125,6 @@ public class SolicitacaoPrivacidadeService {
             Long id,
             DecisaoPrivacidadeRequest request,
             Usuario admin) {
-        return decidir(id, request, admin, SituacaoSolicitacaoPrivacidade.REJEITADA);
-    }
-
-    private SolicitacaoPrivacidadeAdminResponse decidir(
-            Long id,
-            DecisaoPrivacidadeRequest request,
-            Usuario admin,
-            SituacaoSolicitacaoPrivacidade destino) {
         exigirAdmin(admin);
         SolicitacaoPrivacidade solicitacao = bloquear(id);
         if (solicitacao.getSituacao() != SituacaoSolicitacaoPrivacidade.EM_ANALISE) {
@@ -128,21 +135,40 @@ public class SolicitacaoPrivacidadeService {
             throw new org.springframework.security.access.AccessDeniedException(
                     "A solicitação está atribuída a outro responsável");
         }
-        if (destino == SituacaoSolicitacaoPrivacidade.CONCLUIDA
-                && request.evidenciaNormalizada() == null) {
-            throw new ConflitoDadosException(
-                    "Registre a evidência da execução antes de concluir");
-        }
-        solicitacao.setSituacao(destino);
+        solicitacao.setSituacao(SituacaoSolicitacaoPrivacidade.REJEITADA);
         solicitacao.setDecisao(request.decisaoNormalizada());
-        solicitacao.setEvidenciaExecucao(request.evidenciaNormalizada());
+        solicitacao.setEvidenciaExecucao(null);
         solicitacao.setAtualizadoEm(LocalDateTime.now());
-        auditoriaService.registrar(
-                admin.getEmail(),
-                destino == SituacaoSolicitacaoPrivacidade.CONCLUIDA
-                        ? "CONCLUSAO_PRIVACIDADE" : "REJEICAO_PRIVACIDADE",
-                "Solicitação de privacidade " + solicitacao.getId());
+        auditoria.registrar(admin.getEmail(), "REJEICAO_PRIVACIDADE", solicitacao.getId());
+        comunicacao.agendarAposCommit(
+                solicitacao.getId(),
+                solicitacao.getUsuario().getEmail(),
+                solicitacao.getUsuario().getNome(),
+                false);
         return SolicitacaoPrivacidadeAdminResponse.from(solicitacao);
+    }
+
+    @Transactional(readOnly = true)
+    public List<EventoPrivacidadeResponse> listarAuditoria(Long id, Usuario admin) {
+        exigirAdmin(admin);
+        if (!repository.existsById(id)) {
+            throw new RecursoNaoEncontradoException(
+                    "Solicitação de privacidade não encontrada");
+        }
+        return auditoria.listar(id);
+    }
+
+    private void validarIdentidadeParaEncerramento(
+            CadastroSolicitacaoPrivacidadeRequest request,
+            Usuario usuario) {
+        if (request.tipo() != TipoSolicitacaoPrivacidade.ENCERRAMENTO_CONTA) {
+            return;
+        }
+        if (request.senhaAtual() == null
+                || usuario.getSenha() == null
+                || !passwordEncoder.matches(request.senhaAtual(), usuario.getSenha())) {
+            throw new DadosInvalidosException("Confirmação de identidade inválida");
+        }
     }
 
     private SolicitacaoPrivacidade bloquear(Long id) {

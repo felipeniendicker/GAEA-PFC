@@ -19,4 +19,6 @@ public interface LogAuditoriaRepository extends JpaRepository<LogAuditoria, Long
             Long instituicaoId,
             String acao,
             String recurso);
+
+    List<LogAuditoria> findAllByRecursoInOrderByDataHoraAscIdAsc(List<String> recursos);
 }

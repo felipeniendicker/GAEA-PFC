@@ -1,67 +1,120 @@
 import { useEffect, useState } from 'react'
 import CampoSenha from '../auth/CampoSenha'
 import RequisitosSenha from '../auth/RequisitosSenha'
+import AceiteDocumentos from '../forms/AceiteDocumentos'
+import CampoCnpj from '../forms/CampoCnpj'
+import MensagemFormulario from '../forms/MensagemFormulario'
 import { senhaAtendePolitica } from '../../utils/senha'
+import {
+  possuiErros,
+  validarSolicitacaoInstituicao
+} from '../../utils/validacao'
 import { apresentacaoInstituicao } from '../../utils/apresentacao'
 import PrivacidadeAdmin from './PrivacidadeAdmin'
 import './InstituicoesAdmin.css'
-
-function cnpjValido(cnpj) {
-  const numeros = cnpj.replace(/\D/g, '')
-  if (numeros.length !== 14 || /^(\d)\1+$/.test(numeros)) return false
-
-  function calcularDigito(tamanho) {
-    let soma = 0
-    let peso = tamanho - 7
-    for (let indice = 0; indice < tamanho; indice += 1) {
-      soma += Number(numeros[indice]) * peso
-      peso -= 1
-      if (peso === 1) peso = 9
-    }
-    const resto = soma % 11
-    return resto < 2 ? 0 : 11 - resto
-  }
-
-  return Number(numeros[12]) === calcularDigito(12) &&
-    Number(numeros[13]) === calcularDigito(13)
-}
 
 async function mensagem(resposta, padrao) {
   try { const dados = await resposta.json(); return dados.mensagem || padrao } catch { return padrao }
 }
 
 export function SolicitacaoInstituicaoPublica({ apiBase, aoVoltar }) {
-  const [dados, setDados] = useState({ nomeInstitucional: '', cnpj: '', responsavelNome: '', emailInstitucional: '' })
+  const dadosIniciais = {
+    nomeInstitucional: '',
+    cnpj: '',
+    responsavelNome: '',
+    emailInstitucional: ''
+  }
+  const [dados, setDados] = useState(dadosIniciais)
   const [termos, setTermos] = useState(false)
+  const [erros, setErros] = useState({})
   const [estado, setEstado] = useState({ carregando: false, erro: '', sucesso: '' })
-  const alterar = (campo) => (event) => setDados((atual) => ({ ...atual, [campo]: event.target.value }))
+
+  function alterar(campo, valor) {
+    setDados((atual) => ({ ...atual, [campo]: valor }))
+    setErros((atuais) => ({ ...atuais, [campo]: '' }))
+  }
+
   async function enviar(event) {
-    event.preventDefault(); setEstado({ carregando: true, erro: '', sucesso: '' })
+    event.preventDefault()
+    const errosAtuais = validarSolicitacaoInstituicao(dados, termos)
+    setErros(errosAtuais)
+    setEstado({ carregando: false, erro: '', sucesso: '' })
+
+    if (possuiErros(errosAtuais)) return
+
+    setEstado({ carregando: true, erro: '', sucesso: '' })
     try {
       const resposta = await fetch(`${apiBase}/api/instituicoes/solicitacoes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...dados, termosAceitos: termos }) })
       const texto = await mensagem(resposta, 'Não foi possível registrar a solicitação.')
       if (!resposta.ok) return setEstado({ carregando: false, erro: texto, sucesso: '' })
-      setDados({ nomeInstitucional: '', cnpj: '', responsavelNome: '', emailInstitucional: '' })
+      setDados(dadosIniciais)
       setTermos(false)
+      setErros({})
       setEstado({ carregando: false, erro: '', sucesso: texto })
     } catch { setEstado({ carregando: false, erro: 'Não foi possível conectar com o servidor.', sucesso: '' }) }
   }
-  return <main className="conteudo pagina-admin pagina-publica-cadastro"><header className="cabecalho"><p className="cabecalho-contexto">ACESSO INSTITUCIONAL</p><h2>Solicitar cadastro da instituição</h2><p className="cabecalho-descricao">Informe os dados oficiais. A senha será definida somente após aprovação.</p></header><section className="formulario card-admin"><form onSubmit={enviar}>
-    <div className="campo"><label htmlFor="nomeInstitucional">Nome institucional</label><input id="nomeInstitucional" value={dados.nomeInstitucional} onChange={alterar('nomeInstitucional')} required maxLength="255" /></div>
-    <div className="campo"><label htmlFor="cnpjInstitucional">CNPJ</label><input id="cnpjInstitucional" value={dados.cnpj} onChange={alterar('cnpj')} required inputMode="numeric" /></div>
-    <div className="campo"><label htmlFor="responsavelInstitucional">Responsável</label><input id="responsavelInstitucional" value={dados.responsavelNome} onChange={alterar('responsavelNome')} required maxLength="255" /></div>
-    <div className="campo"><label htmlFor="emailInstitucional">E-mail institucional</label><input id="emailInstitucional" type="email" value={dados.emailInstitucional} onChange={alterar('emailInstitucional')} required /></div>
-    <label className="aceite"><input type="checkbox" checked={termos} onChange={(event) => setTermos(event.target.checked)} /> Li e aceito os Termos e a Política de Privacidade.</label>
-    {estado.erro && <p className="mensagem-erro" role="alert">{estado.erro}</p>}{estado.sucesso && <p className="mensagem-sucesso" role="status">{estado.sucesso}</p>}
-    <button type="submit" disabled={estado.carregando || !termos || !dados.nomeInstitucional.trim() || !cnpjValido(dados.cnpj) || !dados.responsavelNome.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(dados.emailInstitucional.trim())}>{estado.carregando ? 'Enviando...' : 'Enviar para análise'}</button>
-  </form><button type="button" className="link-voltar" onClick={aoVoltar}>Voltar para o login</button></section></main>
+
+  return (
+    <main className="conteudo pagina-admin pagina-publica-cadastro">
+      <header className="cabecalho">
+        <p className="cabecalho-contexto">ACESSO INSTITUCIONAL</p>
+        <h2>Solicitar cadastro da instituição</h2>
+        <p className="cabecalho-descricao">Informe os dados oficiais. A senha será definida somente após aprovação.</p>
+      </header>
+      <section className="formulario card-admin">
+        <form onSubmit={enviar} noValidate>
+          <div className="campo">
+            <label htmlFor="nomeInstitucional">Nome institucional *</label>
+            <input id="nomeInstitucional" value={dados.nomeInstitucional}
+              onChange={(event) => alterar('nomeInstitucional', event.target.value)}
+              aria-invalid={Boolean(erros.nomeInstitucional)} maxLength="255" required />
+            {erros.nomeInstitucional && <small className="campo-erro" role="alert">{erros.nomeInstitucional}</small>}
+          </div>
+          <CampoCnpj id="cnpjInstitucional" value={dados.cnpj}
+            onChange={(valor) => alterar('cnpj', valor)} erroExterno={erros.cnpj} />
+          <div className="campo">
+            <label htmlFor="responsavelInstitucional">Responsável *</label>
+            <input id="responsavelInstitucional" value={dados.responsavelNome}
+              onChange={(event) => alterar('responsavelNome', event.target.value)}
+              aria-invalid={Boolean(erros.responsavelNome)} maxLength="255" required />
+            {erros.responsavelNome && <small className="campo-erro" role="alert">{erros.responsavelNome}</small>}
+          </div>
+          <div className="campo">
+            <label htmlFor="emailInstitucional">E-mail institucional *</label>
+            <input id="emailInstitucional" type="email" value={dados.emailInstitucional}
+              onChange={(event) => alterar('emailInstitucional', event.target.value)}
+              aria-invalid={Boolean(erros.emailInstitucional)} maxLength="255" required />
+            {erros.emailInstitucional && <small className="campo-erro" role="alert">{erros.emailInstitucional}</small>}
+          </div>
+          <AceiteDocumentos id="termosInstitucionais" checked={termos}
+            onChange={(aceitos) => { setTermos(aceitos); setErros((atuais) => ({ ...atuais, termos: '' })) }}
+            erro={erros.termos} />
+          <MensagemFormulario tipo="erro">{estado.erro}</MensagemFormulario>
+          <MensagemFormulario tipo="sucesso">{estado.sucesso}</MensagemFormulario>
+          <button type="submit" disabled={estado.carregando}>
+            {estado.carregando ? 'Enviando...' : 'Enviar para análise'}
+          </button>
+        </form>
+        <button type="button" className="link-voltar" onClick={aoVoltar}>Voltar para o login</button>
+      </section>
+    </main>
+  )
 }
 
 export function ConfirmacaoInstituicao({ apiBase, token, tipo, aoConcluir }) {
   const [senha, setSenha] = useState(''); const [confirmacao, setConfirmacao] = useState(''); const [termos, setTermos] = useState(false)
   const [estado, setEstado] = useState({ carregando: false, erro: '', concluido: false })
+  const [erroTermos, setErroTermos] = useState('')
   async function confirmar(event) {
-    event?.preventDefault(); if (tipo === 'ativacao' && !senhaAtendePolitica(senha, confirmacao)) return setEstado({ ...estado, erro: 'Revise os requisitos da senha.' })
+    event?.preventDefault()
+    if (tipo === 'ativacao' && !senhaAtendePolitica(senha, confirmacao)) {
+      setErroTermos(termos ? '' : 'É necessário aceitar os documentos para ativar a conta.')
+      return setEstado({ ...estado, erro: 'Revise os requisitos da senha antes de continuar.' })
+    }
+    if (tipo === 'ativacao' && !termos) {
+      setErroTermos('É necessário aceitar os documentos para ativar a conta.')
+      return setEstado({ ...estado, erro: '' })
+    }
     setEstado({ carregando: true, erro: '', concluido: false })
     const url = tipo === 'ativacao' ? '/api/instituicoes/ativacoes' : '/api/instituicoes/solicitacoes/verificar-email'
     const corpo = tipo === 'ativacao' ? { token, senha, confirmacaoSenha: confirmacao, termosAceitos: termos } : { token }
@@ -69,7 +122,7 @@ export function ConfirmacaoInstituicao({ apiBase, token, tipo, aoConcluir }) {
   }
   if (estado.concluido) return <main className="conteudo pagina-admin"><section className="formulario card-admin"><h2>Etapa concluída</h2><p>{tipo === 'ativacao' ? 'A conta institucional foi ativada.' : 'E-mail confirmado. A solicitação seguirá para análise.'}</p><button onClick={aoConcluir}>Ir para o login</button></section></main>
   return <main className="conteudo pagina-admin"><header className="cabecalho"><h2>{tipo === 'ativacao' ? 'Ativar acesso institucional' : 'Confirmar e-mail institucional'}</h2></header><section className="formulario card-admin">
-    {tipo === 'ativacao' ? <form onSubmit={confirmar}><CampoSenha id="senhaInstituicao" label="Senha" value={senha} onChange={(e) => setSenha(e.target.value)} minLength={8} maxLength={64} /><CampoSenha id="confirmacaoInstituicao" label="Confirmar senha" value={confirmacao} onChange={(e) => setConfirmacao(e.target.value)} minLength={8} maxLength={64} /><RequisitosSenha senha={senha} confirmacao={confirmacao} id="requisitosInstituicao" /><label className="aceite"><input type="checkbox" checked={termos} onChange={(e) => setTermos(e.target.checked)} /> Li e aceito os Termos e a Política de Privacidade.</label>{estado.erro && <p className="mensagem-erro" role="alert">{estado.erro}</p>}<button disabled={estado.carregando || !termos || !senhaAtendePolitica(senha, confirmacao)}>{estado.carregando ? 'Ativando...' : 'Ativar conta'}</button></form>
+    {tipo === 'ativacao' ? <form onSubmit={confirmar} noValidate><CampoSenha id="senhaInstituicao" label="Senha" value={senha} onChange={(e) => setSenha(e.target.value)} minLength={8} maxLength={64} /><CampoSenha id="confirmacaoInstituicao" label="Confirmar senha" value={confirmacao} onChange={(e) => setConfirmacao(e.target.value)} minLength={8} maxLength={64} /><RequisitosSenha senha={senha} confirmacao={confirmacao} id="requisitosInstituicao" /><AceiteDocumentos id="termosAtivacaoInstituicao" checked={termos} onChange={(aceitos) => { setTermos(aceitos); setErroTermos('') }} erro={erroTermos} /><MensagemFormulario tipo="erro">{estado.erro}</MensagemFormulario><button disabled={estado.carregando}>{estado.carregando ? 'Ativando...' : 'Ativar conta'}</button></form>
       : <div>{estado.erro && <p className="mensagem-erro" role="alert">{estado.erro}</p>}<button disabled={estado.carregando} onClick={confirmar}>{estado.carregando ? 'Confirmando...' : 'Confirmar e-mail'}</button></div>}
   </section></main>
 }

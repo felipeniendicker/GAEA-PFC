@@ -1,5 +1,6 @@
 package Gaea.Api.config;
 
+import Gaea.Api.model.DocumentosLegais;
 import Gaea.Api.repository.UsuarioRepository;
 import Gaea.Api.service.PoliticaSenhaService;
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,14 @@ class AdminBootstrapTests {
         when(encoder.encode("Senha-Forte1!")).thenReturn("hash"); when(repositorio.save(any())).thenAnswer(i->i.getArgument(0));
         AdminBootstrap bootstrap=new AdminBootstrap(repositorio,encoder,politica,"Admin GAEA","ADMIN@GAEA.EXAMPLE","Senha-Forte1!",AdminBootstrap.CONFIRMACAO);
         bootstrap.run(new DefaultApplicationArguments());
-        verify(politica).validar("Senha-Forte1!"); verify(encoder).encode("Senha-Forte1!"); verify(repositorio).save(argThat(u->"ADMIN_GAEA".equals(u.getPerfil())&&"admin@gaea.example".equals(u.getEmail())));
+        verify(politica).validar("Senha-Forte1!");
+        verify(encoder).encode("Senha-Forte1!");
+        verify(repositorio).save(argThat(usuario ->
+                "ADMIN_GAEA".equals(usuario.getPerfil())
+                        && "admin@gaea.example".equals(usuario.getEmail())
+                        && DocumentosLegais.VERSAO_TERMOS_USO.equals(usuario.getTermosUsoVersao())
+                        && DocumentosLegais.VERSAO_POLITICA_PRIVACIDADE.equals(
+                                usuario.getPoliticaPrivacidadeVersao())
+                        && usuario.getTermosAceitosEm() != null));
     }
 }

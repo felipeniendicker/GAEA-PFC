@@ -43,4 +43,16 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
             Long instituicaoId,
             String matricula,
             Long id);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            select u from Usuario u
+            where u.instituicao.id = :instituicaoId
+              and u.perfil = 'INSTITUICAO'
+              and u.ativo = true
+              and u.ativado = true
+            order by u.id
+            """)
+    List<Usuario> findResponsaveisInstitucionaisAtivosParaAtualizacao(
+            @Param("instituicaoId") Long instituicaoId);
 }

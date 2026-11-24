@@ -14,6 +14,39 @@
   resize: vertical;
 }
 
+.privacidade-explicacao,
+.privacidade-confirmacao {
+  grid-column: 1 / -1;
+}
+
+.privacidade-explicacao {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border-left: 4px solid var(--cor-esmeralda-principal);
+  border-radius: var(--raio-sm);
+  color: var(--cor-esmeralda-escuro);
+  background: var(--cor-esmeralda-suave);
+}
+
+.privacidade-senha {
+  grid-column: 1 / 2;
+}
+
+.privacidade-confirmacao {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.9rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-md);
+  background: var(--cor-bege);
+}
+
+.privacidade-confirmacao input {
+  margin-top: 0.2rem;
+  accent-color: var(--cor-esmeralda-principal);
+}
+
 .historico-privacidade {
   margin-top: 1.5rem;
 }

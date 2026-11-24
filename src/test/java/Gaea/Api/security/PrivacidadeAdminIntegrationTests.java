@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,9 +28,10 @@ class PrivacidadeAdminIntegrationTests {
     @Autowired UsuarioRepository usuarios;
     @Autowired SolicitacaoPrivacidadeRepository solicitacoes;
     @Autowired JwtService jwtService;
+    @Autowired PasswordEncoder passwordEncoder;
 
     @Test
-    void deveAtenderSolicitacaoComAtribuicaoDecisaoEvidenciaEAuditoria() throws Exception {
+    void deveManterExportacaoEmAnaliseSemExecutorTecnico() throws Exception {
         Usuario titular = usuario("Titular", "titular@example.com", "ALUNO");
         Usuario admin = usuario("Admin", "admin@example.com", "ADMIN_GAEA");
 
@@ -64,26 +66,26 @@ class PrivacidadeAdminIntegrationTests {
                                 {"decisao":"Exportação disponibilizada ao titular.",
                                  "evidenciaExecucao":"Arquivo gerado e entregue pelo canal autenticado."}
                                 """))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.situacao").value("CONCLUIDA"));
+                .andExpect(status().isConflict());
 
         mockMvc.perform(get("/api/privacidade/solicitacoes")
                         .header("Authorization", bearer(titular)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].decisao")
-                        .value("Exportação disponibilizada ao titular."));
+                .andExpect(jsonPath("$[0].situacao").value("EM_ANALISE"))
+                .andExpect(jsonPath("$[0].decisao").doesNotExist());
         assertTrue(usuarios.existsByEmailNormalizado("titular@example.com"));
     }
 
     @Test
-    void deveRestringirAdministracaoEImpedirConclusaoSemEvidencia() throws Exception {
+    void deveRestringirAdministracaoAoPerfilAdmin() throws Exception {
         Usuario titular = usuario("Titular", "titular2@example.com", "EMPRESA");
         Usuario admin = usuario("Admin", "admin2@example.com", "ADMIN_GAEA");
         mockMvc.perform(post("/api/privacidade/solicitacoes")
                         .header("Authorization", bearer(titular))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"tipo":"ENCERRAMENTO_CONTA","descricao":"Solicito encerrar o meu acesso."}
+                                {"tipo":"ENCERRAMENTO_CONTA","descricao":"Solicito encerrar o meu acesso.",
+                                 "senhaAtual":"Senha-segura-123!"}
                                 """))
                 .andExpect(status().isOk());
         Long id = solicitacoes.findAll().get(0).getId();
@@ -97,19 +99,13 @@ class PrivacidadeAdminIntegrationTests {
         mockMvc.perform(put("/api/admin/privacidade/solicitacoes/{id}/analise", id)
                         .header("Authorization", bearer(admin)))
                 .andExpect(status().isOk());
-        mockMvc.perform(post("/api/admin/privacidade/solicitacoes/{id}/concluir", id)
-                        .header("Authorization", bearer(admin))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"decisao":"Encerramento analisado e aprovado.","evidenciaExecucao":""}
-                                """))
-                .andExpect(status().isConflict());
     }
 
     private Usuario usuario(String nome, String email, String perfil) {
         Usuario usuario = new Usuario();
         usuario.setNome(nome);
         usuario.setEmail(email);
+        usuario.setSenha(passwordEncoder.encode("Senha-segura-123!"));
         usuario.setPerfil(perfil);
         usuario.setAtivo(true);
         usuario.setAtivado(true);

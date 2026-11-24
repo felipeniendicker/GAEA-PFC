@@ -794,6 +794,55 @@ button { font-size: 0.9rem; }
   cursor: pointer;
 }
 
+a.link-texto {
+  display: inline;
+}
+
+.campo-erro {
+  display: block;
+  margin-top: var(--espaco-1, 0.3rem);
+  color: var(--cor-perigo, #813a3a);
+  font-size: var(--texto-xs, 0.8rem);
+  font-weight: 600;
+}
+
+.campo input[aria-invalid="true"] {
+  border-color: var(--cor-perigo, #813a3a);
+  box-shadow: 0 0 0 3px rgba(129, 58, 58, 0.1);
+}
+
+.aceite-lgpd.campo-invalido {
+  border-color: var(--cor-perigo, #813a3a);
+}
+
+.mensagem-formulario {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid;
+  border-radius: var(--raio-md, 6px);
+  font-size: var(--texto-sm, 0.88rem);
+  font-weight: 600;
+}
+
+.mensagem-formulario.mensagem-erro {
+  border-color: #d8aaaa;
+  background: var(--cor-perigo-suave, #fff1f1);
+  color: var(--cor-perigo, #813a3a);
+}
+
+.mensagem-formulario.mensagem-sucesso {
+  border-color: #a8c8bb;
+  background: var(--cor-sucesso-suave, #eef8f3);
+  color: var(--cor-sucesso, #245845);
+}
+
+.mensagem-formulario.mensagem-aviso {
+  border-color: #dccb9d;
+  background: #faf7f1;
+  color: #69572f;
+}
+
 .mensagem-erro {
   grid-column: 1 / -1;
   margin: 0;

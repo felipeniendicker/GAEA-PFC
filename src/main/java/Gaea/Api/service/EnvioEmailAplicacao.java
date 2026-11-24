@@ -14,4 +14,11 @@ public interface EnvioEmailAplicacao {
     default void enviarAtivacaoInstituicao(String destinatario, String nome, String link) {
         throw new IllegalStateException("Envio institucional não configurado");
     }
+
+    default void enviarResultadoPrivacidade(
+            String destinatario,
+            String nome,
+            boolean concluida) {
+        throw new IllegalStateException("Envio de privacidade não configurado");
+    }
 }

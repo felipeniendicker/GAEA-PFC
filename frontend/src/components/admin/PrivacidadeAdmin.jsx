@@ -25,6 +25,7 @@ export default function PrivacidadeAdmin({ apiBase, token }) {
   const [situacao, setSituacao] = useState('PENDENTE')
   const [erro, setErro] = useState('')
   const [carregando, setCarregando] = useState(true)
+  const [auditorias, setAuditorias] = useState({})
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
 
   const carregar = useCallback(async () => {
@@ -65,16 +66,30 @@ export default function PrivacidadeAdmin({ apiBase, token }) {
         : 'Justificativa da rejeição (mínimo 10 caracteres):'
     )
     if (!decisao) return
-    const evidenciaExecucao = acao === 'concluir'
-      ? window.prompt('Evidência da execução, sem incluir segredos ou dados excessivos:')
-      : null
-    if (acao === 'concluir' && !evidenciaExecucao) return
     const resposta = await fetch(
       `${apiBase}/api/admin/privacidade/solicitacoes/${id}/${acao}`,
-      { method: 'POST', headers, body: JSON.stringify({ decisao, evidenciaExecucao }) }
+      { method: 'POST', headers, body: JSON.stringify({ decisao }) }
     )
     if (!resposta.ok) setErro(await mensagem(resposta, 'Não foi possível registrar a decisão.'))
     else carregar()
+  }
+
+  async function carregarAuditoria(id) {
+    if (auditorias[id]) {
+      setAuditorias((atuais) => ({ ...atuais, [id]: null }))
+      return
+    }
+    const resposta = await fetch(
+      `${apiBase}/api/admin/privacidade/auditoria?solicitacaoId=${id}`,
+      { headers }
+    )
+    if (!resposta.ok) {
+      setErro(await mensagem(resposta, 'Não foi possível carregar a auditoria.'))
+      return
+    }
+    setAuditorias((atuais) => ({ ...atuais, [id]: [] }))
+    const eventos = await resposta.json()
+    setAuditorias((atuais) => ({ ...atuais, [id]: eventos }))
   }
 
   return (
@@ -82,7 +97,7 @@ export default function PrivacidadeAdmin({ apiBase, token }) {
       <div className="secao-cabecalho">
         <div>
           <h3>Solicitações de privacidade</h3>
-          <p>Acesso restrito para análise; nenhuma exclusão é executada automaticamente.</p>
+          <p>O encerramento de conta possui execução técnica. Exclusão e anonimização permanecem sujeitas à definição dos dados elegíveis.</p>
         </div>
         <label className="campo">
           Situação
@@ -116,9 +131,15 @@ export default function PrivacidadeAdmin({ apiBase, token }) {
               )}
               {solicitacao.situacao === 'EM_ANALISE' && (
                 <div className="processo-acoes">
-                  <button type="button" onClick={() => decidir(solicitacao.id, 'concluir')}>
-                    Concluir com evidência
-                  </button>
+                  {solicitacao.tipo === 'ENCERRAMENTO_CONTA' ? (
+                    <button type="button" onClick={() => decidir(solicitacao.id, 'concluir')}>
+                      Aprovar e executar encerramento
+                    </button>
+                  ) : (
+                    <span className="badge badge-aviso">
+                      Execução técnica indisponível; mantenha em análise ou rejeite fundamentadamente
+                    </span>
+                  )}
                   <button type="button" className="botao-perigo"
                     onClick={() => decidir(solicitacao.id, 'rejeitar')}>
                     Rejeitar com justificativa
@@ -126,6 +147,22 @@ export default function PrivacidadeAdmin({ apiBase, token }) {
                 </div>
               )}
               {solicitacao.decisao && <p><strong>Decisão:</strong> {solicitacao.decisao}</p>}
+              {solicitacao.evidenciaExecucao && (
+                <p><strong>Resultado técnico:</strong> {solicitacao.evidenciaExecucao}</p>
+              )}
+              <button type="button" className="botao-secundario"
+                onClick={() => carregarAuditoria(solicitacao.id)}>
+                {auditorias[solicitacao.id] ? 'Ocultar auditoria' : 'Ver auditoria'}
+              </button>
+              {auditorias[solicitacao.id] && (
+                <ul className="auditoria-privacidade">
+                  {auditorias[solicitacao.id].map((evento, indice) => (
+                    <li key={`${evento.dataHora}-${evento.acao}-${indice}`}>
+                      {formatarDataHora(evento.dataHora)} · {evento.acao} · {evento.ator}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </article>
           ))}
         </div>

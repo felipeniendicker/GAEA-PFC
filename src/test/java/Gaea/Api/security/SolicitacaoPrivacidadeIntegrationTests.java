@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +38,7 @@ class SolicitacaoPrivacidadeIntegrationTests {
     @Autowired SolicitacaoPrivacidadeRepository solicitacaoRepository;
     @Autowired LogAuditoriaRepository auditoriaRepository;
     @Autowired JwtService jwtService;
+    @Autowired PasswordEncoder passwordEncoder;
 
     @Test
     void deveCadastrarParaAlunoInstituicaoEEmpresa() throws Exception {
@@ -110,6 +112,29 @@ class SolicitacaoPrivacidadeIntegrationTests {
                         .content("{\"tipo\":\"ACESSO\",\"descricao\":\"Sem autenticação\"}"))
                 .andExpect(status().isUnauthorized());
         assertEquals(0, solicitacaoRepository.count());
+    }
+
+    @Test
+    void deveExigirSenhaAtualValidaParaEncerramento() throws Exception {
+        Usuario usuario = salvarUsuario("identidade.privacidade@teste.example", "ALUNO", null);
+        usuario.setSenha(passwordEncoder.encode("Senha-correta-123!"));
+        usuarioRepository.saveAndFlush(usuario);
+
+        cadastrar(usuario, """
+                {"tipo":"ENCERRAMENTO_CONTA","descricao":"Encerrar minha conta",
+                 "senhaAtual":"Senha-incorreta-123!"}
+                """)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.mensagem").value("Confirmação de identidade inválida"));
+        cadastrar(usuario, """
+                {"tipo":"ENCERRAMENTO_CONTA","descricao":"Encerrar minha conta"}
+                """)
+                .andExpect(status().isBadRequest());
+        cadastrar(usuario, """
+                {"tipo":"ENCERRAMENTO_CONTA","descricao":"Encerrar minha conta",
+                 "senhaAtual":"Senha-correta-123!"}
+                """)
+                .andExpect(status().isOk());
     }
 
     private org.springframework.test.web.servlet.ResultActions cadastrar(
