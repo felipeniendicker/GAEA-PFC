@@ -119,24 +119,24 @@ Sem o volume, arquivos gravados no filesystem são efêmeros e podem desaparecer
 redeploys. Faça backup do volume conforme a criticidade dos documentos. Serviços com
 volume não devem ser configurados com múltiplas réplicas escrevendo no mesmo diretório.
 
-## 6. SMTP
+## 6. E-mail transacional
 
-O cadastro público de supervisores e os fluxos institucionais exigem SMTP disponível e
-falham de forma fechada quando o envio está desabilitado. Para habilitar o envio, adicione:
+No ambiente `GAEA-PRODUCTION` do Railway, configure estas variáveis no serviço do backend.
 
 ```text
 EMAIL_ENABLED=true
-SMTP_HOST=<host do provedor>
-SMTP_PORT=<porta do provedor>
-SMTP_USERNAME=<usuário SMTP>
-SMTP_PASSWORD=<senha ou token SMTP>
-SMTP_FROM=<remetente validado pelo provedor>
-SMTP_AUTH=true
-SMTP_STARTTLS=true
+EMAIL_PROVIDER=brevo
+BREVO_API_KEY=<chave da API do Brevo>
+SMTP_FROM=<endereço de remetente verificado no Brevo>
+FRONTEND_BASE_URL=https://${{Frontend.RAILWAY_PUBLIC_DOMAIN}}
 ```
 
-Sele `SMTP_PASSWORD` e, se apropriado, `SMTP_USERNAME`. Confirme no provedor se a porta
-usa STARTTLS. Não use `SMTP_STARTTLS=false` em produção quando o provedor oferecer TLS.
+Sele `BREVO_API_KEY` no Railway. Caso o frontend use domínio próprio, mantenha sua URL
+pública HTTPS em `FRONTEND_BASE_URL`. O backend usa a API HTTPS do Brevo com timeout de
+conexão de 3 segundos e de resposta de 5 segundos.
+
+Para enviar e-mails localmente pelo Mailpit, use `EMAIL_ENABLED=true` e
+`EMAIL_PROVIDER=smtp`. O SMTP local usa `localhost:1025` por padrão.
 
 ## 7. Primeiro deploy
 
@@ -153,7 +153,7 @@ usa STARTTLS. Não use `SMTP_STARTTLS=false` em produção quando o provedor ofe
 ## 8. Checklist operacional
 
 - MySQL sem acesso público;
-- `JWT_SECRET` e credenciais SMTP selados;
+- `JWT_SECRET` e `BREVO_API_KEY` selados;
 - `JPA_SHOW_SQL=false`;
 - Flyway habilitado e Hibernate em `validate`;
 - CORS restrito ao domínio do frontend;
